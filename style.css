@@ -31,9 +31,20 @@ header .logo {
     font-weight: bold;
 }
 
+header .navegacion-principal {
+    /* Contenedor de los enlaces de navegación */
+    display: flex;
+    gap: 30px; /* Espacio entre los enlaces */
+}
+
 header .navegacion-principal a {
-    margin: 0 15px; /* Espacio entre los enlaces del menú */
     font-weight: 500;
+}
+
+header .botones-auth {
+    /* Contenedor de los botones de autenticación */
+    display: flex;
+    gap: 10px; /* Espacio entre botones */
 }
 
 /* Estilos para los botones de Iniciar Sesión y Registrarse */
@@ -42,7 +53,6 @@ header .btn-registrarse {
     color: #fff; /* Texto blanco */
     padding: 10px 15px;
     border-radius: 5px; /* Bordes redondeados */
-    margin-left: 10px;
 }
 
 header .btn-iniciar-sesion {
@@ -121,4 +131,77 @@ footer {
 
 footer h3 {
     margin-bottom: 15px;
+}
+
+
+/* -----------------------------------------------------------------
+   --- 6. DISEÑO RESPONSIVO (MEDIA QUERIES) ---
+   -----------------------------------------------------------------
+*/
+
+/* Estos estilos solo se aplican si la pantalla es de 768px o MENOS */
+@media (max-width: 768px) {
+
+    /* --- Encabezado Responsivo --- */
+    header {
+        flex-direction: column; /* Apila el logo, nav y botones */
+        gap: 20px; /* Espacio entre los elementos apilados */
+        padding: 20px; /* Un poco menos de padding en móvil */
+    }
+
+    header .navegacion-principal {
+        /* Los enlaces del menú también los apilamos */
+        flex-direction: column;
+        align-items: center;
+        gap: 15px; 
+        width: 100%; /* Ocupa todo el ancho */
+    }
+    
+    header .botones-auth {
+        /* Los botones de auth también se apilan */
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+
+    header .btn-iniciar-sesion,
+    header .btn-registrarse {
+        text-align: center; /* Centra el texto del botón */
+        width: 100%;
+    }
+
+    /* --- Hero Responsivo --- */
+    #hero {
+        height: auto; /* Altura automática para el contenido */
+        padding: 40px 20px;
+    }
+    
+    #hero h1 {
+        font-size: 2.2em; /* Título más pequeño */
+    }
+
+    /* --- Secciones Responsivas --- */
+    section {
+        padding: 40px 20px; /* Menos padding a los lados */
+    }
+
+    /* --- Sobre Nosotros Responsivo --- */
+    #sobre-nosotros .features-container {
+        flex-direction: column; /* ¡CLAVE! Apila las 3 cajas */
+        gap: 30px; 
+    }
+
+    /* --- Pie de Página Responsivo --- */
+    footer {
+        flex-direction: column; /* ¡CLAVE! Apila las 3 columnas */
+        text-align: center; /* Centra el texto */
+        gap: 30px; /* Espacio entre las columnas apiladas */
+    }
+
+    footer .footer-col-izquierda,
+    footer .footer-col-centro,
+    footer .footer-col-derecha {
+        /* Asegura que ocupen todo el ancho y se centren */
+        width: 100%;
+    }
 }
