@@ -3,26 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio - Mi Tienda</title>
+    <title>ECOTECHSOLUTIONS - Nutrición Acuícola Sostenible</title>
 </head>
 <body>
+
     <header>
-        <nav>
-            <a href="index.html">Inicio</a>
-            <a href="tienda.html">Tienda</a>
-            <a href="cuenta.html">Mi Cuenta</a>
+        <div class="logo">
+            <a href="index.html">ECOTECHSOLUTIONS</a>
+        </div>
+        
+        <nav class="navegacion-principal">
+            <a href="#sobre-nosotros">NOSOTROS</a>
+            <a href="tienda.html">PRODUCTO</a>
+            <a href="#galeria">GALERÍA</a>
         </nav>
+        
+        <div class="botones-auth">
+            <a href="cuenta.html" class="btn-iniciar-sesion">Iniciar Sesión</a>
+            <a href="cuenta.html" class="btn-registrarse">Registrarse</a>
+        </div>
     </header>
 
     <main>
-        <h1>Bienvenido a Nuestra Tienda</h1>
-        <p>Información general del producto o servicio.</p>
+
+        <section id="hero">
+            <div class="hero-contenido">
+                <p>Publicando el futuro</p>
+                <h1>NUTRICIÓN ACUÍCOLA SOSTENIBLE</h1>
+                <p>100% ORGÁNICO - ALTA PROTEÍNA - ECO FRIENDLY</p>
+                <a href="tienda.html" class="btn-comprar">Comprar Ahora</a>
+            </div>
+        </section>
+
+        <section id="sobre-nosotros">
+            <h2>Sobre Nosotros</h2>
+            <p>En ECOTECHSOLUTIONS, transformamos la Lemna Minor, una de las plantas de más rápido crecimiento en el mundo, en un superalimento sostenible para peces. Nuestro proceso super-filtrado garantiza un producto puro y sostenible...</p>
+            
+            <div class="features-container">
+                <div class="feature-box">
+                    <h3>100% Sostenible</h3>
+                    <p>Proceso patentado con 0% químicos</p>
+                </div>
+                <div class="feature-box">
+                    <h3>Alta Proteína</h3>
+                    <p>38% a 42% por cada 100g</p>
+                </div>
+                <div class="feature-box">
+                    <h3>Tecnología</h3>
+                    <p>Producción vertical automatizada</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="nuestro-producto">
+            <h2>Nuestro Producto</h2>
+            <div class="producto-container">
+                <div class="producto-col-izquierda">
+                    <h3>Suplemento de Lemna Minor</h3>
+                    <p>El superalimento para una acuicultura sostenible y rentable. Alto en proteína y 100% orgánico.</p>
+                    <p class="precio">$450.00 MXN <small>Bolsa 1kg</small></p>
+                    <a href="tienda.html" class="btn-comprar">Comprar Ahora</a>
+                </div>
+                <div class="producto-col-derecha">
+                    <p>Aquí va la imagen de la información nutricional</p>
+                </div>
+            </div>
+        </section>
         
-        <a href="tienda.html">¡Compra ahora!</a>
+        <section id="galeria">
+             <h2>Nuestra Granja</h2>
+             <p>(Aquí irá la galería de imágenes)</p>
+        </section>
+
     </main>
 
     <footer>
-        <a href="panel.html">Acceso Personal</a>
+        <div class="footer-col-izquierda">
+            <div class="logo-footer">
+                ECOTECHSOLUTIONS
+            </div>
+            <p>Síguenos</p>
+            </div>
+        
+        <div class="footer-col-centro">
+            <h3>Datos</h3>
+            <p>Av. Blv, Place, #123</p>
+            <p>Tlaxcala, México</p>
+            <p>+52 247 123 4567</p>
+            <p>info@ecotech.com</p>
+        </div>
+        
+        <div class="footer-col-derecha">
+            <h3>Política de la Tienda</h3>
+            <a href="#">Envío y entrega</a>
+            <a href="#">Términos y condiciones</a>
+            <a href="#">FAQ</a>
+        </div>
     </footer>
+
 </body>
 </html>
