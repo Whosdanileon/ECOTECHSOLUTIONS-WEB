@@ -1,7 +1,6 @@
 /* --- 1. ESTILOS GLOBALES Y RESET --- */
-/* Esto 'resetea' estilos que los navegadores ponen por defecto */
 * {
-    box-sizing: border-box; /* Hace que el tamaño de las cajas sea más predecible */
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
@@ -9,32 +8,31 @@
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     line-height: 1.6;
-    color: #333; /* Un color de texto base oscuro */
+    color: #333;
 }
 
 a {
-    text-decoration: none; /* Quita el subrayado de los enlaces */
-    color: inherit; /* Hace que los enlaces hereden el color del texto */
+    text-decoration: none;
+    color: inherit;
 }
 
 /* --- 2. ENCABEZADO (HEADER) --- */
 header {
-    display: flex; /* ¡Magia! Pone los elementos hijos (logo, nav, botones) en fila */
-    justify-content: space-between; /* Los distribuye (espacio-entre-ellos) */
-    align-items: center; /* Los centra verticalmente */
-    padding: 20px 40px; /* 20px de espacio arriba/abajo, 40px a los lados */
-    border-bottom: 1px solid #eee; /* Una línea divisoria sutil */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    border-bottom: 1px solid #eee;
 }
 
 header .logo {
-    font-size: 1.5em; /* Tamaño de fuente más grande */
+    font-size: 1.5em;
     font-weight: bold;
 }
 
 header .navegacion-principal {
-    /* Contenedor de los enlaces de navegación */
     display: flex;
-    gap: 30px; /* Espacio entre los enlaces */
+    gap: 30px;
 }
 
 header .navegacion-principal a {
@@ -42,17 +40,15 @@ header .navegacion-principal a {
 }
 
 header .botones-auth {
-    /* Contenedor de los botones de autenticación */
     display: flex;
-    gap: 10px; /* Espacio entre botones */
+    gap: 10px;
 }
 
-/* Estilos para los botones de Iniciar Sesión y Registrarse */
 header .btn-registrarse {
-    background-color: #28a745; /* Verde (parecido al de tu diseño) */
-    color: #fff; /* Texto blanco */
+    background-color: #28a745;
+    color: #fff;
     padding: 10px 15px;
-    border-radius: 5px; /* Bordes redondeados */
+    border-radius: 5px;
 }
 
 header .btn-iniciar-sesion {
@@ -61,25 +57,16 @@ header .btn-iniciar-sesion {
 
 /* --- 3. SECCIÓN HERO (PORTADA) --- */
 #hero {
-    /* ¡IMPORTANTE! Necesitarás una imagen. 
-       Crea una carpeta llamada 'images' y guarda tu foto de campo ahí.
-       Si tu imagen se llama 'campo.jpg', la ruta sería 'images/campo.jpg'
-    */
-    /* background-image: url('images/campo.jpg'); */
-    background-color: #f4f4f4; /* Color de fondo MIENTRAS no pones la imagen */
-    
-    background-size: cover; /* Hace que la imagen cubra toda la sección */
-    background-position: center; /* Centra la imagen */
-    
-    height: 60vh; /* 60% de la altura de la ventana del navegador */
-    
-    /* Centrar el contenido dentro del Hero */
+    background-color: #f4f4f4;
+    background-size: cover;
+    background-position: center;
+    height: 60vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: #333; /* Cambia esto a #fff (blanco) si tu imagen es oscura */
+    color: #333;
     padding: 0 20px;
 }
 
@@ -88,7 +75,6 @@ header .btn-iniciar-sesion {
     margin-bottom: 10px;
 }
 
-/* Estilo para el botón "Comprar Ahora" */
 .btn-comprar {
     background-color: #28a745;
     color: #fff;
@@ -97,15 +83,14 @@ header .btn-iniciar-sesion {
     font-size: 1.1em;
     font-weight: bold;
     margin-top: 20px;
-    display: inline-block; /* Permite que tome el padding y margin */
+    display: inline-block;
 }
 
 /* --- 4. SECCIONES DE CONTENIDO --- */
-/* Damos un espacio estándar a todas las secciones */
 section {
     padding: 60px 40px;
-    max-width: 1200px; /* Ancho máximo para el contenido */
-    margin: 0 auto; /* Centra las secciones en la página */
+    max-width: 1200px;
+    margin: 0 auto;
     text-align: center;
 }
 
@@ -114,18 +99,43 @@ section h2 {
     margin-bottom: 40px;
 }
 
-/* Layout para las 3 columnas de "Sobre Nosotros" */
 #sobre-nosotros .features-container {
-    display: flex; /* Pone las 3 cajas en fila */
-    gap: 30px; /* Espacio entre las cajas */
+    display: flex;
+    gap: 30px;
+}
+
+/* Estilos para la página de la tienda */
+.producto-detalle {
+    border: 1px solid #eee;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 600px;
+    margin: 0 auto; /* Centra el contenedor del producto */
+    text-align: left; /* Alinea el texto del producto a la izquierda */
+}
+
+.producto-detalle h2 {
+    text-align: center; /* Centra solo el título */
+}
+
+.carrito-controles {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.carrito-controles input {
+    width: 60px;
+    padding: 5px;
 }
 
 /* --- 5. PIE DE PÁGINA (FOOTER) --- */
 footer {
-    display: flex; /* Pone las 3 columnas en fila */
-    justify-content: space-around; /* Las distribuye con espacio alrededor */
+    display: flex;
+    justify-content: space-around;
     padding: 50px 40px;
-    background-color: #f9f9f9; /* Un fondo gris claro */
+    background-color: #f9f9f9;
     border-top: 1px solid #eee;
 }
 
@@ -134,30 +144,23 @@ footer h3 {
 }
 
 
-/* -----------------------------------------------------------------
-   --- 6. DISEÑO RESPONSIVO (MEDIA QUERIES) ---
-   -----------------------------------------------------------------
-*/
-
+/* --- 6. DISEÑO RESPONSIVO (MEDIA QUERIES) --- */
 @media (max-width: 768px) {
 
-    /* --- Encabezado Responsivo --- */
     header {
-        flex-direction: column; /* Apila el logo, nav y botones */
-        gap: 20px; /* Espacio entre los elementos apilados */
-        padding: 20px; /* Un poco menos de padding en móvil */
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
     }
 
     header .navegacion-principal {
-        /* Los enlaces del menú también los apilamos */
         flex-direction: column;
         align-items: center;
         gap: 15px; 
-        width: 100%; /* Ocupa todo el ancho */
+        width: 100%;
     }
     
     header .botones-auth {
-        /* Los botones de auth también se apilan */
         flex-direction: column;
         width: 100%;
         gap: 10px;
@@ -165,42 +168,37 @@ footer h3 {
 
     header .btn-iniciar-sesion,
     header .btn-registrarse {
-        text-align: center; /* Centra el texto del botón */
+        text-align: center;
         width: 100%;
     }
 
-    /* --- Hero Responsivo --- */
     #hero {
-        height: auto; /* Altura automática para el contenido */
+        height: auto;
         padding: 40px 20px;
     }
     
     #hero h1 {
-        font-size: 2.2em; /* Título más pequeño */
+        font-size: 2.2em;
     }
 
-    /* --- Secciones Responsivas --- */
     section {
-        padding: 40px 20px; /* Menos padding a los lados */
+        padding: 40px 20px;
     }
 
-    /* --- Sobre Nosotros Responsivo --- */
     #sobre-nosotros .features-container {
-        flex-direction: column; /* ¡CLAVE! Apila las 3 cajas */
+        flex-direction: column;
         gap: 30px; 
     }
 
-    /* --- Pie de Página Responsivo --- */
     footer {
-        flex-direction: column; /* ¡CLAVE! Apila las 3 columnas */
-        text-align: center; /* Centra el texto */
-        gap: 30px; /* Espacio entre las columnas apiladas */
+        flex-direction: column;
+        text-align: center;
+        gap: 30px;
     }
 
     footer .footer-col-izquierda,
     footer .footer-col-centro,
     footer .footer-col-derecha {
-        /* Asegura que ocupen todo el ancho y se centren */
         width: 100%;
     }
 }
