@@ -10,7 +10,9 @@
 
     <header>
         <div class="logo">
-            <a href="index.html">ECOTECHSOLUTIONS</a>
+            <a href="index.html">
+                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+            </a>
         </div>
         
         <nav class="navegacion-principal">
@@ -37,7 +39,8 @@
 
         <section id="sobre-nosotros">
             <h2>Sobre Nosotros</h2>
-            <p>En ECOTECHSOLUTIONS, transformamos la Lemna Minor...</p>
+            <p>En ECOTECHSOLUTIONS, transformamos la Lemna Minor, una de las plantas de más rápido crecimiento en el mundo, en un superalimento sostenible para peces. Nuestro proceso super-filtrado garantiza un producto puro y sostenible...</p>
+            
             <div class="features-container">
                 <div class="feature-box">
                     <h3>100% Sostenible</h3>
@@ -56,15 +59,73 @@
 
         <section id="nuestro-producto">
             <h2>Nuestro Producto</h2>
-            <div class="producto-container">
+            <div class="producto-layout-flex">
+
                 <div class="producto-col-izquierda">
+                    <div class="producto-imagen-wrapper">
+                        <img src="images/product-bag.png" alt="Suplemento de Lemna Minor">
+                    </div>
                     <h3 id="index-producto-nombre">Cargando...</h3>
-                    <p>El superalimento para una acuicultura sostenible...</p>
-                    <p class="precio" id="index-producto-precio">$---.-- MXN <small>Bolsa 1kg</small></p>
-                    <a href="tienda.html" class="btn-comprar">Comprar Ahora</a>
+                    <p>El superalimento para una acuicultura sostenible y rentable. Alto en proteína y 100% orgánico.</p>
+                    <p class="precio" id="index-producto-precio">$---.-- MXN</p>
+                    <a href="tienda.html" class="btn-comprar btn-verde-grande">Comprar Ahora</a>
                 </div>
+
                 <div class="producto-col-derecha">
-                    <p>Aquí va la imagen de la información nutricional</p>
+                    <div class="tabla-nutricional">
+                        <h4>Información Nutricional</h4>
+                        
+                        <div class="nutri-seccion">
+                            <div class="nutri-fila principal">
+                                <span>Proteína</span>
+                                <span>54g</span>
+                            </div>
+                            <div class="nutri-fila principal">
+                                <span>Grasa</span>
+                                <span>9g</span>
+                            </div>
+                            <div class="nutri-fila principal">
+                                <span>Fibra</span>
+                                <span>13g</span>
+                            </div>
+                        </div>
+
+                        <div class="nutri-seccion calorias">
+                            <div class="nutri-fila">
+                                <span>Energía</span>
+                                <span>330 Kcal</span>
+                            </div>
+                            <div class="nutri-fila">
+                                <span>Sodio</span>
+                                <span>280mg</span>
+                            </div>
+                            <div class="nutri-fila">
+                                <span>Hierro</span>
+                                <span>10mg</span>
+                            </div>
+                        </div>
+
+                        <div class="nutri-seccion detalle">
+                            <h5>Producto Desglose</h5>
+                            <div class="nutri-fila">
+                                <span>Proteína Cruda</span>
+                                <span>42g</span>
+                            </div>
+                            <div class="nutri-fila">
+                                <span>Carbohidratos</span>
+                                <span>12g</span>
+                            </div>
+                            <div class="nutri-fila">
+                                <span>Calcio</span>
+                                <span>2.8g</span>
+                            </div>
+                            <div class="nutri-fila">
+                                <span>Fósforo</span>
+                                <span>1.2g</span>
+                            </div>
+                        </div>
+                        <small>Valores aproximados por cada 100g de producto</small>
+                    </div>
                 </div>
             </div>
         </section>
@@ -73,16 +134,16 @@
              <h2>Nuestra Granja</h2>
              <p>(Aquí irá la galería de imágenes)</p>
         </section>
-
     </main>
 
     <footer>
         <div class="footer-col-izquierda">
             <div class="logo-footer">
-                ECOTECHSOLUTIONS
+                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
             </div>
             <p>Síguenos</p>
-        </div>
+            </div>
+        
         <div class="footer-col-centro">
             <h3>Datos</h3>
             <p>Av. Blv, Place, #123</p>
@@ -90,6 +151,7 @@
             <p>+52 247 123 4567</p>
             <p>info@ecotech.com</p>
         </div>
+        
         <div class="footer-col-derecha">
             <h3>Política de la Tienda</h3>
             <a href="#">Envío y entrega</a>

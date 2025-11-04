@@ -9,6 +9,7 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     line-height: 1.6;
     color: #333;
+    background-color: #fdfdfd; /* Un fondo casi blanco */
 }
 
 a {
@@ -21,22 +22,26 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 40px;
+    padding: 15px 40px; /* Un poco menos de padding vertical */
     border-bottom: 1px solid #eee;
+    background-color: #fff;
+    position: sticky; /* Opcional: fija el header al hacer scroll */
+    top: 0;
+    z-index: 100;
 }
 
-header .logo {
-    font-size: 1.5em;
-    font-weight: bold;
+header .logo img {
+    height: 40px; /* Altura fija para el logo */
 }
 
 header .navegacion-principal {
     display: flex;
-    gap: 30px;
+    gap: 40px; /* Más espacio */
 }
 
 header .navegacion-principal a {
     font-weight: 500;
+    color: #555;
 }
 
 header .botones-auth {
@@ -44,37 +49,50 @@ header .botones-auth {
     gap: 10px;
 }
 
-header .btn-registrarse {
+.btn-registrarse {
     background-color: #28a745;
-    color: #fff;
+    color: #fff !important; /* Forzamos color blanco */
     padding: 10px 15px;
     border-radius: 5px;
 }
 
-header .btn-iniciar-sesion {
+.btn-iniciar-sesion {
     padding: 10px 15px;
+    color: #555;
 }
 
 /* --- 3. SECCIÓN HERO (PORTADA) --- */
 #hero {
-    background-color: #f4f4f4;
+    /* Cargamos la imagen de fondo */
+    background-image: url('images/hero-background.jpg');
+    background-color: #444; /* Color de respaldo */
     background-size: cover;
     background-position: center;
-    height: 60vh;
+    height: 70vh; /* Más alto */
+    
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: #333;
+    
+    color: #fff; /* TEXTO BLANCO */
     padding: 0 20px;
 }
 
 #hero h1 {
-    font-size: 3em;
+    font-size: 3.5em; /* Más grande */
     margin-bottom: 10px;
+    font-weight: 700;
+    /* Sombra para legibilidad */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+}
+#hero p {
+    font-size: 1.2em;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* Estilo de botón genérico */
 .btn-comprar {
     background-color: #28a745;
     color: #fff;
@@ -84,7 +102,15 @@ header .btn-iniciar-sesion {
     font-weight: bold;
     margin-top: 20px;
     display: inline-block;
+    border: none;
+    cursor: pointer;
 }
+.btn-verde-grande {
+    background-color: #5a8a44; /* Tono de verde del diseño */
+    padding: 15px 30px;
+    width: 100%; /* Ocupa todo el ancho */
+}
+
 
 /* --- 4. SECCIONES DE CONTENIDO --- */
 section {
@@ -95,77 +121,248 @@ section {
 }
 
 section h2 {
-    font-size: 2.2em;
-    margin-bottom: 40px;
+    font-size: 2.5em;
+    margin-bottom: 50px;
+    font-weight: 600;
 }
 
+/* Sobre Nosotros */
 #sobre-nosotros .features-container {
     display: flex;
     gap: 30px;
+    text-align: left;
 }
-
-/* Estilos para la página de la tienda */
-.producto-detalle {
-    border: 1px solid #eee;
-    padding: 20px;
+#sobre-nosotros .feature-box {
+    background-color: #f4f9f4; /* Verde muy pálido */
+    padding: 25px;
     border-radius: 8px;
-    max-width: 600px;
-    margin: 0 auto; /* Centra el contenedor del producto */
-    text-align: left; /* Alinea el texto del producto a la izquierda */
+    flex: 1; /* Ocupa 1/3 del espacio */
+}
+#sobre-nosotros .feature-box h3 {
+    margin-bottom: 10px;
+    color: #3b5d2a;
 }
 
-.producto-detalle h2 {
-    text-align: center; /* Centra solo el título */
+/* Nuestro Producto (index.html) */
+#nuestro-producto {
+    background-color: #fff;
 }
-
-.carrito-controles {
-    margin-top: 20px;
+.producto-layout-flex {
     display: flex;
-    gap: 10px;
-    align-items: center;
+    gap: 40px;
+    text-align: left;
+}
+.producto-col-izquierda {
+    flex: 1;
+}
+.producto-col-izquierda .producto-imagen-wrapper {
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.producto-col-izquierda img {
+    width: 100%;
+    height: auto;
+}
+.producto-col-izquierda h3 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+}
+.producto-col-izquierda .precio {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
 }
 
-.carrito-controles input {
-    width: 60px;
-    padding: 5px;
+.producto-col-derecha {
+    flex: 1;
+}
+
+/* Estilos de la Tabla Nutricional */
+.tabla-nutricional {
+    background-color: #f4f9f4;
+    border-radius: 8px;
+    padding: 25px;
+    border: 1px solid #e0e0e0;
+}
+.tabla-nutricional h4 {
+    font-size: 1.3em;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.nutri-seccion {
+    padding: 15px 0;
+    border-bottom: 1px solid #d0d0d0;
+}
+.nutri-seccion:last-child {
+    border-bottom: none;
+}
+.nutri-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+.nutri-fila.principal span {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+.nutri-seccion.calorias {
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+}
+.nutri-seccion.detalle h5 {
+    font-size: 1em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.tabla-nutricional small {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: #777;
 }
 
 /* --- 5. PIE DE PÁGINA (FOOTER) --- */
 footer {
     display: flex;
-    justify-content: space-around;
-    padding: 50px 40px;
-    background-color: #f9f9f9;
+    justify-content: space-between; /* space-around -> space-between */
+    padding: 50px 80px; /* Más padding lateral */
+    background-color: #fff;
     border-top: 1px solid #eee;
+    text-align: left;
 }
-
-footer h3 {
+.footer-col-izquierda, .footer-col-centro, .footer-col-derecha {
+    flex: 1;
+}
+.logo-footer img {
+    height: 35px;
     margin-bottom: 15px;
 }
+footer h3 {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    color: #000;
+}
+footer p, footer a {
+    color: #555;
+    line-height: 2;
+}
+
+/* --- 6. PÁGINA DE TIENDA (tienda.html) --- */
+.tienda-main {
+    padding: 60px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.tienda-layout {
+    display: flex;
+    gap: 40px;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+}
+.tienda-col-img {
+    flex: 1;
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    padding: 20px;
+    align-self: flex-start; /* Evita que se estire */
+}
+.tienda-col-img img {
+    width: 100%;
+}
+.tienda-col-info {
+    flex: 1;
+    text-align: left;
+}
+.tienda-col-info h1 {
+    font-size: 2.2em;
+    font-weight: 600;
+}
+.tienda-col-info .precio {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #333;
+    margin: 10px 0;
+}
+.tienda-col-info p {
+    margin-bottom: 15px;
+    color: #555;
+}
+.carrito-controles {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+.carrito-controles input[type="number"] {
+    width: 60px;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.carrito-controles .btn-verde-grande {
+    width: auto; /* No ocupa el 100% aquí */
+    flex: 1; /* Ocupa el espacio restante */
+}
+.info-adicional {
+    margin-top: 30px;
+    display: flex;
+    gap: 20px;
+}
+.info-box {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 15px;
+    flex: 1;
+}
+.info-box h3 {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
 
 
-/* --- 6. DISEÑO RESPONSIVO (MEDIA QUERIES) --- */
+/* --- 7. DISEÑO RESPONSIVO (Media Queries) --- */
+@media (max-width: 900px) {
+    /* Ajustes para Tablets */
+    .producto-layout-flex, .tienda-layout {
+        flex-direction: column; /* Apila las columnas */
+    }
+    
+    footer {
+        flex-direction: column;
+        gap: 30px;
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    #sobre-nosotros .features-container {
+        flex-direction: column;
+    }
+}
+
 @media (max-width: 768px) {
-
+    /* Ajustes para Móviles */
     header {
         flex-direction: column;
         gap: 20px;
         padding: 20px;
     }
-
     header .navegacion-principal {
         flex-direction: column;
         align-items: center;
         gap: 15px; 
-        width: 100%;
     }
-    
     header .botones-auth {
         flex-direction: column;
         width: 100%;
-        gap: 10px;
     }
-
     header .btn-iniciar-sesion,
     header .btn-registrarse {
         text-align: center;
@@ -174,9 +371,8 @@ footer h3 {
 
     #hero {
         height: auto;
-        padding: 40px 20px;
+        padding: 60px 20px;
     }
-    
     #hero h1 {
         font-size: 2.2em;
     }
@@ -185,20 +381,8 @@ footer h3 {
         padding: 40px 20px;
     }
 
-    #sobre-nosotros .features-container {
+    .carrito-controles {
         flex-direction: column;
-        gap: 30px; 
-    }
-
-    footer {
-        flex-direction: column;
-        text-align: center;
-        gap: 30px;
-    }
-
-    footer .footer-col-izquierda,
-    footer .footer-col-centro,
-    footer .footer-col-derecha {
-        width: 100%;
+        align-items: stretch;
     }
 }
