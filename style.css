@@ -139,7 +139,6 @@ footer h3 {
    -----------------------------------------------------------------
 */
 
-/* Estos estilos solo se aplican si la pantalla es de 768px o MENOS */
 @media (max-width: 768px) {
 
     /* --- Encabezado Responsivo --- */
