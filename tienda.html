@@ -27,10 +27,23 @@
     </header>
 
     <main>
-        <h1>Nuestros Productos (Página Tienda)</h1>
-        <p>Aquí se mostrarán TODOS los productos desde Supabase.</p>
-        <a href="checkout.html">Ir al Checkout</a>
-    </main>
+    <h1>Nuestros Productos (Página Tienda)</h1>
+
+    <div class="producto-detalle">
+        <h2 id="producto-nombre">Cargando nombre...</h2>
+        <p id="producto-precio">Cargando precio...</p>
+        <p>Stock: <span id="producto-stock">Cargando stock...</span></p>
+
+        <div class="carrito-controles">
+            <label for="cantidad">Cantidad:</label>
+            <input type="number" id="cantidad" name="cantidad" value="1" min="1">
+            <button id="btn-anadir-carrito">Añadir al Carrito</button>
+        </div>
+
+    </div>
+
+    <a href="checkout.html">Ir al Checkout</a>
+</main>
 
     <footer>
         <a href="panel.html">Acceso Personal</a>
@@ -56,6 +69,10 @@
             <a href="#">FAQ</a>
         </div>
     </footer>
-    
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script type="module" src="main.js"></script>
+
 </body>
 </html>
