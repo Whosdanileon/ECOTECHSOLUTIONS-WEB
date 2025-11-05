@@ -5,14 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Cuenta - ECOTECHSOLUTIONS</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .cuenta-main {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .cuenta-nav {
+            flex: 0 0 200px; /* Ancho fijo para la navegación */
+        }
+        .cuenta-nav button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: left;
+            background-color: #f4f4f4;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .cuenta-nav button.active {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        .cuenta-nav button.btn-logout {
+            background-color: #fbebee;
+            color: #d9534f;
+        }
+        .cuenta-contenido {
+            flex: 1; /* Ocupa el resto del espacio */
+            background-color: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 30px;
+        }
+        .cuenta-contenido h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        /* Estilos del formulario de perfil */
+        #form-perfil .form-grupo {
+            margin-bottom: 20px;
+        }
+        #form-perfil label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        #form-perfil input[type="text"],
+        #form-perfil input[type="email"],
+        #form-perfil textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #form-perfil input[type="email"][disabled] {
+            background-color: #f4f4f4;
+            color: #777;
+        }
+        #form-perfil textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        #form-perfil small {
+            color: #777;
+        }
+        
+        /* Ocultar formularios de auth por defecto */
+        #auth-forms { display: none; }
+    </style>
 </head>
 <body>
 
     <header>
         <div class="logo">
-            <a href="index.html">
-                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
-            </a>
+            <a href="index.html"><img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo"></a>
         </div>
         <nav class="navegacion-principal">
             <a href="index.html#sobre-nosotros">NOSOTROS</a>
@@ -20,44 +92,69 @@
             <a href="index.html#galeria">GALERÍA</a>
         </nav>
         <div class="botones-auth">
-            <a href="cuenta.html" class="btn-iniciar-sesion">Iniciar Sesión</a>
-            <a href="cuenta.html" class="btn-registrarse">Registrarse</a>
-        </div>
+            </div>
     </header>
 
-    <main class="cuenta-main">
+    <main>
         
-        <div id="user-info" style="display: none;">
-            <h1>Bienvenido a tu Cuenta</h1>
-            <p>Has iniciado sesión como: <strong id="user-email"></strong></p>
-            <button id="btn-logout">Cerrar Sesión</button>
+        <div id="user-info" class="cuenta-main" style="display: none;">
             
-            </div>
+            <nav class="cuenta-nav">
+                <button class="active">Mis Datos</button>
+                <button>Mis Pedidos</button>
+                <button>Configuración</button>
+                <button id="btn-logout" class="btn-logout">Cerrar Sesión</button>
+            </nav>
 
-        <div id="auth-forms">
+            <div class="cuenta-contenido">
+                <h1>Mis Datos</h1>
+                
+                <form id="form-perfil">
+                    <div class="form-grupo">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="profile-email" disabled>
+                        <small>El correo no se puede modificar.</small>
+                    </div>
+
+                    <div class="form-grupo">
+                        <label for="profile-name">Nombre Completo</label>
+                        <input type="text" id="profile-name" placeholder="Tu nombre y apellidos">
+                    </div>
+                    
+                    <div class="form-grupo">
+                        <label for="profile-phone">Teléfono (Opcional)</label>
+                        <input type="text" id="profile-phone" placeholder="10 dígitos sin espacios">
+                    </div>
+                    
+                    <div class="form-grupo">
+                        <label for="profile-address">Dirección de Envío Principal</label>
+                        <textarea id="profile-address" placeholder="Incluye: calle, número, colonia, ciudad y código postal"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-comprar btn-verde-grande">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="auth-forms" style="display: block;">
             <form id="form-login">
                 <h2>Iniciar Sesión</h2>
-                <label for="login-email">Correo Electrónico:</label>
+                <label for="login-email">Correo:</label>
                 <input type="email" id="login-email" required>
-                
                 <label for="login-password">Contraseña:</label>
                 <input type="password" id="login-password" required>
-                
                 <button type="submit">Entrar</button>
             </form>
-
+            <hr>
             <form id="form-registro">
                 <h2>Crear Cuenta Nueva</h2>
-                <label for="registro-email">Correo Electrónico:</label>
+                <label for="registro-email">Correo:</label>
                 <input type="email" id="registro-email" required>
-                
-                <label for="registro-password">Contraseña (mín. 6 caracteres):</label>
+                <label for="registro-password">Contraseña (mín. 6):</label>
                 <input type="password" id="registro-password" required minlength="6">
-                
                 <button type="submit">Registrarme</button>
             </form>
         </div>
-
     </main>
 
     <footer>
@@ -69,11 +166,12 @@
         </div>
         <div class="footer-col-centro">
             <h3>Datos</h3>
-            <p>...etc...</p>
+            <p>Av. Blv, Place, #123</p>
+            <p>Tlaxcala, México</p>
         </div>
         <div class="footer-col-derecha">
             <h3>Política de la Tienda</h3>
-            <p>...etc...</p>
+            <a href="#">Envío y entrega</a>
         </div>
     </footer>
     
