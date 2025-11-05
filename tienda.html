@@ -5,89 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tienda - ECOTECHSOLUTIONS</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header>
-        <div class="logo">
-            <a href="index.html">
-                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+    <nav class="main-nav">
+        <a href="index.html" class="logo">
+            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+        </a>
+        <div class="center-nav-links">
+            <a href="index.html#nosotros" class="nav-link">NOSOTROS</a>
+            <a href="tienda.html" class="nav-link">PRODUCTO</a>
+            <a href="index.html#galeria" class="nav-link">GALERÍA</a>
+        </div>
+        <div class="right-nav">
+            <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
-        </div>
-        <nav class="navegacion-principal">
-            <a href="index.html#sobre-nosotros">NOSOTROS</a>
-            <a href="tienda.html">PRODUCTO</a>
-            <a href="index.html#galeria">GALERÍA</a>
-        </nav>
-        <div class="botones-auth">
-            <a href="cuenta.html" class="btn-iniciar-sesion">Iniciar Sesión</a>
-            <a href="cuenta.html" class="btn-registrarse">Registrarse</a>
-        </div>
-    </header>
-
-    <main class="tienda-main">
-        <div class="tienda-layout">
-
-            <div class="tienda-col-img">
-                <img src="images/product-bag.png" alt="Paquete de 4 Bolsas">
-            </div>
-
-            <div class="tienda-col-info">
-                <h1 id="producto-nombre">Cargando...</h1>
-                
-                <p class="precio" id="producto-precio">$---.-- MXN</p>
-                
-                <p>Suplemento premium, empaquetado en un conveniente lote de 4 bolsas.</p>
-                
-                <p><b>Disponibilidad:</b> ¡Disponible! (<span id="producto-stock">--</span> paquetes)</p>
-
-                <div class="carrito-controles">
-                    <label for="cantidad">Cantidad:</label>
-                    <input type="number" id="cantidad" name="cantidad" value="1" min="1">
-                    <button id="btn-anadir-carrito" class="btn-comprar btn-verde-grande">Añadir al Carrito</button>
+            <div class="auth-links" id="auth-links-container">
                 </div>
+        </div>
+    </nav>
+
+    <main class="page-section">
+        <div class="container">
+            <div class="shop-layout" data-product-id="">
                 
-                <div class="info-adicional">
-                    <div class="info-box">
-                        <h3>Proceso Sostenible</h3>
-                        <p>Desde el cultivo de Lemna Minor hasta el empaque, nuestro proceso está diseñado para minimizar el impacto ambiental.</p>
+                <div class="product-feature-panel card">
+                    <img src="images/product-bag.png" alt="Paquete de 4 Bolsas">
+                    <div class="product-info">
+                        <h1 id="producto-nombre">Cargando...</h1>
+                        <p class="product-price" id="producto-precio">$---.-- MXN</p>
+                        <p class="text-muted">Suplemento premium, empaquetado en un conveniente lote de 4 bolsas.</p>
+                        <p class="text-bold">Disponibilidad: <span id="producto-stock">--</span> paquetes</p>
                     </div>
-                    <div class="info-box">
-                        <h3>Calidad Garantizada</h3>
-                        <p>Cada lote es analizado para asegurar los más altos niveles de proteína y pureza.</p>
+                </div>
+
+                <div class="checkout-summary-sidebar card">
+                    <div class="summary-details">
+                        <h4>Añadir al Carrito</h4>
+                        
+                        <div class="input-group">
+                            <label for="cantidad">Cantidad:</label>
+                            <input type="number" id="cantidad" name="cantidad" value="1" min="1">
+                        </div>
+                        
+                        <button id="btn-anadir-carrito" class="btn btn-primary btn-lg" style="width: 100%;">Añadir al Carrito</button>
+                        
+                        <hr>
+                        <a href="checkout.html" class="btn btn-secondary" style="width: 100%;">Ir al Checkout</a>
                     </div>
                 </div>
                 
-                <a href="checkout.html" class="link-checkout">Ir al Checkout</a>
             </div>
-
         </div>
     </main>
 
-    <footer>
-        <div class="footer-col-izquierda">
-            <div class="logo-footer">
-                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
-            </div>
-            <p>Síguenos</p>
-        </div>
-        <div class="footer-col-centro">
-            <h3>Datos</h3>
-            <p>Av. Blv, Place, #123</p>
-            <p>Tlaxcala, México</p>
-            <p>+52 247 123 4567</p>
-            <p>info@ecotech.com</p>
-        </div>
-        <div class="footer-col-derecha">
-            <h3>Política de la Tienda</h3>
-            <a href="#">Envío y entrega</a>
-            <a href="#">Términos y condiciones</a>
-            <a href="#">FAQ</a>
-        </div>
-    </footer>
-    
+    <footer class="site-footer">
+        </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
-
 </body>
 </html>
