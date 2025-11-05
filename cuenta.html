@@ -3,61 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECOTECHSOLUTIONS</title>
-
+    <title>Mi Cuenta - ECOTECHSOLUTIONS</title>
     <link rel="stylesheet" href="style.css">
-    </head>
+</head>
 <body>
+
     <header>
         <div class="logo">
-            <a href="index.html">ECOTECHSOLUTIONS</a>
+            <a href="index.html">
+                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+            </a>
         </div>
-        
         <nav class="navegacion-principal">
             <a href="index.html#sobre-nosotros">NOSOTROS</a>
             <a href="tienda.html">PRODUCTO</a>
             <a href="index.html#galeria">GALERÍA</a>
         </nav>
-        
         <div class="botones-auth">
             <a href="cuenta.html" class="btn-iniciar-sesion">Iniciar Sesión</a>
             <a href="cuenta.html" class="btn-registrarse">Registrarse</a>
         </div>
     </header>
 
-    <main>
-        <h1>Mi Cuenta</h1>
-        <p>Aquí pondremos el formulario de Login/Registro.</p>
-        <p>Si el usuario ya inició sesión, aquí verá sus datos (nombre, correo, mapa, etc.).</p>
+    <main class="cuenta-main">
+        
+        <div id="user-info" style="display: none;">
+            <h1>Bienvenido a tu Cuenta</h1>
+            <p>Has iniciado sesión como: <strong id="user-email"></strong></p>
+            <button id="btn-logout">Cerrar Sesión</button>
+            
+            </div>
+
+        <div id="auth-forms">
+            <form id="form-login">
+                <h2>Iniciar Sesión</h2>
+                <label for="login-email">Correo Electrónico:</label>
+                <input type="email" id="login-email" required>
+                
+                <label for="login-password">Contraseña:</label>
+                <input type="password" id="login-password" required>
+                
+                <button type="submit">Entrar</button>
+            </form>
+
+            <form id="form-registro">
+                <h2>Crear Cuenta Nueva</h2>
+                <label for="registro-email">Correo Electrónico:</label>
+                <input type="email" id="registro-email" required>
+                
+                <label for="registro-password">Contraseña (mín. 6 caracteres):</label>
+                <input type="password" id="registro-password" required minlength="6">
+                
+                <button type="submit">Registrarme</button>
+            </form>
+        </div>
+
     </main>
 
     <footer>
-        <a href="panel.html">Acceso Personal</a>
         <div class="footer-col-izquierda">
             <div class="logo-footer">
-                ECOTECHSOLUTIONS
+                <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
             </div>
             <p>Síguenos</p>
         </div>
-        
         <div class="footer-col-centro">
             <h3>Datos</h3>
-            <p>Av. Blv, Place, #123</p>
-            <p>Tlaxcala, México</p>
-            <p>+52 247 123 4567</p>
-            <p>info@ecotech.com</p>
+            <p>...etc...</p>
         </div>
-        
         <div class="footer-col-derecha">
             <h3>Política de la Tienda</h3>
-            <a href="#">Envío y entrega</a>
-            <a href="#">Términos y condiciones</a>
-            <a href="#">FAQ</a>
+            <p>...etc...</p>
         </div>
     </footer>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <script type="module" src="main.js"></script>
 
 </body>
