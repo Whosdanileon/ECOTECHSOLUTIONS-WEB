@@ -57,6 +57,8 @@ async function manejarRegistro(e) {
     const email = document.getElementById('registro-email').value;
     const password = document.getElementById('registro-password').value;
 
+    console.log("Intentando registrar con:", email); // Mensaje de depuración
+
     const { data, error } = await db.auth.signUp({
         email: email,
         password: password
@@ -77,6 +79,8 @@ async function manejarLogin(e) {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
+    
+    console.log("Intentando iniciar sesión con:", email); // Mensaje de depuración
 
     const { data, error } = await db.auth.signInWithPassword({
         email: email,
@@ -122,7 +126,7 @@ function actualizarUI(session) {
         // Actualizar header
         if (botonesAuthHeader) {
             botonesAuthHeader.innerHTML = `
-                <a href="tienda.html" class="btn-iniciar-sesion">Tienda</a>
+                <a href="tienda.html" class"btn-iniciar-sesion">Tienda</a>
                 <button id="header-logout" class="btn-registrarse">Cerrar Sesión</button>
             `;
             // Añadimos el listener al nuevo botón del header
@@ -174,9 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const formRegistro = document.getElementById('form-registro');
 
     if (formLogin) {
-        formLogin.addEventListener('submit', manejarRegistro);
+        // ANTES ESTABA MANEJAREGISTRO
+        formLogin.addEventListener('submit', manejarLogin); // <-- CORREGIDO
     }
     if (formRegistro) {
-        formRegistro.addEventListener('submit', manejarLogin);
+        // ANTES ESTABA MANEJALOGIN
+        formRegistro.addEventListener('submit', manejarRegistro); // <-- CORREGIDO
     }
 });
