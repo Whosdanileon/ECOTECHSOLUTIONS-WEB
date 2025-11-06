@@ -8,12 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
     <nav class="main-nav">
         <a href="index.html" class="logo">
             <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+            <span id="header-title"></span> 
         </a>
         <div class="center-nav-links">
             <a href="index.html#nosotros" class="nav-link">NOSOTROS</a>
@@ -33,7 +35,7 @@
     <main class="page-section">
         <div class="container">
             
-            <div id="panel-login-form">
+            <div id="panel-login-form" style="display: none;">
                 <div class="modal-content" style="margin: auto; animation: none; transform: none; max-width: 420px;">
                     <form id="form-login-personal">
                         <h3 class="login-title">Acceso de Personal</h3>
@@ -51,45 +53,46 @@
             </div>
 
             <div id="panel-contenido" style="display: none;">
-                <h2>Panel de Administración</h2>
-                <p>Bienvenido, personal.</p>
+                <div id="admin-bar" class="admin-bar card" style="display: none;"></div>
+
+                <div id="maquinas-container" class="mt-4">
+                    <p>Cargando máquinas...</p>
+                </div>
             </div>
             
         </div>
     </main>
 
     <footer class="site-footer">
-    <div class="container">
-        <div class="footer-grid">
-            <div class="footer-col-1">
-                <img src="images/logo.png" alt="Logo" class="footer-logo-placeholder">
-                <div class="social-links">
-                    </div>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col-1">
+                    <img src="images/logo.png" alt="Logo" class="footer-logo-placeholder">
+                </div>
+                <div class="footer-col-2">
+                    <h4>Datos</h4>
+                    <p>
+                        Av. Blv, Place, #123<br>
+                        Tlaxcala, México<br>
+                        +52 247 123 4567<br>
+                        info@ecotech.com
+                    </p>
+                </div>
+                <div class="footer-col-3">
+                    <h4>Política de la Tienda</h4>
+                    <ul>
+                        <li><a href="#">Envío y entrega</a></li>
+                        <li><a href="#">Términos y condiciones</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="panel.html">Acceso Personal</a></li>
+                    </ul>
+                </div>
             </div>
-            <div class="footer-col-2">
-                <h4>Datos</h4>
-                <p>
-                    Av. Blv, Place, #123<br>
-                    Tlaxcala, México<br>
-                    +52 247 123 4567<br>
-                    info@ecotech.com
-                </p>
-            </div>
-            <div class="footer-col-3">
-                <h4>Política de la Tienda</h4>
-                <ul>
-                    <li><a href="#">Envío y entrega</a></li>
-                    <li><a href="#">Términos y condiciones</a></li>
-                    <li><a href="#">FAQ</a></li>
-                    <li><a href="panel.html">Acceso Personal</a></li>
-                </ul>
+            <div class="copyright">
+                © 2025 ECOTECHSOLUTIONS. Todos los derechos reservados.
             </div>
         </div>
-        <div class="copyright">
-           <li>© 2025 ECOTECHSOLUTIONS. Todos los derechos reservados.</li>
-        </div>
-    </div>
-</footer>
+    </footer>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
