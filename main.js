@@ -242,14 +242,21 @@ async function manejarConfirmarCompra(e) {
 
 /* ===== 6. LÓGICA DEL PANEL DE PERSONAL (ROLES Y MÁQUINAS) ===== */
 
+// --- FUNCIÓN ACTUALIZADA ---
+// Ahora habilita los botones del admin-bar
 function renderAdminBar(adminBar, userRole) {
     let adminHTML = '';
-    if (userRole === 'Lider_Empresa') {
-        adminHTML = `<h4>Panel de Líder de Empresa</h4>...`;
-    } else if (userRole === 'Sistemas') {
+    
+    // El rol 'Lider' ahora se llama 'Lider_Empresa' en tu CSS, usamos ese
+    if (userRole === 'Lider' || userRole === 'Sistemas') {
         adminHTML = `
-            <h4>Panel de Administración Total (Sistemas)</h4>
-            <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-users-cog"></i> Administrar Personal y Roles</a>
+            <h4>Panel de Administrador</h4>
+            <a href="admin-personal.html" class="btn btn-secondary"><i class="fa-solid fa-users-cog"></i> Administrar Personal</a>
+        `;
+    }
+    
+    if (userRole === 'Sistemas') {
+        adminHTML += `
             <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-chart-line"></i> Ver Reportes Globales</a>
             <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-boxes-stacked"></i> Gestionar Inventario</a>
             <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-file-invoice"></i> Ver Pedidos</a>
@@ -280,7 +287,6 @@ async function loadAndRenderMaquinas(container, userRole) {
             maquinas.forEach(maquina => {
                 container.insertAdjacentHTML('beforeend', createMachineHTML(maquina, userRole));
             });
-            // Después de renderizar, actualizamos la UI de los botones (en caso de Paro)
             maquinas.forEach(maquina => {
                 if (maquina.id === 1 && maquina.controles) {
                     actualizarBotonesParo(maquina.controles.Paro === true);
@@ -295,34 +301,27 @@ async function loadAndRenderMaquinas(container, userRole) {
     }
 }
 
-/**
- * Función auxiliar para ocultar/mostrar controles de Paro
- */
 function actualizarBotonesParo(estaEnParo) {
     const controlesCiclo = document.getElementById('controles-ciclo-1');
     const controlesManuales = document.getElementById('controles-manuales-1');
     const controlesReset = document.getElementById('controles-reset-1');
 
     if (estaEnParo) {
-        // PARO ACTIVO: Ocultar controles normales, mostrar Reset
         if (controlesCiclo) controlesCiclo.style.display = 'none';
         if (controlesManuales) controlesManuales.style.display = 'none';
         if (controlesReset) controlesReset.style.display = 'block';
     } else {
-        // PARO INACTIVO: Mostrar controles normales, ocultar Reset
         if (controlesCiclo) controlesCiclo.style.display = 'block';
         if (controlesManuales) controlesManuales.style.display = 'block';
         if (controlesReset) controlesReset.style.display = 'none';
     }
 }
 
-
 function createMachineHTML(maquina, userRole) {
     let controlesHTML = '';
     const loteInfo = `<p id="lote-${maquina.id}"><strong>Lote Actual:</strong> ${maquina.lote_actual || 'N/A'}</p>`;
     const canControlThisUser = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
 
-    // Lógica de la Lavadora (ID 1)
     if (maquina.id === 1 && maquina.controles) {
         const { online_llenado, online_vaciado, online_arriba, online_abajo } = maquina.controles;
         const fillState = online_llenado ? 'llenado' : (online_vaciado ? 'vaciado' : 'fill-off');
@@ -330,7 +329,6 @@ function createMachineHTML(maquina, userRole) {
 
         if (canControlThisUser) {
             controlesHTML = `
-                <!-- Contenedor para botones de ciclo (se ocultan en Paro) -->
                 <div class="controles" id="controles-ciclo-1">
                     <p><strong>Ciclo de Proceso:</strong></p>
                     <div class="btn-group">
@@ -338,16 +336,12 @@ function createMachineHTML(maquina, userRole) {
                         <button class="btn btn-danger btn-control" data-command="Paro" data-value="true" data-maquina-id="1">Paro de Emergencia</button>
                     </div>
                 </div>
-                
-                <!-- Botón de Restablecer (solo se muestra en Paro) -->
                 <div class="controles" id="controles-reset-1" style="display: none;">
                     <p><strong>¡Paro de Emergencia Activo!</strong></p>
                     <div class="btn-group">
                         <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">Restablecer Paro</button>
                     </div>
                 </div>
-
-                <!-- Contenedor para controles manuales (se ocultan en Paro) -->
                 <div class="controles-manuales" id="controles-manuales-1">
                     <div class="controles-detallados">
                         <p><strong>Control Llenado/Vaciado:</strong></p>
@@ -394,10 +388,6 @@ function createMachineHTML(maquina, userRole) {
         </div>`;
 }
 
-/**
- * ¡¡SIMULADO!! Envía un comando PLC. (ACTUALIZADO)
- * Lee el jsonb, lo modifica, aplica lógica de paro, y lo vuelve a escribir.
- */
 async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     let originalText;
     if (button) {
@@ -430,8 +420,6 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     };
 
     // 3. Aplicar la lógica de simulación
-    
-    // *** LÓGICA DE PARO DE EMERGENCIA (ACTUALIZADA) ***
     if (commandName === 'Paro' && commandValue === true) {
         newMaquinaState.estado = 'Detenida';
         newControls['Inicio'] = false;
@@ -443,22 +431,17 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     } 
     else if (commandName === 'Paro' && commandValue === false) {
         newControls['Paro'] = false;
-        // (El estado ya es 'Detenida', no se cambia)
     }
     else if (newControls['Paro'] === true) {
          console.warn("Simulación: Paro de Emergencia está activo. Ignorando comando.");
-         // ¡YA NO MOSTRAMOS ALERT! El realtime se encarga de la UI.
          if (button) { button.disabled = false; button.textContent = originalText; }
          return; 
     }
-    // *** FIN LÓGICA DE PARO ***
-    
     else if (commandName === 'Inicio') {
         newMaquinaState.estado = 'En Ciclo';
         newMaquinaState.lote_actual = `LT-${Math.floor(Math.random() * 900) + 100}`;
         newControls['Inicio'] = true;
     }
-    
     else if (commandName === 'online_llenado' && commandValue) {
         newControls['online_llenado'] = true;
         newControls['online_vaciado'] = false;
@@ -484,13 +467,10 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         newControls['online_abajo'] = false;
     }
     
-    // --- *** INICIO DE LA CORRECCIÓN *** ---
-    // Actualizar la UI inmediatamente (Actualización Optimista)
-    // Solo actualizamos la UI de Paro, el resto lo hará el realtime.
+    // Actualizar la UI inmediatamente
     if (commandName === 'Paro') {
-        actualizarBotonesParo(commandValue); // commandValue es 'true' o 'false'
+        actualizarBotonesParo(commandValue);
     }
-    // --- *** FIN DE LA CORRECCIÓN *** ---
 
     // 4. Enviar la actualización COMPLETA a Supabase
     const { error: updateError } = await db.from('maquinas')
@@ -520,7 +500,6 @@ function setupEventListeners(container, userRole) {
     const canControl = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
     if (!canControl) return;
 
-    // Listener para Botones (Iniciar, Paro, y Restablecer)
     container.addEventListener('click', async (event) => {
         const button = event.target.closest('button.btn-control');
         if (button && !button.disabled) {
@@ -533,7 +512,6 @@ function setupEventListeners(container, userRole) {
         }
     });
 
-    // Listener para Radios
     container.addEventListener('change', async (event) => {
         if (event.target.type === 'radio' && event.target.name.startsWith('switch-')) {
             const radio = event.target;
@@ -569,13 +547,11 @@ function subscribeToChanges(container, userRole, userArea) {
                 } 
                 else if (payload.eventType === 'UPDATE' && machineElement && isInArea) {
                     console.log(`🔄 Actualizando DOM para máquina: ${record.id}`);
-                    // Actualizar estado
                     const statusSpan = document.getElementById(`estado-${record.id}`);
                     if (statusSpan) {
                         statusSpan.textContent = record.estado || 'Desconocido';
                         statusSpan.className = `badge ${record.estado?.toLowerCase() === 'en ciclo' ? 'badge-success' : 'badge-danger'}`;
                     }
-                    // Actualizar lote
                     const loteP = document.getElementById(`lote-${record.id}`);
                     if (loteP) {
                          loteP.innerHTML = record.lote_actual ? `<strong>Lote Actual:</strong> ${record.lote_actual}` : '<strong>Lote Actual:</strong> N/A';
@@ -584,10 +560,8 @@ function subscribeToChanges(container, userRole, userArea) {
                     if (record.id === 1 && record.controles) {
                         const { online_llenado, online_vaciado, online_arriba, online_abajo, Paro } = record.controles;
                         
-                        // Llamar a la función que oculta/muestra botones
                         actualizarBotonesParo(Paro === true);
 
-                        // Actualizar radios
                         if (online_llenado) document.getElementById('llenado-1').checked = true;
                         else if (online_vaciado) document.getElementById('vaciado-1').checked = true;
                         else document.getElementById('fill-off-1').checked = true;
@@ -648,7 +622,8 @@ async function initializePanel(session) {
 }
 
 
-/* ===== 7. GESTOR DE UI GLOBAL ===== */
+/* ===== 7. GESTOR DE UI GLOBAL (ACTUALIZADO) ===== */
+let currentUserProfile = null; // Caché para el perfil del usuario
 
 function actualizarUI(session) {
     const authLinksContainer = document.getElementById('auth-links-container'); 
@@ -716,10 +691,184 @@ function actualizarUI(session) {
             if (panelContenido) panelContenido.style.display = 'none';
         }
     }
+    
+    // --- ¡NUEVO! Lógica para 'admin-personal.html' ---
+    else if (path.includes('admin-personal.html')) {
+        const adminContainer = document.getElementById('admin-personal-container');
+        if (session) {
+            // El usuario está logueado, ahora verificamos su rol
+            initializeAdminPersonalPage(session.user);
+        } else {
+            // No hay sesión, redirigir
+            alert('Acceso denegado. Debes iniciar sesión.');
+            window.location.href = 'panel.html';
+        }
+    }
 }
 
 
-/* ===== 8. PUNTO DE ENTRADA (DOMCONTENTLOADED) ===== */
+/* ===== 8. LÓGICA DE GESTIÓN DE PERSONAL (NUEVO) ===== */
+
+/**
+ * Inicializa la página de admin-personal.html
+ * Verifica el rol y carga la lista de usuarios.
+ */
+async function initializeAdminPersonalPage(user) {
+    // 1. Obtener el perfil del *administrador* (tú)
+    const { data: profile, error } = await db
+        .from('perfiles')
+        .select('rol')
+        .eq('id', user.id)
+        .single();
+
+    if (error || !profile) {
+        alert('Error al verificar tu permiso.');
+        window.location.href = 'panel.html';
+        return;
+    }
+    
+    const adminRole = profile.rol;
+    
+    // 2. Proteger la página
+    if (adminRole !== 'Sistemas' && adminRole !== 'Lider') {
+        alert('No tienes permiso para ver esta página.');
+        window.location.href = 'panel.html';
+        return;
+    }
+
+    // 3. Si tiene permiso, mostrar el contenido y cargar los datos
+    const adminContainer = document.getElementById('admin-personal-container');
+    if (adminContainer) adminContainer.style.display = 'block';
+    
+    const adminBar = document.getElementById('admin-bar');
+    if (adminBar) renderAdminBar(adminBar, adminRole); // Reusar la función
+    
+    // Cargar la tabla de usuarios
+    await loadAllUsersAndProfiles(adminRole);
+}
+
+/**
+ * Carga todos los perfiles y usuarios de auth
+ */
+async function loadAllUsersAndProfiles(adminRole) {
+    const tableBody = document.getElementById('user-table-body');
+    tableBody.innerHTML = '<tr><td colspan="4">Cargando usuarios...</td></tr>';
+
+    // 1. Obtener todos los perfiles (RLS lo permite para 'Sistemas'/'Lider')
+    const { data: perfiles, error: profileError } = await db
+        .from('perfiles')
+        .select('*');
+        
+    if (profileError) {
+        console.error('Error cargando perfiles:', profileError);
+        tableBody.innerHTML = '<tr><td colspan="4" style="color:red;">Error al cargar perfiles.</td></tr>';
+        return;
+    }
+    
+    // 2. Obtener todos los usuarios de Auth (necesita una Edge Function o ser admin)
+    // Por ahora, solo mostraremos los perfiles que encontramos
+    console.log('Perfiles cargados:', perfiles);
+
+    const rolesDisponibles = ['Cliente', 'Operador', 'Supervisor', 'Mecanico', 'Lider', 'Sistemas'];
+
+    tableBody.innerHTML = perfiles.map(p => {
+        // El rol "Sistemas" no puede ser editado ni borrado
+        const esSistemas = p.rol === 'Sistemas';
+        const esMiMismoUsuario = p.id === db.auth.user()?.id;
+        
+        // El rol 'Lider' no puede editar a 'Sistemas'
+        const noPuedeEditar = (adminRole === 'Lider' && esSistemas);
+        
+        return `
+            <tr data-user-id="${p.id}">
+                <td>${p.email || p.id}</td> <!-- (Email no está en perfiles, usamos ID como fallback) -->
+                <td>
+                    <select class="input-group" data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                        ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="input-group" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                </td>
+                <td class="btn-group">
+                    <button class="btn btn-primary btn-sm btn-save-user" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>Guardar</button>
+                    <button class="btn btn-danger btn-sm btn-delete-user" ${esSistemas || esMiMismoUsuario || adminRole !== 'Sistemas' ? 'disabled' : ''}>Borrar</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Añadir listeners a los nuevos botones
+    document.querySelectorAll('.btn-save-user').forEach(btn => {
+        btn.addEventListener('click', handleUserUpdate);
+    });
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', handleUserDelete);
+    });
+}
+
+/**
+ * Maneja el clic en "Guardar" en la tabla de usuarios
+ */
+async function handleUserUpdate(event) {
+    const row = event.target.closest('tr');
+    const userId = row.dataset.userId;
+    const newRol = row.querySelector('select[data-field="rol"]').value;
+    const newArea = row.querySelector('input[data-field="area"]').value;
+
+    console.log(`Actualizando usuario ${userId}: Rol=${newRol}, Área=${newArea}`);
+    
+    const { error } = await db
+        .from('perfiles')
+        .update({ rol: newRol, area: newArea })
+        .eq('id', userId);
+        
+    if (error) {
+        console.error('Error al actualizar perfil:', error);
+        alert('Error al guardar: ' + error.message);
+    } else {
+        alert('¡Perfil de usuario actualizado!');
+    }
+}
+
+/**
+ * Maneja el clic en "Borrar" en la tabla de usuarios
+ */
+async function handleUserDelete(event) {
+    const row = event.target.closest('tr');
+    const userId = row.dataset.userId;
+    
+    if (!confirm(`¿Estás seguro de que quieres BORRAR a este usuario?\nID: ${userId}\n¡Esta acción es irreversible y borrará sus datos de Auth y Perfil!`)) {
+        return;
+    }
+    
+    console.log(`Borrando usuario ${userId}...`);
+    
+    // Para borrar un usuario, debemos llamar a una Edge Function
+    // que use la "service_role" key.
+    // Crearemos una simulación por ahora, ya que esto requiere
+    // una configuración de backend (Edge Function).
+    
+    alert('Simulación: Borrar usuario no está implementado.\nSe necesita una Edge Function con permisos de administrador.');
+    
+    /*
+    // --- CÓDIGO REAL (requiere Edge Function 'delete-user') ---
+    const { error } = await db.functions.invoke('delete-user', {
+        body: { userId: userId }
+    });
+    
+    if (error) {
+        console.error('Error al borrar usuario:', error);
+        alert('Error al borrar: ' + error.message);
+    } else {
+        alert('¡Usuario borrado exitosamente!');
+        row.remove(); // Quitarlo de la tabla
+    }
+    */
+}
+
+
+/* ===== 9. PUNTO DE ENTRADA (DOMCONTENTLOADED) ===== */
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -735,21 +884,17 @@ document.addEventListener('DOMContentLoaded', () => {
         cargarProducto();
     }
 
+    // Listeners de auth
     const formLogin = document.getElementById('form-login');
     const formRegistro = document.getElementById('form-registro');
+    const formLoginPersonal = document.getElementById('form-login-personal');
     if (formLogin) formLogin.addEventListener('submit', manejarLogin);
     if (formRegistro) formRegistro.addEventListener('submit', manejarRegistro);
-    
-    const formLoginPersonal = document.getElementById('form-login-personal');
-    if (formLoginPersonal) {
-        formLoginPersonal.addEventListener('submit', manejarLoginPersonal); 
-    }
+    if (formLoginPersonal) formLoginPersonal.addEventListener('submit', manejarLoginPersonal); 
 
+    // Listeners de tienda
     const btnCarrito = document.getElementById('btn-anadir-carrito');
     if (btnCarrito) btnCarrito.addEventListener('click', manejarAnadirAlCarrito);
-    
     const formCheckout = document.getElementById('form-checkout');
-    if (formCheckout) {
-        formCheckout.addEventListener('submit', manejarConfirmarCompra);
-    }
+    if (formCheckout) formCheckout.addEventListener('submit', manejarConfirmarCompra);
 });
