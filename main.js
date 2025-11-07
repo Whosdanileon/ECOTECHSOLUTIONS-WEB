@@ -10,7 +10,7 @@ console.log('Cliente de Supabase conectado.');
 /* ===== 2. LÓGICA DE PRODUCTOS (TIENDA E INICIO) ===== */
 async function cargarProducto() {
     console.log("Intentando cargar producto...");
-    const PRODUCTO_ID = 1;
+    const PRODUCTO_ID = 1; 
 
     const { data, error } = await db
         .from('productos')
@@ -384,42 +384,75 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     }
 
     // 2. Preparar los nuevos datos copiando los antiguos
-    const newControls = { ...maquina.controles };
+    // ¡¡IMPORTANTE!! Asegurarse de que 'controles' no sea nulo
+    const newControls = maquina.controles ? { ...maquina.controles } : {};
     const newMaquinaState = {
         estado: maquina.estado,
         lote_actual: maquina.lote_actual
     };
 
     // 3. Aplicar la lógica de simulación
-    if (commandName === 'Inicio') {
-        newMaquinaState.estado = 'En Ciclo';
-        newMaquinaState.lote_actual = `LT-${Math.floor(Math.random() * 900) + 100}`;
-    }
+    
+    // *** LÓGICA DE PARO DE EMERGENCIA ***
     if (commandName === 'Paro') {
         newMaquinaState.estado = 'Detenida';
-        newControls['Inicio'] = false; // Resetear 'Inicio' dentro del JSON
+        // Apagar todas las acciones en el JSON
+        newControls['Inicio'] = false;
+        newControls['online_llenado'] = false;
+        newControls['online_vaciado'] = false;
+        newControls['online_arriba'] = false;
+        newControls['online_abajo'] = false;
+        // Poner Paro en True
+        newControls['Paro'] = true;
+    } 
+    // Si el Paro está activo, no permitir ningún otro comando de acción
+    else if (newControls['Paro'] === true) {
+         console.warn("Simulación: Paro de Emergencia está activo. Ignorando comando.");
+         alert("¡Paro de Emergencia está activo! Debe restablecerlo en el PLC.");
+         if (button) { button.disabled = false; button.textContent = originalText; }
+         return; // Salir de la función
     }
-
-    // 4. Actualizar la clave específica en el objeto de controles
-    newControls[commandName] = commandValue;
+    // *** FIN LÓGICA DE PARO ***
     
-    // 5. Lógica de radio buttons (apagar el opuesto)
-    if (commandName === 'online_llenado' && commandValue) newControls['online_vaciado'] = false;
-    if (commandName === 'online_vaciado' && commandValue) newControls['online_llenado'] = false;
-    if (commandName === 'online_arriba' && commandValue) newControls['online_abajo'] = false;
-    if (commandName === 'online_abajo' && commandValue) newControls['online_arriba'] = false;
-
-    // 6. Lógica de radio 'OFF' (apagar ambos)
-    if (commandName === 'apagar_llenado_vaciado') {
+    // Lógica de estado general (solo si no hay Paro)
+    else if (commandName === 'Inicio') {
+        newMaquinaState.estado = 'En Ciclo';
+        newMaquinaState.lote_actual = `LT-${Math.floor(Math.random() * 900) + 100}`;
+        newControls['Inicio'] = true;
+    }
+    
+    // Lógica de radio buttons (solo si no hay Paro)
+    else if (commandName === 'online_llenado' && commandValue) {
+        newControls['online_llenado'] = true;
+        newControls['online_vaciado'] = false;
+    }
+    else if (commandName === 'online_vaciado' && commandValue) {
+        newControls['online_llenado'] = false;
+        newControls['online_vaciado'] = true;
+    }
+    else if (commandName === 'online_arriba' && commandValue) {
+        newControls['online_arriba'] = true;
+        newControls['online_abajo'] = false;
+    }
+    else if (commandName === 'online_abajo' && commandValue) {
+        newControls['online_arriba'] = false;
+        newControls['online_abajo'] = true;
+    }
+    // Lógica de radio 'OFF'
+    else if (commandName === 'apagar_llenado_vaciado') {
         newControls['online_llenado'] = false;
         newControls['online_vaciado'] = false;
     }
-    if (commandName === 'apagar_arriba_abajo') {
+    else if (commandName === 'apagar_arriba_abajo') {
         newControls['online_arriba'] = false;
         newControls['online_abajo'] = false;
     }
+    // Lógica para otros comandos (como el propio 'Paro' que se maneja arriba)
+    else {
+         newControls[commandName] = commandValue;
+    }
     
-    // 7. Enviar la actualización COMPLETA a Supabase
+    // 4. Enviar la actualización COMPLETA a Supabase
     const { error: updateError } = await db.from('maquinas')
         .update({ 
             controles: newControls, // Enviar el objeto JSON completo
@@ -471,7 +504,7 @@ function setupEventListeners(container, userRole) {
             const commandsToTurnOff = radio.dataset.commandsOff?.split(',');
             if (commandOn) {
                 await sendPlcCommand(maquinaId, commandOn, true, null);
-                if (commandOff) await sendPlcCommand(maquinaId, commandOff, false, null);
+                // (La lógica de apagar el opuesto ahora está DENTRO de sendPlcCommand)
             } else if (commandsToTurnOff) {
                 if (commandsToTurnOff.includes('online_llenado')) await sendPlcCommand(maquinaId, 'apagar_llenado_vaciado', false, null);
                 if (commandsToTurnOff.includes('online_arriba')) await sendPlcCommand(maquinaId, 'apagar_arriba_abajo', false, null);
@@ -509,7 +542,19 @@ function subscribeToChanges(container, userRole, userArea) {
                     }
                     
                     if (record.id === 1 && record.controles) {
-                        const { online_llenado, online_vaciado, online_arriba, online_abajo } = record.controles;
+                        const { online_llenado, online_vaciado, online_arriba, online_abajo, Paro } = record.controles;
+                        
+                        // Si hay Paro, deshabilitar botones (lógica visual extra)
+                        const estaEnParo = Paro === true;
+                        machineElement.querySelectorAll('button.btn-control, input[type="radio"]')
+                            .forEach(el => {
+                                // No deshabilitar el botón de Paro en sí mismo
+                                if (el.dataset.command !== 'Paro') {
+                                    el.disabled = estaEnParo;
+                                }
+                            });
+
+                        // Actualizar radios
                         if (online_llenado) document.getElementById('llenado-1').checked = true;
                         else if (online_vaciado) document.getElementById('vaciado-1').checked = true;
                         else document.getElementById('fill-off-1').checked = true;
