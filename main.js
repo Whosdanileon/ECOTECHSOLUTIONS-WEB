@@ -10,7 +10,7 @@ console.log('Cliente de Supabase conectado.');
 /* ===== 2. LÓGICA DE PRODUCTOS (TIENDA E INICIO) ===== */
 async function cargarProducto() {
     console.log("Intentando cargar producto...");
-    const PRODUCTO_ID = 1; // Asumimos que tu producto es el ID 1
+    const PRODUCTO_ID = 1;
 
     const { data, error } = await db
         .from('productos')
@@ -22,13 +22,10 @@ async function cargarProducto() {
     
     if (data) {
         const producto = data;
-        
-        // --- Actualizar la PÁGINA DE TIENDA (`tienda.html`) ---
         const nombreProductoEl = document.getElementById('producto-nombre');
         const precioProductoEl = document.getElementById('producto-precio');
         const stockProductoEl = document.getElementById('producto-stock');
         const layoutTienda = document.querySelector('.shop-layout'); 
-        
         if (nombreProductoEl) nombreProductoEl.textContent = producto.nombre;
         if (precioProductoEl) precioProductoEl.textContent = `$${producto.precio.toLocaleString('es-MX')} MXN`;
         if (stockProductoEl) stockProductoEl.textContent = `${producto.stock_disponible}`;
@@ -36,8 +33,6 @@ async function cargarProducto() {
             layoutTienda.dataset.productId = producto.id;
             layoutTienda.dataset.productStock = producto.stock_disponible;
         }
-        
-        // --- Actualizar la PÁGINA DE INICIO (`index.html`) ---
         const nombreIndexEl = document.getElementById('index-producto-nombre');
         const precioIndexEl = document.getElementById('index-producto-precio');
         if(nombreIndexEl) nombreIndexEl.textContent = producto.nombre;
@@ -48,31 +43,21 @@ async function cargarProducto() {
 
 /* ===== 3. LÓGICA DE AUTENTICACIÓN Y PERFILES (CLIENTES) ===== */
 
-/**
- * Registra un nuevo CLIENTE.
- * Crea una entrada en 'auth.users' y una fila en 'perfiles'.
- */
 async function manejarRegistro(e) {
     e.preventDefault();
     const email = document.getElementById('registro-email').value;
     const password = document.getElementById('registro-password').value;
     console.log("Intentando registrar con:", email);
-    
-    // 1. Crear el usuario en Supabase Auth
     const { data: authData, error: authError } = await db.auth.signUp({ email, password });
     if (authError) {
         console.error('Error en el registro:', authError.message);
         alert('Error: ' + authError.message);
         return;
     }
-    
     console.log('Usuario registrado en Auth:', authData.user);
-    
-    // 2. Crear la fila de perfil correspondiente
     const { error: profileError } = await db
         .from('perfiles')
-        .insert({ id: authData.user.id, rol: 'cliente' }); // Rol 'cliente' por defecto
-        
+        .insert({ id: authData.user.id, rol: 'cliente' });
     if (profileError) {
         console.error('Error creando el perfil:', profileError.message);
         alert('Error al crear el perfil: ' + profileError.message);
@@ -82,15 +67,11 @@ async function manejarRegistro(e) {
     }
 }
 
-/**
- * Inicia sesión para un CLIENTE (desde cuenta.html)
- */
 async function manejarLogin(e) {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     console.log("Intentando iniciar sesión de CLIENTE con:", email);
-    
     const { data, error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
         console.error('Error en el inicio de sesión de cliente:', error.message);
@@ -101,56 +82,39 @@ async function manejarLogin(e) {
     }
 }
 
-/**
- * Inicia sesión para PERSONAL (desde panel.html)
- */
 async function manejarLoginPersonal(e) {
     e.preventDefault();
     const email = document.getElementById('personal-email').value;
     const password = document.getElementById('personal-password').value;
     console.log("Intentando iniciar sesión de PERSONAL con:", email);
-
-    const { data, error } = await db.auth.signInWithPassword({
-        email: email,
-        password: password
-    });
-
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
         console.error('Error en el inicio de sesión de personal:', error.message);
         alert('Error: ' + error.message);
     } else {
         console.log('Inicio de sesión de personal exitoso:', data.user);
-        window.location.reload(); // Recarga la página para que 'actualizarUI' muestre el panel
+        window.location.reload(); 
     }
 }
 
-/**
- * Cierra la sesión global para cualquier usuario
- */
 async function manejarLogout() {
     const { error } = await db.auth.signOut();
     if (error) console.error('Error al cerrar sesión:', error.message);
-    else window.location.href = 'index.html'; // Redirigir al inicio
+    else window.location.href = 'index.html';
 }
 
-/**
- * Carga los datos del formulario "Mis Datos" desde la tabla 'perfiles'
- */
 async function cargarDatosPerfil(user) {
     console.log("Cargando datos del perfil para el usuario:", user.id);
     const emailInput = document.getElementById('profile-email');
     if (emailInput) emailInput.value = user.email;
-
     const { data, error } = await db
         .from('perfiles')
         .select('nombre_completo, telefono, direccion')
         .eq('id', user.id)
         .single();
-        
     if (error) {
         console.error('Error cargando el perfil:', error.message);
     } else if (data) {
-        console.log("Perfil encontrado:", data);
         const nameInput = document.getElementById('profile-name');
         const phoneInput = document.getElementById('profile-phone');
         const addressInput = document.getElementById('profile-address');
@@ -160,21 +124,16 @@ async function cargarDatosPerfil(user) {
     }
 }
 
-/**
- * Actualiza los datos del formulario "Mis Datos" en la tabla 'perfiles'
- */
 async function actualizarPerfil(e, user) {
     e.preventDefault();
     console.log("Actualizando perfil para el usuario:", user.id);
     const nombre = document.getElementById('profile-name').value;
     const telefono = document.getElementById('profile-phone').value;
     const direccion = document.getElementById('profile-address').value;
-    
     const { error } = await db
         .from('perfiles')
         .update({ nombre_completo: nombre, telefono: telefono, direccion: direccion })
         .eq('id', user.id);
-        
     if (error) {
         console.error('Error actualizando el perfil:', error.message);
         alert('Error al guardar: ' + error.message);
@@ -187,25 +146,16 @@ async function actualizarPerfil(e, user) {
 
 /* ===== 4. LÓGICA DEL CARRITO (LOCALSTORAGE) ===== */
 
-/**
- * Lee el carrito desde localStorage y lo devuelve como un objeto
- */
 function leerCarrito() {
     const carritoJSON = localStorage.getItem('carrito');
     return carritoJSON ? JSON.parse(carritoJSON) : {};
 }
 
-/**
- * Guarda un objeto de carrito en localStorage como texto
- */
 function guardarCarrito(carrito) {
     localStorage.setItem('carrito', JSON.stringify(carrito));
     actualizarContadorCarrito(carrito);
 }
 
-/**
- * Actualiza el contador (badge) del carrito en el header
- */
 function actualizarContadorCarrito(carrito) {
     const contadorEl = document.getElementById('carrito-contador');
     let totalItems = 0;
@@ -213,7 +163,6 @@ function actualizarContadorCarrito(carrito) {
     if (cantidades.length > 0) {
         totalItems = cantidades.reduce((sum, current) => sum + current, 0);
     }
-    
     if (contadorEl) {
         if (totalItems > 0) {
             contadorEl.textContent = totalItems;
@@ -224,74 +173,44 @@ function actualizarContadorCarrito(carrito) {
     }
 }
 
-/**
- * Se ejecuta al hacer clic en "Añadir al Carrito"
- */
 function manejarAnadirAlCarrito() {
-    console.log("Botón 'Añadir al Carrito' presionado.");
     const layoutTienda = document.querySelector('.shop-layout');
     const inputCantidad = document.getElementById('cantidad');
     const id = layoutTienda.dataset.productId;
     const stockMaximo = parseInt(layoutTienda.dataset.productStock);
     const cantidad = parseInt(inputCantidad.value);
-    
     if (!id) return alert("Error: No se pudo identificar el producto.");
     if (isNaN(cantidad) || cantidad <= 0) return alert("Por favor, introduce una cantidad válida.");
     if (cantidad > stockMaximo) return alert(`Lo sentimos, solo quedan ${stockMaximo} unidades disponibles.`);
-    
     const carrito = leerCarrito();
-    carrito[id] = cantidad; // Sobrescribe la cantidad
+    carrito[id] = cantidad;
     guardarCarrito(carrito);
-    
-    console.log("Carrito actualizado:", carrito);
     alert(`¡${cantidad} paquete(s) añadidos al carrito!`);
 }
 
 
 /* ===== 5. LÓGICA DE CHECKOUT (COMPRA) ===== */
 
-/**
- * Carga el resumen del pedido en la página de checkout
- */
 async function cargarResumenCheckout() {
-    console.log("Cargando resumen de checkout...");
     const carrito = leerCarrito();
     const [productoID, cantidad] = Object.entries(carrito)[0] || [];
-    
     if (!productoID) {
-        console.log("El carrito está vacío.");
         document.getElementById('checkout-items').innerHTML = "<p>Tu carrito está vacío.</p>";
         return;
     }
-    
-    const { data: producto, error } = await db
-        .from('productos')
-        .select('nombre, precio')
-        .eq('id', productoID)
-        .single();
-        
+    const { data: producto, error } = await db.from('productos').select('nombre, precio').eq('id', productoID).single();
     if (error) { console.error("Error al buscar precio del producto:", error); return; }
-    
     const subtotal = producto.precio * cantidad;
     const envio = 0; 
     const total = subtotal + envio;
-    
     document.getElementById('checkout-items').innerHTML = `<p><span>${producto.nombre} (x${cantidad})</span><span>$${subtotal.toLocaleString('es-MX')}</span></p>`;
     document.getElementById('checkout-subtotal').textContent = `$${subtotal.toLocaleString('es-MX')}`;
     document.getElementById('checkout-envio').textContent = `$${envio.toLocaleString('es-MX')}`;
     document.getElementById('checkout-total').textContent = `$${total.toLocaleString('es-MX')}`;
 }
 
-/**
- * Autocompleta los datos de envío usando el perfil del usuario
- */
 async function autocompletarDatosEnvio(user) {
-    const { data, error } = await db
-        .from('perfiles')
-        .select('nombre_completo, telefono, direccion')
-        .eq('id', user.id)
-        .single();
-        
+    const { data, error } = await db.from('perfiles').select('nombre_completo, telefono, direccion').eq('id', user.id).single();
     if (error) {
         console.error('Error cargando el perfil para autocompletar:', error.message);
     } else if (data) {
@@ -304,40 +223,18 @@ async function autocompletarDatosEnvio(user) {
     }
 }
 
-/**
- * Procesa la compra, actualiza el stock y vacía el carrito
- */
 async function manejarConfirmarCompra(e) {
     e.preventDefault();
-    console.log("Procesando compra...");
     const carrito = leerCarrito();
     const [productoID, cantidad] = Object.entries(carrito)[0] || [];
-    
     if (!productoID) { alert("Tu carrito está vacío."); return; }
-    
-    // Verificar stock
-    const { data: producto, error: stockError } = await db
-        .from('productos')
-        .select('stock_disponible')
-        .eq('id', productoID)
-        .single();
-        
+    const { data: producto, error: stockError } = await db.from('productos').select('stock_disponible').eq('id', productoID).single();
     if (stockError) { alert("Error al verificar el stock: " + stockError.message); return; }
-    
-    // Actualizar stock
     const nuevoStock = producto.stock_disponible - cantidad;
     if (nuevoStock < 0) { alert("Error: Stock insuficiente."); return; }
-    
-    const { error: updateError } = await db
-        .from('productos')
-        .update({ stock_disponible: nuevoStock })
-        .eq('id', productoID);
-        
+    const { error: updateError } = await db.from('productos').update({ stock_disponible: nuevoStock }).eq('id', productoID);
     if (updateError) { alert("Error al actualizar el inventario: " + updateError.message); return; }
-    
-    // Éxito
-    console.log("¡Compra exitosa! Stock actualizado.");
-    guardarCarrito({}); // Vacía el carrito
+    guardarCarrito({});
     alert("¡Gracias por tu compra! Tu pedido ha sido procesado.");
     window.location.href = 'index.html';
 }
@@ -345,17 +242,10 @@ async function manejarConfirmarCompra(e) {
 
 /* ===== 6. LÓGICA DEL PANEL DE PERSONAL (ROLES Y MÁQUINAS) ===== */
 
-/**
- * Renderiza la barra de admin según el rol del personal
- */
 function renderAdminBar(adminBar, userRole) {
     let adminHTML = '';
     if (userRole === 'Lider_Empresa') {
-        adminHTML = `
-            <h4>Panel de Líder de Empresa</h4>
-            <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-users-gear"></i> Administrar Personal</a>
-            <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-chart-line"></i> Ver Reportes Globales</a>
-        `;
+        adminHTML = `<h4>Panel de Líder de Empresa</h4>...`;
     } else if (userRole === 'Sistemas') {
         adminHTML = `
             <h4>Panel de Administración Total (Sistemas)</h4>
@@ -373,9 +263,6 @@ function renderAdminBar(adminBar, userRole) {
     adminBar.style.display = adminHTML ? 'flex' : 'none';
 }
 
-/**
- * Obtiene la lista de máquinas (RLS se encarga de filtrar)
- */
 async function getMaquinas() {
     console.log('🚚 Obteniendo lista de máquinas...');
     const { data, error } = await db.from('maquinas').select('*'); 
@@ -383,16 +270,12 @@ async function getMaquinas() {
     return data;
 }
 
-/**
- * Carga y renderiza las tarjetas de las máquinas
- */
 async function loadAndRenderMaquinas(container, userRole) {
     container.innerHTML = '<p>Cargando máquinas...</p>';
     try {
         const maquinas = await getMaquinas();
         console.log(`✓ ${maquinas.length} máquinas recibidas.`);
-        
-        container.innerHTML = ''; // Limpiar
+        container.innerHTML = ''; 
         if (maquinas.length > 0) {
             maquinas.forEach(maquina => {
                 container.insertAdjacentHTML('beforeend', createMachineHTML(maquina, userRole));
@@ -406,19 +289,14 @@ async function loadAndRenderMaquinas(container, userRole) {
     }
 }
 
-/**
- * Crea el HTML para una sola tarjeta de máquina, leyendo 'controles' (jsonb)
- */
 function createMachineHTML(maquina, userRole) {
     let controlesHTML = '';
     const loteInfo = `<p id="lote-${maquina.id}"><strong>Lote Actual:</strong> ${maquina.lote_actual || 'N/A'}</p>`;
-    
     const canControlThisUser = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
 
     // Lógica de la Lavadora (ID 1)
     if (maquina.id === 1 && maquina.controles) {
         const { online_llenado, online_vaciado, online_arriba, online_abajo } = maquina.controles;
-        
         const fillState = online_llenado ? 'llenado' : (online_vaciado ? 'vaciado' : 'fill-off');
         const trayState = online_arriba ? 'arriba' : (online_abajo ? 'abajo' : 'tray-off');
 
@@ -456,11 +334,9 @@ function createMachineHTML(maquina, userRole) {
             `;
         }
     } 
-    // Máquinas 2 y 3
     else if (canControlThisUser) {
         controlesHTML = `<div class="controles"><p>Controles no disponibles para esta máquina.</p></div>`;
     }
-    // Operador
     else if (userRole === 'Operador') {
         controlesHTML = `<div class="controles"><p>Modo de solo lectura.</p></div>`;
     }
@@ -478,7 +354,8 @@ function createMachineHTML(maquina, userRole) {
 }
 
 /**
- * SIMULADO: Envía un comando PLC actualizando el 'jsonb' en Supabase.
+ * ¡¡SIMULADO!! Envía un comando PLC. (CORREGIDO)
+ * Lee el jsonb, lo modifica y lo vuelve a escribir.
  */
 async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     let originalText;
@@ -490,47 +367,72 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     
     console.warn(`📡 SIMULACIÓN: Comando: ${commandName} -> ${commandValue} a Máquina ${maquinaId}`);
 
-    // 1. Preparar el objeto de actualización
-    const updateData = {};
+    // --- INICIO DE LÓGICA CORREGIDA ---
     
-    // Lógica de estado general
+    // 1. Obtener el estado actual de la máquina desde la DB
+    const { data: maquina, error: fetchError } = await db
+        .from('maquinas')
+        .select('controles, estado, lote_actual') // Pedir todos los campos que modificaremos
+        .eq('id', maquinaId)
+        .single();
+
+    if (fetchError) {
+        console.error('❌ Error al LEER la máquina antes de actualizar:', fetchError);
+        alert('Error al leer la máquina: ' + fetchError.message);
+        if (button) { button.disabled = false; button.textContent = originalText; }
+        return;
+    }
+
+    // 2. Preparar los nuevos datos copiando los antiguos
+    const newControls = { ...maquina.controles };
+    const newMaquinaState = {
+        estado: maquina.estado,
+        lote_actual: maquina.lote_actual
+    };
+
+    // 3. Aplicar la lógica de simulación
     if (commandName === 'Inicio') {
-        updateData['estado'] = 'En Ciclo';
-        updateData['lote_actual'] = `LT-${Math.floor(Math.random() * 900) + 100}`;
+        newMaquinaState.estado = 'En Ciclo';
+        newMaquinaState.lote_actual = `LT-${Math.floor(Math.random() * 900) + 100}`;
     }
     if (commandName === 'Paro') {
-        updateData['estado'] = 'Detenida';
-        updateData['controles.Inicio'] = false; // Resetea 'Inicio' dentro del JSON
+        newMaquinaState.estado = 'Detenida';
+        newControls['Inicio'] = false; // Resetear 'Inicio' dentro del JSON
     }
 
-    // 2. Actualizar el JSON 'controles'
-    const controlPath = `controles.${commandName}`;
-    updateData[controlPath] = commandValue;
+    // 4. Actualizar la clave específica en el objeto de controles
+    newControls[commandName] = commandValue;
     
-    // 3. Lógica de radio buttons (apagar el opuesto)
-    if (commandName === 'online_llenado' && commandValue) updateData['controles.online_vaciado'] = false;
-    if (commandName === 'online_vaciado' && commandValue) updateData['controles.online_llenado'] = false;
-    if (commandName === 'online_arriba' && commandValue) updateData['controles.online_abajo'] = false;
-    if (commandName === 'online_abajo' && commandValue) updateData['controles.online_arriba'] = false;
+    // 5. Lógica de radio buttons (apagar el opuesto)
+    if (commandName === 'online_llenado' && commandValue) newControls['online_vaciado'] = false;
+    if (commandName === 'online_vaciado' && commandValue) newControls['online_llenado'] = false;
+    if (commandName === 'online_arriba' && commandValue) newControls['online_abajo'] = false;
+    if (commandName === 'online_abajo' && commandValue) newControls['online_arriba'] = false;
 
-    // 4. Lógica de radio 'OFF' (apagar ambos)
+    // 6. Lógica de radio 'OFF' (apagar ambos)
     if (commandName === 'apagar_llenado_vaciado') {
-        updateData['controles.online_llenado'] = false;
-        updateData['controles.online_vaciado'] = false;
+        newControls['online_llenado'] = false;
+        newControls['online_vaciado'] = false;
     }
     if (commandName === 'apagar_arriba_abajo') {
-        updateData['controles.online_arriba'] = false;
-        updateData['controles.online_abajo'] = false;
+        newControls['online_arriba'] = false;
+        newControls['online_abajo'] = false;
     }
     
-    // 5. Enviar la actualización a Supabase (dispara el realtime)
-    const { error } = await db.from('maquinas')
-        .update(updateData)
+    // 7. Enviar la actualización COMPLETA a Supabase
+    const { error: updateError } = await db.from('maquinas')
+        .update({ 
+            controles: newControls, // Enviar el objeto JSON completo
+            estado: newMaquinaState.estado, // Enviar el nuevo estado
+            lote_actual: newMaquinaState.lote_actual // Enviar el nuevo lote
+        })
         .eq('id', maquinaId);
     
-    if (error) {
-        console.error(`❌ Error al actualizar la máquina (sim):`, error);
-        alert('Error en simulación: ' + error.message);
+    // --- FIN DE LÓGICA CORREGIDA ---
+
+    if (updateError) {
+        console.error(`❌ Error al actualizar la máquina (sim):`, updateError);
+        alert('Error en simulación: ' + updateError.message);
     }
     
     setTimeout(() => {
@@ -541,15 +443,12 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     }, 1000); 
 }
 
-/**
- * Configura los event listeners para los botones del panel
- */
+
 function setupEventListeners(container, userRole) {
     console.log('👂 Configurando event listeners del panel...');
     const canControl = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
     if (!canControl) return;
 
-    // Listener para Botones (Iniciar, Paro)
     container.addEventListener('click', async (event) => {
         const button = event.target.closest('button.btn-control');
         if (button && !button.disabled) {
@@ -562,21 +461,18 @@ function setupEventListeners(container, userRole) {
         }
     });
 
-    // Listener para Radios
     container.addEventListener('change', async (event) => {
         if (event.target.type === 'radio' && event.target.name.startsWith('switch-')) {
             const radio = event.target;
             const maquinaId = radio.closest('.switch-3-pos').dataset.maquinaId;
             if (!maquinaId) return;
-
             const commandOn = radio.dataset.commandOn;
             const commandOff = radio.dataset.commandOff;
             const commandsToTurnOff = radio.dataset.commandsOff?.split(',');
-
-            if (commandOn) { // Botón ON (Llenado, Arriba, etc.)
+            if (commandOn) {
                 await sendPlcCommand(maquinaId, commandOn, true, null);
                 if (commandOff) await sendPlcCommand(maquinaId, commandOff, false, null);
-            } else if (commandsToTurnOff) { // Botón OFF
+            } else if (commandsToTurnOff) {
                 if (commandsToTurnOff.includes('online_llenado')) await sendPlcCommand(maquinaId, 'apagar_llenado_vaciado', false, null);
                 if (commandsToTurnOff.includes('online_arriba')) await sendPlcCommand(maquinaId, 'apagar_arriba_abajo', false, null);
             }
@@ -584,9 +480,6 @@ function setupEventListeners(container, userRole) {
     });
 }
 
-/**
- * Se suscribe a cambios en tiempo real en la tabla 'maquinas'
- */
 function subscribeToChanges(container, userRole, userArea) {
     console.log('📡 Suscribiéndose a cambios en tiempo real para "maquinas"...');
     const channel = db.channel('maquinas-changes')
@@ -594,7 +487,7 @@ function subscribeToChanges(container, userRole, userArea) {
             { event: '*', schema: 'public', table: 'maquinas' }, 
             (payload) => {
                 console.log('⚡ Cambio recibido:', payload);
-                const record = payload.new; // El estado más nuevo
+                const record = payload.new; 
                 if (!record) return;
 
                 const machineElement = document.getElementById(`maquina-${record.id}`);
@@ -605,22 +498,18 @@ function subscribeToChanges(container, userRole, userArea) {
                 } 
                 else if (payload.eventType === 'UPDATE' && machineElement && isInArea) {
                     console.log(`🔄 Actualizando DOM para máquina: ${record.id}`);
-                    // Actualizar estado
                     const statusSpan = document.getElementById(`estado-${record.id}`);
                     if (statusSpan) {
                         statusSpan.textContent = record.estado || 'Desconocido';
                         statusSpan.className = `badge ${record.estado?.toLowerCase() === 'en ciclo' ? 'badge-success' : 'badge-danger'}`;
                     }
-                    // Actualizar lote
                     const loteP = document.getElementById(`lote-${record.id}`);
                     if (loteP) {
                          loteP.innerHTML = record.lote_actual ? `<strong>Lote Actual:</strong> ${record.lote_actual}` : '<strong>Lote Actual:</strong> N/A';
                     }
                     
-                    // Actualizar radio buttons en tiempo real
                     if (record.id === 1 && record.controles) {
                         const { online_llenado, online_vaciado, online_arriba, online_abajo } = record.controles;
-                        
                         if (online_llenado) document.getElementById('llenado-1').checked = true;
                         else if (online_vaciado) document.getElementById('vaciado-1').checked = true;
                         else document.getElementById('fill-off-1').checked = true;
@@ -641,15 +530,11 @@ function subscribeToChanges(container, userRole, userArea) {
         });
 }
 
-/**
- * Punto de entrada del panel: Verifica el rol y renderiza el contenido
- */
 async function initializePanel(session) {
     const panelLoginPrompt = document.getElementById('panel-login-form');
     const panelContenido = document.getElementById('panel-contenido');
     const headerTitle = document.getElementById('header-title');
 
-    // 1. Obtener perfil
     const { data: profile, error } = await db
         .from('perfiles')
         .select('rol, area')
@@ -663,14 +548,12 @@ async function initializePanel(session) {
         return;
     }
 
-    // 2. Autorización
     if (profile.rol === 'Cliente') {
         alert('Acceso denegado. Esta área es solo para el personal autorizado.');
         window.location.href = 'index.html'; 
         return;
     }
 
-    // 3. Renderizar el panel
     console.log(`✓ Perfil de personal obtenido: Rol=${profile.rol}, Área=${profile.area || 'N/A'}`);
     panelLoginPrompt.style.display = 'none';
     panelContenido.style.display = 'block';
@@ -689,9 +572,6 @@ async function initializePanel(session) {
 
 /* ===== 7. GESTOR DE UI GLOBAL ===== */
 
-/**
- * Decide qué mostrar en la página basándose en la sesión y la URL
- */
 function actualizarUI(session) {
     const authLinksContainer = document.getElementById('auth-links-container'); 
     const path = window.location.pathname;
@@ -752,10 +632,8 @@ function actualizarUI(session) {
         const panelLoginPrompt = document.getElementById('panel-login-form');
         const panelContenido = document.getElementById('panel-contenido');
         if (session) {
-            // Usuario tiene sesión, ahora 'initializePanel' revisará su rol
             initializePanel(session);
         } else {
-            // Usuario no tiene sesión, muestra el login de personal
             if (panelLoginPrompt) panelLoginPrompt.style.display = 'block';
             if (panelContenido) panelContenido.style.display = 'none';
         }
@@ -767,38 +645,31 @@ function actualizarUI(session) {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 1. Actualizar contador del carrito (en todas las páginas)
     const carritoActual = leerCarrito();
     actualizarContadorCarrito(carritoActual);
     
-    // 2. Revisar la sesión de autenticación (en todas las páginas)
     db.auth.getSession().then(({ data: { session } }) => {
-        actualizarUI(session); // Esta función decide qué hacer
+        actualizarUI(session); 
     });
     
-    // 3. Cargar productos (solo en páginas relevantes)
     const path = window.location.pathname;
     if (path.includes('tienda.html') || path.includes('index.html') || path.endsWith('/ECOTECHSOLUTIONS-WEB/')) {
         cargarProducto();
     }
 
-    // 4. Listeners formularios de auth (CLIENTE)
     const formLogin = document.getElementById('form-login');
     const formRegistro = document.getElementById('form-registro');
     if (formLogin) formLogin.addEventListener('submit', manejarLogin);
     if (formRegistro) formRegistro.addEventListener('submit', manejarRegistro);
     
-    // 5. Listener formulario de auth (PERSONAL)
     const formLoginPersonal = document.getElementById('form-login-personal');
     if (formLoginPersonal) {
-        formLoginPersonal.addEventListener('submit', manejarLoginPersonal); // Usa la función de personal
+        formLoginPersonal.addEventListener('submit', manejarLoginPersonal); 
     }
 
-    // 6. Listener botón de carrito
     const btnCarrito = document.getElementById('btn-anadir-carrito');
     if (btnCarrito) btnCarrito.addEventListener('click', manejarAnadirAlCarrito);
     
-    // 7. Listener para el botón de confirmar compra
     const formCheckout = document.getElementById('form-checkout');
     if (formCheckout) {
         formCheckout.addEventListener('submit', manejarConfirmarCompra);
