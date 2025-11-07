@@ -295,7 +295,28 @@ async function loadAndRenderMaquinas(container, userRole) {
     }
 }
 
-// --- FUNCIÓN ACTUALIZADA ---
+/**
+ * Función auxiliar para ocultar/mostrar controles de Paro
+ */
+function actualizarBotonesParo(estaEnParo) {
+    const controlesCiclo = document.getElementById('controles-ciclo-1');
+    const controlesManuales = document.getElementById('controles-manuales-1');
+    const controlesReset = document.getElementById('controles-reset-1');
+
+    if (estaEnParo) {
+        // PARO ACTIVO: Ocultar controles normales, mostrar Reset
+        if (controlesCiclo) controlesCiclo.style.display = 'none';
+        if (controlesManuales) controlesManuales.style.display = 'none';
+        if (controlesReset) controlesReset.style.display = 'block';
+    } else {
+        // PARO INACTIVO: Mostrar controles normales, ocultar Reset
+        if (controlesCiclo) controlesCiclo.style.display = 'block';
+        if (controlesManuales) controlesManuales.style.display = 'block';
+        if (controlesReset) controlesReset.style.display = 'none';
+    }
+}
+
+
 function createMachineHTML(maquina, userRole) {
     let controlesHTML = '';
     const loteInfo = `<p id="lote-${maquina.id}"><strong>Lote Actual:</strong> ${maquina.lote_actual || 'N/A'}</p>`;
@@ -373,7 +394,10 @@ function createMachineHTML(maquina, userRole) {
         </div>`;
 }
 
-// --- FUNCIÓN ACTUALIZADA ---
+/**
+ * ¡¡SIMULADO!! Envía un comando PLC. (ACTUALIZADO)
+ * Lee el jsonb, lo modifica, aplica lógica de paro, y lo vuelve a escribir.
+ */
 async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     let originalText;
     if (button) {
@@ -408,41 +432,33 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     // 3. Aplicar la lógica de simulación
     
     // *** LÓGICA DE PARO DE EMERGENCIA (ACTUALIZADA) ***
-    
-    // Si se presiona "Paro de Emergencia" (Paro: true)
     if (commandName === 'Paro' && commandValue === true) {
         newMaquinaState.estado = 'Detenida';
-        // Apagar todas las acciones en el JSON
         newControls['Inicio'] = false;
         newControls['online_llenado'] = false;
         newControls['online_vaciado'] = false;
         newControls['online_arriba'] = false;
         newControls['online_abajo'] = false;
-        // Poner Paro en True
         newControls['Paro'] = true;
     } 
-    // Si se presiona "Restablecer Paro" (Paro: false)
     else if (commandName === 'Paro' && commandValue === false) {
         newControls['Paro'] = false;
-        // El estado ya es 'Detenida', no se cambia
+        // (El estado ya es 'Detenida', no se cambia)
     }
-    // Si el Paro está activo, no permitir ningún otro comando
     else if (newControls['Paro'] === true) {
          console.warn("Simulación: Paro de Emergencia está activo. Ignorando comando.");
-         alert("¡Paro de Emergencia está activo! Debe restablecerlo.");
+         // ¡YA NO MOSTRAMOS ALERT! El realtime se encarga de la UI.
          if (button) { button.disabled = false; button.textContent = originalText; }
-         return; // Salir de la función
+         return; 
     }
     // *** FIN LÓGICA DE PARO ***
     
-    // Lógica de estado general (solo si no hay Paro)
     else if (commandName === 'Inicio') {
         newMaquinaState.estado = 'En Ciclo';
         newMaquinaState.lote_actual = `LT-${Math.floor(Math.random() * 900) + 100}`;
         newControls['Inicio'] = true;
     }
     
-    // Lógica de radio buttons (solo si no hay Paro)
     else if (commandName === 'online_llenado' && commandValue) {
         newControls['online_llenado'] = true;
         newControls['online_vaciado'] = false;
@@ -459,7 +475,6 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         newControls['online_arriba'] = false;
         newControls['online_abajo'] = true;
     }
-    // Lógica de radio 'OFF'
     else if (commandName === 'apagar_llenado_vaciado') {
         newControls['online_llenado'] = false;
         newControls['online_vaciado'] = false;
@@ -469,6 +484,14 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         newControls['online_abajo'] = false;
     }
     
+    // --- *** INICIO DE LA CORRECCIÓN *** ---
+    // Actualizar la UI inmediatamente (Actualización Optimista)
+    // Solo actualizamos la UI de Paro, el resto lo hará el realtime.
+    if (commandName === 'Paro') {
+        actualizarBotonesParo(commandValue); // commandValue es 'true' o 'false'
+    }
+    // --- *** FIN DE LA CORRECCIÓN *** ---
+
     // 4. Enviar la actualización COMPLETA a Supabase
     const { error: updateError } = await db.from('maquinas')
         .update({ 
@@ -502,7 +525,6 @@ function setupEventListeners(container, userRole) {
         const button = event.target.closest('button.btn-control');
         if (button && !button.disabled) {
             const command = button.dataset.command;
-            // Convertir 'false' string a boolean false
             const value = (button.dataset.value === 'true'); 
             const maquinaId = button.dataset.maquinaId;
             if (command && maquinaId) {
@@ -529,30 +551,6 @@ function setupEventListeners(container, userRole) {
     });
 }
 
-// --- NUEVA FUNCIÓN AUXILIAR ---
-/**
- * Oculta/muestra los controles de la máquina basado en el estado de Paro
- */
-function actualizarBotonesParo(estaEnParo) {
-    const controlesCiclo = document.getElementById('controles-ciclo-1');
-    const controlesManuales = document.getElementById('controles-manuales-1');
-    const controlesReset = document.getElementById('controles-reset-1');
-
-    if (estaEnParo) {
-        // PARO ACTIVO: Ocultar controles normales, mostrar Reset
-        if (controlesCiclo) controlesCiclo.style.display = 'none';
-        if (controlesManuales) controlesManuales.style.display = 'none';
-        if (controlesReset) controlesReset.style.display = 'block';
-    } else {
-        // PARO INACTIVO: Mostrar controles normales, ocultar Reset
-        if (controlesCiclo) controlesCiclo.style.display = 'block';
-        if (controlesManuales) controlesManuales.style.display = 'block';
-        if (controlesReset) controlesReset.style.display = 'none';
-    }
-}
-
-
-// --- FUNCIÓN ACTUALIZADA ---
 function subscribeToChanges(container, userRole, userArea) {
     console.log('📡 Suscribiéndose a cambios en tiempo real para "maquinas"...');
     const channel = db.channel('maquinas-changes')
@@ -583,11 +581,10 @@ function subscribeToChanges(container, userRole, userArea) {
                          loteP.innerHTML = record.lote_actual ? `<strong>Lote Actual:</strong> ${record.lote_actual}` : '<strong>Lote Actual:</strong> N/A';
                     }
                     
-                    // Actualizar UI de botones y radios en tiempo real
                     if (record.id === 1 && record.controles) {
                         const { online_llenado, online_vaciado, online_arriba, online_abajo, Paro } = record.controles;
                         
-                        // ¡NUEVO! Llamar a la función que oculta/muestra botones
+                        // Llamar a la función que oculta/muestra botones
                         actualizarBotonesParo(Paro === true);
 
                         // Actualizar radios
