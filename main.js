@@ -280,6 +280,12 @@ async function loadAndRenderMaquinas(container, userRole) {
             maquinas.forEach(maquina => {
                 container.insertAdjacentHTML('beforeend', createMachineHTML(maquina, userRole));
             });
+            // Después de renderizar, actualizamos la UI de los botones (en caso de Paro)
+            maquinas.forEach(maquina => {
+                if (maquina.id === 1 && maquina.controles) {
+                    actualizarBotonesParo(maquina.controles.Paro === true);
+                }
+            });
         } else {
             container.innerHTML = '<p>No hay máquinas asignadas a tu área o disponibles.</p>';
         }
@@ -289,6 +295,7 @@ async function loadAndRenderMaquinas(container, userRole) {
     }
 }
 
+// --- FUNCIÓN ACTUALIZADA ---
 function createMachineHTML(maquina, userRole) {
     let controlesHTML = '';
     const loteInfo = `<p id="lote-${maquina.id}"><strong>Lote Actual:</strong> ${maquina.lote_actual || 'N/A'}</p>`;
@@ -302,33 +309,46 @@ function createMachineHTML(maquina, userRole) {
 
         if (canControlThisUser) {
             controlesHTML = `
-                <div class="controles">
+                <!-- Contenedor para botones de ciclo (se ocultan en Paro) -->
+                <div class="controles" id="controles-ciclo-1">
                     <p><strong>Ciclo de Proceso:</strong></p>
                     <div class="btn-group">
                         <button class="btn btn-primary btn-control" data-command="Inicio" data-value="true" data-maquina-id="1">Iniciar Ciclo</button>
                         <button class="btn btn-danger btn-control" data-command="Paro" data-value="true" data-maquina-id="1">Paro de Emergencia</button>
                     </div>
                 </div>
-                <div class="controles-detallados">
-                    <p><strong>Control Llenado/Vaciado:</strong></p>
-                    <div class="switch-3-pos" data-maquina-id="1">
-                        <input type="radio" id="llenado-1" name="switch-fill-1" data-command-on="online_llenado" data-command-off="online_vaciado" ${fillState === 'llenado' ? 'checked' : ''}>
-                        <label for="llenado-1">Llenado</label>
-                        <input type="radio" id="fill-off-1" name="switch-fill-1" data-commands-off="online_llenado,online_vaciado" ${fillState === 'fill-off' ? 'checked' : ''}>
-                        <label for="fill-off-1">OFF</label>
-                        <input type="radio" id="vaciado-1" name="switch-fill-1" data-command-on="online_vaciado" data-command-off="online_llenado" ${fillState === 'vaciado' ? 'checked' : ''}>
-                        <label for="vaciado-1">Vaciado</label>
+                
+                <!-- Botón de Restablecer (solo se muestra en Paro) -->
+                <div class="controles" id="controles-reset-1" style="display: none;">
+                    <p><strong>¡Paro de Emergencia Activo!</strong></p>
+                    <div class="btn-group">
+                        <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">Restablecer Paro</button>
                     </div>
                 </div>
-                <div class="controles-detallados">
-                    <p><strong>Control de Charola:</strong></p>
-                    <div class="switch-3-pos" data-maquina-id="1">
-                        <input type="radio" id="arriba-1" name="switch-tray-1" data-command-on="online_arriba" data-command-off="online_abajo" ${trayState === 'arriba' ? 'checked' : ''}>
-                        <label for="arriba-1">Arriba</label>
-                        <input type="radio" id="tray-off-1" name="switch-tray-1" data-commands-off="online_arriba,online_abajo" ${trayState === 'tray-off' ? 'checked' : ''}>
-                        <label for="tray-off-1">OFF</label>
-                        <input type="radio" id="abajo-1" name="switch-tray-1" data-command-on="online_abajo" data-command-off="online_arriba" ${trayState === 'abajo' ? 'checked' : ''}>
-                        <label for="abajo-1">Abajo</label>
+
+                <!-- Contenedor para controles manuales (se ocultan en Paro) -->
+                <div class="controles-manuales" id="controles-manuales-1">
+                    <div class="controles-detallados">
+                        <p><strong>Control Llenado/Vaciado:</strong></p>
+                        <div class="switch-3-pos" data-maquina-id="1">
+                            <input type="radio" id="llenado-1" name="switch-fill-1" data-command-on="online_llenado" data-command-off="online_vaciado" ${fillState === 'llenado' ? 'checked' : ''}>
+                            <label for="llenado-1">Llenado</label>
+                            <input type="radio" id="fill-off-1" name="switch-fill-1" data-commands-off="online_llenado,online_vaciado" ${fillState === 'fill-off' ? 'checked' : ''}>
+                            <label for="fill-off-1">OFF</label>
+                            <input type="radio" id="vaciado-1" name="switch-fill-1" data-command-on="online_vaciado" data-command-off="online_llenado" ${fillState === 'vaciado' ? 'checked' : ''}>
+                            <label for="vaciado-1">Vaciado</label>
+                        </div>
+                    </div>
+                    <div class="controles-detallados">
+                        <p><strong>Control de Charola:</strong></p>
+                        <div class="switch-3-pos" data-maquina-id="1">
+                            <input type="radio" id="arriba-1" name="switch-tray-1" data-command-on="online_arriba" data-command-off="online_abajo" ${trayState === 'arriba' ? 'checked' : ''}>
+                            <label for="arriba-1">Arriba</label>
+                            <input type="radio" id="tray-off-1" name="switch-tray-1" data-commands-off="online_arriba,online_abajo" ${trayState === 'tray-off' ? 'checked' : ''}>
+                            <label for="tray-off-1">OFF</label>
+                            <input type="radio" id="abajo-1" name="switch-tray-1" data-command-on="online_abajo" data-command-off="online_arriba" ${trayState === 'abajo' ? 'checked' : ''}>
+                            <label for="abajo-1">Abajo</label>
+                        </div>
                     </div>
                 </div>
             `;
@@ -353,10 +373,7 @@ function createMachineHTML(maquina, userRole) {
         </div>`;
 }
 
-/**
- * ¡¡SIMULADO!! Envía un comando PLC. (CORREGIDO)
- * Lee el jsonb, lo modifica y lo vuelve a escribir.
- */
+// --- FUNCIÓN ACTUALIZADA ---
 async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     let originalText;
     if (button) {
@@ -367,12 +384,10 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     
     console.warn(`📡 SIMULACIÓN: Comando: ${commandName} -> ${commandValue} a Máquina ${maquinaId}`);
 
-    // --- INICIO DE LÓGICA CORREGIDA ---
-    
-    // 1. Obtener el estado actual de la máquina desde la DB
+    // 1. Obtener el estado actual
     const { data: maquina, error: fetchError } = await db
         .from('maquinas')
-        .select('controles, estado, lote_actual') // Pedir todos los campos que modificaremos
+        .select('controles, estado, lote_actual')
         .eq('id', maquinaId)
         .single();
 
@@ -383,8 +398,7 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         return;
     }
 
-    // 2. Preparar los nuevos datos copiando los antiguos
-    // ¡¡IMPORTANTE!! Asegurarse de que 'controles' no sea nulo
+    // 2. Preparar los nuevos datos
     const newControls = maquina.controles ? { ...maquina.controles } : {};
     const newMaquinaState = {
         estado: maquina.estado,
@@ -393,8 +407,10 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
 
     // 3. Aplicar la lógica de simulación
     
-    // *** LÓGICA DE PARO DE EMERGENCIA ***
-    if (commandName === 'Paro') {
+    // *** LÓGICA DE PARO DE EMERGENCIA (ACTUALIZADA) ***
+    
+    // Si se presiona "Paro de Emergencia" (Paro: true)
+    if (commandName === 'Paro' && commandValue === true) {
         newMaquinaState.estado = 'Detenida';
         // Apagar todas las acciones en el JSON
         newControls['Inicio'] = false;
@@ -405,10 +421,15 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         // Poner Paro en True
         newControls['Paro'] = true;
     } 
-    // Si el Paro está activo, no permitir ningún otro comando de acción
+    // Si se presiona "Restablecer Paro" (Paro: false)
+    else if (commandName === 'Paro' && commandValue === false) {
+        newControls['Paro'] = false;
+        // El estado ya es 'Detenida', no se cambia
+    }
+    // Si el Paro está activo, no permitir ningún otro comando
     else if (newControls['Paro'] === true) {
          console.warn("Simulación: Paro de Emergencia está activo. Ignorando comando.");
-         alert("¡Paro de Emergencia está activo! Debe restablecerlo en el PLC.");
+         alert("¡Paro de Emergencia está activo! Debe restablecerlo.");
          if (button) { button.disabled = false; button.textContent = originalText; }
          return; // Salir de la función
     }
@@ -447,22 +468,16 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         newControls['online_arriba'] = false;
         newControls['online_abajo'] = false;
     }
-    // Lógica para otros comandos (como el propio 'Paro' que se maneja arriba)
-    else {
-         newControls[commandName] = commandValue;
-    }
     
     // 4. Enviar la actualización COMPLETA a Supabase
     const { error: updateError } = await db.from('maquinas')
         .update({ 
-            controles: newControls, // Enviar el objeto JSON completo
-            estado: newMaquinaState.estado, // Enviar el nuevo estado
-            lote_actual: newMaquinaState.lote_actual // Enviar el nuevo lote
+            controles: newControls, 
+            estado: newMaquinaState.estado,
+            lote_actual: newMaquinaState.lote_actual
         })
         .eq('id', maquinaId);
     
-    // --- FIN DE LÓGICA CORREGIDA ---
-
     if (updateError) {
         console.error(`❌ Error al actualizar la máquina (sim):`, updateError);
         alert('Error en simulación: ' + updateError.message);
@@ -482,11 +497,13 @@ function setupEventListeners(container, userRole) {
     const canControl = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
     if (!canControl) return;
 
+    // Listener para Botones (Iniciar, Paro, y Restablecer)
     container.addEventListener('click', async (event) => {
         const button = event.target.closest('button.btn-control');
         if (button && !button.disabled) {
             const command = button.dataset.command;
-            const value = button.dataset.value === 'true'; 
+            // Convertir 'false' string a boolean false
+            const value = (button.dataset.value === 'true'); 
             const maquinaId = button.dataset.maquinaId;
             if (command && maquinaId) {
                 await sendPlcCommand(maquinaId, command, value, button);
@@ -494,17 +511,16 @@ function setupEventListeners(container, userRole) {
         }
     });
 
+    // Listener para Radios
     container.addEventListener('change', async (event) => {
         if (event.target.type === 'radio' && event.target.name.startsWith('switch-')) {
             const radio = event.target;
             const maquinaId = radio.closest('.switch-3-pos').dataset.maquinaId;
             if (!maquinaId) return;
             const commandOn = radio.dataset.commandOn;
-            const commandOff = radio.dataset.commandOff;
             const commandsToTurnOff = radio.dataset.commandsOff?.split(',');
             if (commandOn) {
                 await sendPlcCommand(maquinaId, commandOn, true, null);
-                // (La lógica de apagar el opuesto ahora está DENTRO de sendPlcCommand)
             } else if (commandsToTurnOff) {
                 if (commandsToTurnOff.includes('online_llenado')) await sendPlcCommand(maquinaId, 'apagar_llenado_vaciado', false, null);
                 if (commandsToTurnOff.includes('online_arriba')) await sendPlcCommand(maquinaId, 'apagar_arriba_abajo', false, null);
@@ -513,6 +529,30 @@ function setupEventListeners(container, userRole) {
     });
 }
 
+// --- NUEVA FUNCIÓN AUXILIAR ---
+/**
+ * Oculta/muestra los controles de la máquina basado en el estado de Paro
+ */
+function actualizarBotonesParo(estaEnParo) {
+    const controlesCiclo = document.getElementById('controles-ciclo-1');
+    const controlesManuales = document.getElementById('controles-manuales-1');
+    const controlesReset = document.getElementById('controles-reset-1');
+
+    if (estaEnParo) {
+        // PARO ACTIVO: Ocultar controles normales, mostrar Reset
+        if (controlesCiclo) controlesCiclo.style.display = 'none';
+        if (controlesManuales) controlesManuales.style.display = 'none';
+        if (controlesReset) controlesReset.style.display = 'block';
+    } else {
+        // PARO INACTIVO: Mostrar controles normales, ocultar Reset
+        if (controlesCiclo) controlesCiclo.style.display = 'block';
+        if (controlesManuales) controlesManuales.style.display = 'block';
+        if (controlesReset) controlesReset.style.display = 'none';
+    }
+}
+
+
+// --- FUNCIÓN ACTUALIZADA ---
 function subscribeToChanges(container, userRole, userArea) {
     console.log('📡 Suscribiéndose a cambios en tiempo real para "maquinas"...');
     const channel = db.channel('maquinas-changes')
@@ -531,28 +571,24 @@ function subscribeToChanges(container, userRole, userArea) {
                 } 
                 else if (payload.eventType === 'UPDATE' && machineElement && isInArea) {
                     console.log(`🔄 Actualizando DOM para máquina: ${record.id}`);
+                    // Actualizar estado
                     const statusSpan = document.getElementById(`estado-${record.id}`);
                     if (statusSpan) {
                         statusSpan.textContent = record.estado || 'Desconocido';
                         statusSpan.className = `badge ${record.estado?.toLowerCase() === 'en ciclo' ? 'badge-success' : 'badge-danger'}`;
                     }
+                    // Actualizar lote
                     const loteP = document.getElementById(`lote-${record.id}`);
                     if (loteP) {
                          loteP.innerHTML = record.lote_actual ? `<strong>Lote Actual:</strong> ${record.lote_actual}` : '<strong>Lote Actual:</strong> N/A';
                     }
                     
+                    // Actualizar UI de botones y radios en tiempo real
                     if (record.id === 1 && record.controles) {
                         const { online_llenado, online_vaciado, online_arriba, online_abajo, Paro } = record.controles;
                         
-                        // Si hay Paro, deshabilitar botones (lógica visual extra)
-                        const estaEnParo = Paro === true;
-                        machineElement.querySelectorAll('button.btn-control, input[type="radio"]')
-                            .forEach(el => {
-                                // No deshabilitar el botón de Paro en sí mismo
-                                if (el.dataset.command !== 'Paro') {
-                                    el.disabled = estaEnParo;
-                                }
-                            });
+                        // ¡NUEVO! Llamar a la función que oculta/muestra botones
+                        actualizarBotonesParo(Paro === true);
 
                         // Actualizar radios
                         if (online_llenado) document.getElementById('llenado-1').checked = true;
