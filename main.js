@@ -1,5 +1,10 @@
-// 1. Configuración del Cliente Supabase
-// Pega tu URL y tu Anon Key (pública) aquí
+/* =============================================
+ * ECOTECHSOLUTIONS - MAIN JAVASCRIPT FILE
+ * Versión 1.4.2 (Corrección de Estilos de Tabla)
+ * ============================================= */
+
+/* ===== 1. CONFIGURACIÓN Y CLIENTE SUPABASE ===== */
+// Reemplaza con tus claves reales de Supabase
 const SUPABASE_URL = 'https://dtdtqedzfuxfnnipdorg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY';
 
@@ -336,7 +341,7 @@ function createMachineHTML(maquina, userRole) {
                 <div class="controles" id="controles-reset-1" style="display: none;">
                     <p><strong>¡Paro de Emergencia Activo!</strong></p>
                     <div class="btn-group">
-                        <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">RestableCER Paro</button>
+                        <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">Restablecer Paro</button>
                     </div>
                 </div>
                 <div class="controles-manuales" id="controles-manuales-1">
@@ -684,11 +689,14 @@ function actualizarUI(session) {
         }
     }
     
+    // --- ¡NUEVO! Lógica para 'admin-personal.html' ---
     else if (path.includes('admin-personal.html')) {
         const adminContainer = document.getElementById('admin-personal-container');
         if (session) {
+            // El usuario está logueado, ahora verificamos su rol
             initializeAdminPersonalPage(session.user);
         } else {
+            // No hay sesión, redirigir
             alert('Acceso denegado. Debes iniciar sesión.');
             window.location.href = 'panel.html';
         }
@@ -764,16 +772,22 @@ async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
         const esMiMismoUsuario = p.id === currentAdminId; 
         const noPuedeEditar = (adminRole === 'Lider' && esSistemas);
         
+        // --- INICIO DE CORRECCIÓN DE ESTILO ---
+        // Envolvemos los inputs/selects en un div.input-group
         return `
             <tr data-user-id="${p.id}">
                 <td>${p.email || 'Email no encontrado'}</td>
                 <td>
-                    <select class="input-group" data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
-                        ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
-                    </select>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <select data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                            ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
+                        </select>
+                    </div>
                 </td>
                 <td>
-                    <input type="text" class="input-group" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <input type="text" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                    </div>
                 </td>
                 <td class="btn-group">
                     <button class="btn btn-primary btn-sm btn-save-user" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>Guardar</button>
@@ -781,6 +795,7 @@ async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
                 </td>
             </tr>
         `;
+        // --- FIN DE CORRECCIÓN DE ESTILO ---
     }).join('');
 
     // Añadir listeners a los nuevos botones
