@@ -13,20 +13,26 @@ console.log('Cliente de Supabase conectado.');
 
 
 /* ===== 2. LÓGICA DE PRODUCTOS (TIENDA E INICIO) ===== */
-async function cargarProducto() {
-    console.log("Intentando cargar producto...");
-    const PRODUCTO_ID = 1; 
+async function cargarProducto(productoID = 1) {
+    console.log(`Intentando cargar producto ID: ${productoID}...`);
+    
+    const path = window.location.pathname;
+    const esPaginaDeProducto = path.includes('tienda.html') || path.includes('index.html') || path.endsWith('/ECOTECHSOLUTIONS-WEB/');
 
     const { data, error } = await db
         .from('productos')
         .select('*')
-        .eq('id', PRODUCTO_ID) 
+        .eq('id', productoID) 
         .single();
         
-    if (error) { console.error('Error al cargar el producto:', error.message); return; }
+    if (error) { 
+        console.error('Error al cargar el producto:', error.message); 
+        return null;
+    }
     
-    if (data) {
+    if (data && esPaginaDeProducto) {
         const producto = data;
+        
         const nombreProductoEl = document.getElementById('producto-nombre');
         const precioProductoEl = document.getElementById('producto-precio');
         const stockProductoEl = document.getElementById('producto-stock');
@@ -38,11 +44,14 @@ async function cargarProducto() {
             layoutTienda.dataset.productId = producto.id;
             layoutTienda.dataset.productStock = producto.stock_disponible;
         }
+        
         const nombreIndexEl = document.getElementById('index-producto-nombre');
         const precioIndexEl = document.getElementById('index-producto-precio');
         if(nombreIndexEl) nombreIndexEl.textContent = producto.nombre;
         if(precioIndexEl) precioIndexEl.textContent = `$${producto.precio.toLocaleString('es-MX')}`;
     }
+    
+    return data;
 }
 
 
@@ -53,6 +62,7 @@ async function manejarRegistro(e) {
     const email = document.getElementById('registro-email').value;
     const password = document.getElementById('registro-password').value;
     console.log("Intentando registrar con:", email);
+    
     const { data: authData, error: authError } = await db.auth.signUp({ email, password });
     if (authError) {
         console.error('Error en el registro:', authError.message);
@@ -60,9 +70,15 @@ async function manejarRegistro(e) {
         return;
     }
     console.log('Usuario registrado en Auth:', authData.user);
+
     const { error: profileError } = await db
         .from('perfiles')
-        .insert({ id: authData.user.id, rol: 'cliente' });
+        .insert({ 
+            id: authData.user.id, 
+            rol: 'cliente',
+            email: authData.user.email
+        });
+        
     if (profileError) {
         console.error('Error creando el perfil:', profileError.message);
         alert('Error al crear el perfil: ' + profileError.message);
@@ -135,10 +151,17 @@ async function actualizarPerfil(e, user) {
     const nombre = document.getElementById('profile-name').value;
     const telefono = document.getElementById('profile-phone').value;
     const direccion = document.getElementById('profile-address').value;
+    
     const { error } = await db
         .from('perfiles')
-        .update({ nombre_completo: nombre, telefono: telefono, direccion: direccion })
+        .update({ 
+            nombre_completo: nombre, 
+            telefono: telefono, 
+            direccion: direccion,
+            email: user.email
+        })
         .eq('id', user.id);
+        
     if (error) {
         console.error('Error actualizando el perfil:', error.message);
         alert('Error al guardar: ' + error.message);
@@ -197,18 +220,30 @@ function manejarAnadirAlCarrito() {
 /* ===== 5. LÓGICA DE CHECKOUT (COMPRA) ===== */
 
 async function cargarResumenCheckout() {
+    console.log("Cargando resumen de checkout...");
     const carrito = leerCarrito();
     const [productoID, cantidad] = Object.entries(carrito)[0] || [];
     if (!productoID) {
         document.getElementById('checkout-items').innerHTML = "<p>Tu carrito está vacío.</p>";
         return;
     }
-    const { data: producto, error } = await db.from('productos').select('nombre, precio').eq('id', productoID).single();
-    if (error) { console.error("Error al buscar precio del producto:", error); return; }
+    
+    const producto = await cargarProducto(productoID); 
+    if (!producto) {
+         document.getElementById('checkout-items').innerHTML = "<p>Error al cargar el producto.</p>";
+         return;
+    }
+
     const subtotal = producto.precio * cantidad;
     const envio = 0; 
     const total = subtotal + envio;
-    document.getElementById('checkout-items').innerHTML = `<p><span>${producto.nombre} (x${cantidad})</span><span>$${subtotal.toLocaleString('es-MX')}</span></p>`;
+    
+    document.getElementById('checkout-items').innerHTML = `
+        <p>
+            <span>${producto.nombre} (x${cantidad})</span>
+            <span>$${subtotal.toLocaleString('es-MX')}</span>
+        </p>
+    `;
     document.getElementById('checkout-subtotal').textContent = `$${subtotal.toLocaleString('es-MX')}`;
     document.getElementById('checkout-envio').textContent = `$${envio.toLocaleString('es-MX')}`;
     document.getElementById('checkout-total').textContent = `$${total.toLocaleString('es-MX')}`;
@@ -230,15 +265,77 @@ async function autocompletarDatosEnvio(user) {
 
 async function manejarConfirmarCompra(e) {
     e.preventDefault();
+    console.log("Procesando compra...");
+    
     const carrito = leerCarrito();
     const [productoID, cantidad] = Object.entries(carrito)[0] || [];
-    if (!productoID) { alert("Tu carrito está vacío."); return; }
-    const { data: producto, error: stockError } = await db.from('productos').select('stock_disponible').eq('id', productoID).single();
+    const { data: { user } } = await db.auth.getUser();
+
+    if (!productoID || !user) {
+        alert("Error: Carrito vacío o sesión no encontrada. Por favor, inicia sesión de nuevo.");
+        return;
+    }
+    
+    const datosEnvio = {
+        nombre: document.getElementById('checkout-name').value,
+        direccion: document.getElementById('checkout-address').value,
+        telefono: document.getElementById('checkout-phone').value
+    };
+    
+    if (!datosEnvio.nombre || !datosEnvio.direccion) {
+        alert("Por favor, completa tu nombre y dirección de envío.");
+        return;
+    }
+
+    const { data: producto, error: stockError } = await db
+        .from('productos')
+        .select('nombre, precio, stock_disponible')
+        .eq('id', productoID)
+        .single();
+
     if (stockError) { alert("Error al verificar el stock: " + stockError.message); return; }
+
     const nuevoStock = producto.stock_disponible - cantidad;
-    if (nuevoStock < 0) { alert("Error: Stock insuficiente."); return; }
-    const { error: updateError } = await db.from('productos').update({ stock_disponible: nuevoStock }).eq('id', productoID);
-    if (updateError) { alert("Error al actualizar el inventario: " + updateError.message); return; }
+    if (nuevoStock < 0) { alert("Error: Stock insuficiente. Alguien compró el producto."); return; }
+    
+    const total = producto.precio * cantidad;
+    const itemsPedido = [{
+        id: productoID,
+        nombre: producto.nombre,
+        cantidad: cantidad,
+        precio_unitario: producto.precio
+    }];
+
+    const { error: pedidoError } = await db
+        .from('pedidos')
+        .insert({
+            user_id: user.id,
+            items: itemsPedido,
+            total: total,
+            datos_envio: datosEnvio,
+            estado: 'Procesando'
+        });
+
+    if (pedidoError) {
+        console.error("Error al guardar el pedido:", pedidoError);
+        alert("Error al guardar tu pedido: " + pedidoError.message);
+        return;
+    }
+    
+    console.log("¡Pedido guardado en la base de datos!");
+
+    const { error: updateError } = await db
+        .from('productos')
+        .update({ stock_disponible: nuevoStock })
+        .eq('id', productoID);
+        
+    if (updateError) { 
+        console.error("¡Error CRÍTICO! El pedido se creó pero el stock no se actualizó:", updateError);
+        alert("Error al actualizar el inventario. Por favor, contacta a soporte.");
+        return; 
+    }
+
+    console.log("¡Compra exitosa! Stock actualizado.");
     guardarCarrito({});
     alert("¡Gracias por tu compra! Tu pedido ha sido procesado.");
     window.location.href = 'index.html';
@@ -740,20 +837,19 @@ async function initializeAdminPersonalPage(user) {
     if (adminBar) renderAdminBar(adminBar, adminRole);
     
     // Cargar la tabla de usuarios (pasando el ID del admin)
-    await loadAllUsersAndProfiles(adminRole, user.id);
+    await loadAllUsersAndProfiles(adminRole, user.id); // <--- ID del admin pasado aquí
 }
 
 /**
  * Carga todos los perfiles y usuarios (Función CORREGIDA)
  */
-async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
+async function loadAllUsersAndProfiles(adminRole, currentAdminId) { // <--- Recibe el ID del admin
     const tableBody = document.getElementById('user-table-body');
     tableBody.innerHTML = '<tr><td colspan="4">Cargando usuarios...</td></tr>';
 
     // 1. Llamar a la función RPC que creamos en Supabase
-    // (Asegúrate de haber creado la función 'get_all_user_profiles' en el SQL Editor)
     const { data: perfiles, error: profileError } = await db
-        .rpc('get_all_user_profiles');
+        .rpc('get_all_user_profiles'); // <--- Llama a la función SQL
         
     if (profileError) {
         console.error('Error cargando perfiles:', profileError);
@@ -768,25 +864,25 @@ async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
     tableBody.innerHTML = perfiles.map(p => {
         const esSistemas = p.rol === 'Sistemas';
         // --- CORRECCIÓN AQUÍ ---
-        // Comparamos con el ID del admin que pasamos a la función
+        // Usamos el ID del admin que pasamos a la función
         const esMiMismoUsuario = p.id === currentAdminId; 
         const noPuedeEditar = (adminRole === 'Lider' && esSistemas);
         
-        // --- INICIO DE CORRECCIÓN DE ESTILO ---
-        // Envolvemos los inputs/selects en un div.input-group
+        // --- CORRECCIÓN DE ESTILOS AQUÍ ---
+        // Envolvemos cada input/select en un <div>
         return `
             <tr data-user-id="${p.id}">
                 <td>${p.email || 'Email no encontrado'}</td>
                 <td>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <select data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                    <div class="input-group" style="margin: 0;">
+                        <select class="input-group" data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
                             ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
                         </select>
                     </div>
                 </td>
                 <td>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <input type="text" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
+                    <div class="input-group" style="margin: 0;">
+                        <input type="text" class="input-group" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
                     </div>
                 </td>
                 <td class="btn-group">
@@ -795,7 +891,6 @@ async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
                 </td>
             </tr>
         `;
-        // --- FIN DE CORRECCIÓN DE ESTILO ---
     }).join('');
 
     // Añadir listeners a los nuevos botones
@@ -845,7 +940,6 @@ async function handleUserDelete(event) {
     console.log(`Borrando usuario ${userId}...`);
     
     // Llamar a la función RPC 'delete_user_and_profile'
-    // (Asegúrate de haber creado la función en el SQL Editor y dado permisos)
     const { data, error } = await db.rpc('delete_user_and_profile', {
         user_id_to_delete: userId
     });
@@ -860,7 +954,81 @@ async function handleUserDelete(event) {
 }
 
 
-/* ===== 9. PUNTO DE ENTRADA (DOMCONTENTLOADED) ===== */
+/* ===== 9. LÓGICA DE "MIS PEDIDOS" (CLIENTE) ===== */
+
+function manejarTabsCuenta(tab, userId) {
+    const seccionDatos = document.getElementById('seccion-mis-datos');
+    const seccionPedidos = document.getElementById('seccion-mis-pedidos');
+    const btnDatos = document.getElementById('btn-tab-datos');
+    const btnPedidos = document.getElementById('btn-tab-pedidos');
+
+    if (tab === 'datos') {
+        seccionDatos.style.display = 'block';
+        seccionPedidos.style.display = 'none';
+        btnDatos.classList.add('active');
+        btnPedidos.classList.remove('active');
+    } 
+    else if (tab === 'pedidos') {
+        seccionDatos.style.display = 'none';
+        seccionPedidos.style.display = 'block';
+        btnDatos.classList.remove('active');
+        btnPedidos.classList.add('active');
+        cargarMisPedidos(userId);
+    }
+}
+
+async function cargarMisPedidos(userId) {
+    const container = document.getElementById('pedidos-lista-container');
+    container.innerHTML = '<p>Cargando tus pedidos...</p>';
+
+    const { data: pedidos, error } = await db
+        .from('pedidos')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error al cargar pedidos:", error);
+        container.innerHTML = '<p style="color:red;">No se pudieron cargar tus pedidos.</p>';
+        return;
+    }
+    
+    if (pedidos.length === 0) {
+        container.innerHTML = '<p>No has realizado ningún pedido todavía.</p>';
+        return;
+    }
+
+    container.innerHTML = pedidos.map(pedido => {
+        const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX');
+        const items = pedido.items.map(item => 
+            `<p>${item.nombre} (x${item.cantidad})</p>`
+        ).join('');
+        
+        return `
+            <div class="pedido-card">
+                <div class="pedido-header">
+                    <span class="pedido-id">Pedido #${pedido.id}</span>
+                    <span class="badge badge-warning">${pedido.estado}</span>
+                </div>
+                <div class="order-info">
+                    <span>Fecha:</span>
+                    <span class="info-value">${fecha}</span>
+                </div>
+                <div class="order-info">
+                    <span>Items:</span>
+                    <span class="info-value">${items}</span>
+                </div>
+                <div class="order-info">
+                    <span>Total:</span>
+                    <span class="info-value total">$${pedido.total.toLocaleString('es-MX')}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+
+/* ===== 10. PUNTO DE ENTRADA (DOMCONTENTLOADED) ===== */
 
 document.addEventListener('DOMContentLoaded', () => {
     
