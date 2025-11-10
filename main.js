@@ -242,12 +242,9 @@ async function manejarConfirmarCompra(e) {
 
 /* ===== 6. LÓGICA DEL PANEL DE PERSONAL (ROLES Y MÁQUINAS) ===== */
 
-// --- FUNCIÓN ACTUALIZADA ---
-// Ahora habilita los botones del admin-bar
 function renderAdminBar(adminBar, userRole) {
     let adminHTML = '';
     
-    // El rol 'Lider' ahora se llama 'Lider_Empresa' en tu CSS, usamos ese
     if (userRole === 'Lider' || userRole === 'Sistemas') {
         adminHTML = `
             <h4>Panel de Administrador</h4>
@@ -339,7 +336,7 @@ function createMachineHTML(maquina, userRole) {
                 <div class="controles" id="controles-reset-1" style="display: none;">
                     <p><strong>¡Paro de Emergencia Activo!</strong></p>
                     <div class="btn-group">
-                        <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">Restablecer Paro</button>
+                        <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">RestableCER Paro</button>
                     </div>
                 </div>
                 <div class="controles-manuales" id="controles-manuales-1">
@@ -398,7 +395,6 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
     
     console.warn(`📡 SIMULACIÓN: Comando: ${commandName} -> ${commandValue} a Máquina ${maquinaId}`);
 
-    // 1. Obtener el estado actual
     const { data: maquina, error: fetchError } = await db
         .from('maquinas')
         .select('controles, estado, lote_actual')
@@ -412,14 +408,12 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         return;
     }
 
-    // 2. Preparar los nuevos datos
     const newControls = maquina.controles ? { ...maquina.controles } : {};
     const newMaquinaState = {
         estado: maquina.estado,
         lote_actual: maquina.lote_actual
     };
 
-    // 3. Aplicar la lógica de simulación
     if (commandName === 'Paro' && commandValue === true) {
         newMaquinaState.estado = 'Detenida';
         newControls['Inicio'] = false;
@@ -467,12 +461,10 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
         newControls['online_abajo'] = false;
     }
     
-    // Actualizar la UI inmediatamente
     if (commandName === 'Paro') {
         actualizarBotonesParo(commandValue);
     }
 
-    // 4. Enviar la actualización COMPLETA a Supabase
     const { error: updateError } = await db.from('maquinas')
         .update({ 
             controles: newControls, 
@@ -692,14 +684,11 @@ function actualizarUI(session) {
         }
     }
     
-    // --- ¡NUEVO! Lógica para 'admin-personal.html' ---
     else if (path.includes('admin-personal.html')) {
         const adminContainer = document.getElementById('admin-personal-container');
         if (session) {
-            // El usuario está logueado, ahora verificamos su rol
             initializeAdminPersonalPage(session.user);
         } else {
-            // No hay sesión, redirigir
             alert('Acceso denegado. Debes iniciar sesión.');
             window.location.href = 'panel.html';
         }
@@ -711,7 +700,6 @@ function actualizarUI(session) {
 
 /**
  * Inicializa la página de admin-personal.html
- * Verifica el rol y carga la lista de usuarios.
  */
 async function initializeAdminPersonalPage(user) {
     // 1. Obtener el perfil del *administrador* (tú)
@@ -741,47 +729,44 @@ async function initializeAdminPersonalPage(user) {
     if (adminContainer) adminContainer.style.display = 'block';
     
     const adminBar = document.getElementById('admin-bar');
-    if (adminBar) renderAdminBar(adminBar, adminRole); // Reusar la función
+    if (adminBar) renderAdminBar(adminBar, adminRole);
     
-    // Cargar la tabla de usuarios
-    await loadAllUsersAndProfiles(adminRole);
+    // Cargar la tabla de usuarios (pasando el ID del admin)
+    await loadAllUsersAndProfiles(adminRole, user.id);
 }
 
 /**
- * Carga todos los perfiles y usuarios de auth
+ * Carga todos los perfiles y usuarios (Función CORREGIDA)
  */
-async function loadAllUsersAndProfiles(adminRole) {
+async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
     const tableBody = document.getElementById('user-table-body');
     tableBody.innerHTML = '<tr><td colspan="4">Cargando usuarios...</td></tr>';
 
-    // 1. Obtener todos los perfiles (RLS lo permite para 'Sistemas'/'Lider')
+    // 1. Llamar a la función RPC que creamos en Supabase
+    // (Asegúrate de haber creado la función 'get_all_user_profiles' en el SQL Editor)
     const { data: perfiles, error: profileError } = await db
-        .from('perfiles')
-        .select('*');
+        .rpc('get_all_user_profiles');
         
     if (profileError) {
         console.error('Error cargando perfiles:', profileError);
-        tableBody.innerHTML = '<tr><td colspan="4" style="color:red;">Error al cargar perfiles.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" style="color:red;">Error al cargar perfiles. (Asegúrate de crear la función RPC `get_all_user_profiles` en el SQL Editor de Supabase)</td></tr>';
         return;
     }
     
-    // 2. Obtener todos los usuarios de Auth (necesita una Edge Function o ser admin)
-    // Por ahora, solo mostraremos los perfiles que encontramos
     console.log('Perfiles cargados:', perfiles);
 
     const rolesDisponibles = ['Cliente', 'Operador', 'Supervisor', 'Mecanico', 'Lider', 'Sistemas'];
 
     tableBody.innerHTML = perfiles.map(p => {
-        // El rol "Sistemas" no puede ser editado ni borrado
         const esSistemas = p.rol === 'Sistemas';
-        const esMiMismoUsuario = p.id === db.auth.user()?.id;
-        
-        // El rol 'Lider' no puede editar a 'Sistemas'
+        // --- CORRECCIÓN AQUÍ ---
+        // Comparamos con el ID del admin que pasamos a la función
+        const esMiMismoUsuario = p.id === currentAdminId; 
         const noPuedeEditar = (adminRole === 'Lider' && esSistemas);
         
         return `
             <tr data-user-id="${p.id}">
-                <td>${p.email || p.id}</td> <!-- (Email no está en perfiles, usamos ID como fallback) -->
+                <td>${p.email || 'Email no encontrado'}</td>
                 <td>
                     <select class="input-group" data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
                         ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
@@ -844,27 +829,19 @@ async function handleUserDelete(event) {
     
     console.log(`Borrando usuario ${userId}...`);
     
-    // Para borrar un usuario, debemos llamar a una Edge Function
-    // que use la "service_role" key.
-    // Crearemos una simulación por ahora, ya que esto requiere
-    // una configuración de backend (Edge Function).
-    
-    alert('Simulación: Borrar usuario no está implementado.\nSe necesita una Edge Function con permisos de administrador.');
-    
-    /*
-    // --- CÓDIGO REAL (requiere Edge Function 'delete-user') ---
-    const { error } = await db.functions.invoke('delete-user', {
-        body: { userId: userId }
+    // Llamar a la función RPC 'delete_user_and_profile'
+    // (Asegúrate de haber creado la función en el SQL Editor y dado permisos)
+    const { data, error } = await db.rpc('delete_user_and_profile', {
+        user_id_to_delete: userId
     });
     
     if (error) {
         console.error('Error al borrar usuario:', error);
-        alert('Error al borrar: ' + error.message);
+        alert('Error al borrar: ' + error.message + '\n\n(Asegúrate de que la función RPC `delete_user_and_profile` exista y tenga permisos de `SECURITY DEFINER` y que el rol `postgres` tenga permiso de DELETE en `auth.users`.)');
     } else {
-        alert('¡Usuario borrado exitosamente!');
+        alert(data); // Debería decir "Usuario ... borrado exitosamente"
         row.remove(); // Quitarlo de la tabla
     }
-    */
 }
 
 
