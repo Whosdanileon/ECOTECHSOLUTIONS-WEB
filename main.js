@@ -1,6 +1,6 @@
 /* =============================================
  * ECOTECHSOLUTIONS - MAIN JAVASCRIPT FILE
- * Versión 1.5.4 (Revisión, Menú Hamburguesa y Corrección de Duplicados)
+ * Versión 1.5.3 (Lógica de Menú Hamburguesa)
  * ============================================= */
 
 /* ===== 1. CONFIGURACIÓN Y CLIENTE SUPABASE ===== */
@@ -9,30 +9,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log('Cliente de Supabase conectado.');
-
-
-/* ===== 1.5 LÓGICA DE NAVEGACIÓN (MENÚ) ===== */
-
-/**
- * Configura el menú hamburguesa para dispositivos móviles.
- * Asume que existe un botón #menu-toggle y un nav #main-nav.
- */
-function setupMenuHamburguesa() {
-    const menuToggle = document.getElementById('menu-toggle');
-    const mainNav = document.getElementById('main-nav');
-
-    if (menuToggle && mainNav) {
-        menuToggle.addEventListener('click', () => {
-            mainNav.classList.toggle('active');
-            
-            // Opcional: para accesibilidad (ARIA)
-            const isExpanded = mainNav.classList.contains('active');
-            menuToggle.setAttribute('aria-expanded', isExpanded);
-        });
-    } else {
-        console.log('No se encontraron los elementos #menu-toggle o #main-nav para el menú hamburguesa.');
-    }
-}
 
 
 /* ===== 2. LÓGICA DE PRODUCTOS (TIENDA E INICIO) ===== */
@@ -180,7 +156,7 @@ async function actualizarPerfil(e, user) {
             nombre_completo: nombre, 
             telefono: telefono, 
             direccion: direccion,
-            email: user.email // Asegurarse de que el email esté sincronizado si se muestra
+            email: user.email
         })
         .eq('id', user.id);
         
@@ -208,10 +184,11 @@ function guardarCarrito(carrito) {
 
 function actualizarContadorCarrito(carrito) {
     const contadorEl = document.getElementById('carrito-contador');
-    
-    // Simplificado: reduce en un array vacío con un valor inicial (0) devuelve 0.
-    const totalItems = Object.values(carrito).reduce((sum, current) => sum + current, 0);
-    
+    let totalItems = 0;
+    const cantidades = Object.values(carrito);
+    if (cantidades.length > 0) {
+        totalItems = cantidades.reduce((sum, current) => sum + current, 0);
+    }
     if (contadorEl) {
         if (totalItems > 0) {
             contadorEl.textContent = totalItems;
@@ -225,22 +202,14 @@ function actualizarContadorCarrito(carrito) {
 function manejarAnadirAlCarrito() {
     const layoutTienda = document.querySelector('.shop-layout');
     const inputCantidad = document.getElementById('cantidad');
-    if (!layoutTienda || !inputCantidad) {
-        return alert("Error: No se encontraron los elementos de la tienda.");
-    }
-    
     const id = layoutTienda.dataset.productId;
     const stockMaximo = parseInt(layoutTienda.dataset.productStock);
     const cantidad = parseInt(inputCantidad.value);
-    
     if (!id) return alert("Error: No se pudo identificar el producto.");
     if (isNaN(cantidad) || cantidad <= 0) return alert("Por favor, introduce una cantidad válida.");
     if (cantidad > stockMaximo) return alert(`Lo sentimos, solo quedan ${stockMaximo} unidades disponibles.`);
-    
     const carrito = leerCarrito();
-    // NOTA: Esta lógica (carrito[id] = cantidad) solo permite UN tipo de producto en el carrito a la vez.
-    // Si se añade otro producto, reemplazará al anterior.
-    carrito[id] = cantidad; 
+    carrito[id] = cantidad;
     guardarCarrito(carrito);
     alert(`¡${cantidad} paquete(s) añadidos al carrito!`);
 }
@@ -251,15 +220,7 @@ function manejarAnadirAlCarrito() {
 async function cargarResumenCheckout() {
     console.log("Cargando resumen de checkout...");
     const carrito = leerCarrito();
-
-    // --- NOTA DE REVISIÓN ---
-    // La lógica actual del carrito solo permite UN tipo de producto a la vez.
-    // `Object.entries(carrito)[0]` toma solo el *primer* producto del carrito.
-    // Si se necesita un carrito con múltiples productos (ej: 2x Producto A, 3x Producto B),
-    // se debe rediseñar la función `manejarAnadirAlCarrito` y esta función.
-    // --- FIN DE NOTA ---
     const [productoID, cantidad] = Object.entries(carrito)[0] || [];
-    
     if (!productoID) {
         document.getElementById('checkout-items').innerHTML = "<p>Tu carrito está vacío.</p>";
         return;
@@ -333,7 +294,7 @@ async function manejarConfirmarCompra(e) {
     if (stockError) { alert("Error al verificar el stock: " + stockError.message); return; }
 
     const nuevoStock = producto.stock_disponible - cantidad;
-    if (nuevoStock < 0) { alert("Error: Stock insuficiente. Alguien compró el producto mientras estabas en checkout."); return; }
+    if (nuevoStock < 0) { alert("Error: Stock insuficiente. Alguien compró el producto."); return; }
     
     const total = producto.precio * cantidad;
     const itemsPedido = [{
@@ -385,7 +346,6 @@ async function manejarConfirmarCompra(e) {
 /* ===== 6. LÓGICA DEL PANEL DE PERSONAL (ROLES Y MÁQUINAS) ===== */
 
 function renderAdminBar(adminBar, userRole) {
-    if (!adminBar) return;
     let adminHTML = '';
     
     if (userRole === 'Lider' || userRole === 'Sistemas') {
@@ -418,7 +378,6 @@ async function getMaquinas() {
 }
 
 async function loadAndRenderMaquinas(container, userRole) {
-    if (!container) return;
     container.innerHTML = '<p>Cargando máquinas...</p>';
     try {
         const maquinas = await getMaquinas();
@@ -632,7 +591,6 @@ async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
 
 
 function setupEventListeners(container, userRole) {
-    if (!container) return;
     console.log('👂 Configurando event listeners del panel...');
     const canControl = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
     if (!canControl) return;
@@ -667,7 +625,6 @@ function setupEventListeners(container, userRole) {
 }
 
 function subscribeToChanges(container, userRole, userArea) {
-    if (!container) return;
     console.log('📡 Suscribiéndose a cambios en tiempo real para "maquinas"...');
     const channel = db.channel('maquinas-changes')
         .on('postgres_changes', 
@@ -700,20 +657,13 @@ function subscribeToChanges(container, userRole, userArea) {
                         
                         actualizarBotonesParo(Paro === true);
 
-                        const llenadoRadio = document.getElementById('llenado-1');
-                        const vaciadoRadio = document.getElementById('vaciado-1');
-                        const fillOffRadio = document.getElementById('fill-off-1');
-                        const arribaRadio = document.getElementById('arriba-1');
-                        const abajoRadio = document.getElementById('abajo-1');
-                        const trayOffRadio = document.getElementById('tray-off-1');
+                        if (online_llenado) document.getElementById('llenado-1').checked = true;
+                        else if (online_vaciado) document.getElementById('vaciado-1').checked = true;
+                        else document.getElementById('fill-off-1').checked = true;
 
-                        if (online_llenado && llenadoRadio) llenadoRadio.checked = true;
-                        else if (online_vaciado && vaciadoRadio) vaciadoRadio.checked = true;
-                        else if (fillOffRadio) fillOffRadio.checked = true;
-
-                        if (online_arriba && arribaRadio) arribaRadio.checked = true;
-                        else if (online_abajo && abajoRadio) abajoRadio.checked = true;
-                        else if (trayOffRadio) trayOffRadio.checked = true;
+                        if (online_arriba) document.getElementById('arriba-1').checked = true;
+                        else if (online_abajo) document.getElementById('abajo-1').checked = true;
+                        else document.getElementById('tray-off-1').checked = true;
                     }
                 } 
                 else if (payload.eventType === 'INSERT' && !machineElement && isInArea) {
@@ -740,10 +690,8 @@ async function initializePanel(session) {
     
     if (error || !profile) {
         console.error('Error obteniendo perfil de personal:', error ? error.message : "Perfil no encontrado");
-        if(panelLoginPrompt) {
-            panelLoginPrompt.innerHTML = '<p style="color:red;">Error al cargar tu perfil. Contacta a sistemas.</p>';
-            panelLoginPrompt.style.display = 'block';
-        }
+        panelLoginPrompt.innerHTML = '<p style="color:red;">Error al cargar tu perfil. Contacta a sistemas.</p>';
+        panelLoginPrompt.style.display = 'block';
         return;
     }
 
@@ -754,8 +702,8 @@ async function initializePanel(session) {
     }
 
     console.log(`✓ Perfil de personal obtenido: Rol=${profile.rol}, Área=${profile.area || 'N/A'}`);
-    if (panelLoginPrompt) panelLoginPrompt.style.display = 'none';
-    if (panelContenido) panelContenido.style.display = 'block';
+    panelLoginPrompt.style.display = 'none';
+    panelContenido.style.display = 'block';
     if(headerTitle) headerTitle.textContent = "Panel de Control";
 
     const { rol, area } = profile;
@@ -783,8 +731,7 @@ function actualizarUI(session) {
                 <a href="cuenta.html" class="nav-link">Mi Cuenta</a>
                 <button id="header-logout" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
             `;
-            const headerLogoutBtn = document.getElementById('header-logout');
-            if(headerLogoutBtn) headerLogoutBtn.addEventListener('click', manejarLogout);
+            document.getElementById('header-logout').addEventListener('click', manejarLogout);
         }
     } else {
         if (authLinksContainer) {
@@ -804,19 +751,17 @@ function actualizarUI(session) {
             if (userInfo) {
                 userInfo.style.display = 'grid';
                 cargarDatosPerfil(session.user);
+                document.getElementById('form-perfil').addEventListener('submit', (e) => actualizarPerfil(e, session.user));
                 
-                const formPerfil = document.getElementById('form-perfil');
-                if(formPerfil) formPerfil.addEventListener('submit', (e) => actualizarPerfil(e, session.user));
-                
-                // --- Listeners para las pestañas ---
+                // --- ¡CORRECCIÓN AQUÍ! ---
+                // Listeners para las pestañas
                 const btnTabDatos = document.getElementById('btn-tab-datos');
                 const btnTabPedidos = document.getElementById('btn-tab-pedidos');
                 if(btnTabDatos) btnTabDatos.addEventListener('click', () => manejarTabsCuenta('datos', session.user.id));
                 if(btnTabPedidos) btnTabPedidos.addEventListener('click', () => manejarTabsCuenta('pedidos', session.user.id));
                 // --- FIN DE LA CORRECCIÓN ---
                 
-                const btnLogout = document.getElementById('btn-logout');
-                if(btnLogout) btnLogout.addEventListener('click', manejarLogout);
+                document.getElementById('btn-logout').addEventListener('click', manejarLogout);
             }
         } else {
             if (authForms) authForms.style.display = 'block';
@@ -907,7 +852,6 @@ async function initializeAdminPersonalPage(user) {
  */
 async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
     const tableBody = document.getElementById('user-table-body');
-    if (!tableBody) return;
     tableBody.innerHTML = '<tr><td colspan="4">Cargando usuarios...</td></tr>';
 
     // 1. Llamar a la función RPC que creamos en Supabase
@@ -1096,25 +1040,18 @@ async function cargarMisPedidos(userId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- CONFIGURACIÓN INICIAL ---
     const carritoActual = leerCarrito();
     actualizarContadorCarrito(carritoActual);
-    setupMenuHamburguesa(); // Añadida la nueva función del menú
     
-    // --- SESIÓN Y UI GLOBAL ---
     db.auth.getSession().then(({ data: { session } }) => {
         actualizarUI(session); 
     });
     
-    // --- LÓGICA DE PÁGINA ESPECÍFICA ---
     const path = window.location.pathname;
     if (path.includes('tienda.html') || path.includes('index.html') || path.endsWith('/ECOTECHSOLUTIONS-WEB/')) {
         cargarProducto();
     }
 
-    // --- LISTENERS DE FORMULARIOS (GLOBALES) ---
-    // Se usan selectores de ID, por lo que solo se adjuntarán si existen en la página actual.
-    
     // Listeners de auth
     const formLogin = document.getElementById('form-login');
     const formRegistro = document.getElementById('form-registro');
