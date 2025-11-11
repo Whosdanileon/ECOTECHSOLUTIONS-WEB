@@ -1,11 +1,11 @@
 /* =============================================
  * ECOTECHSOLUTIONS - MAIN JAVASCRIPT FILE
- * Versión 1.5.2 (Corrección de Tabs de Cuenta y Pedidos)
+ * Versión 1.5.1 (Corrección de Pedidos y Perfiles)
  * ============================================= */
 
 /* ===== 1. CONFIGURACIÓN Y CLIENTE SUPABASE ===== */
-const SUPABASE_URL = 'TU_SUPABASE_URL'; // <-- REEMPLAZA ESTO
-const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY'; // <-- REEMPLAZA ESTO
+const SUPABASE_URL = 'https://dtdtqedzfuxfnnipdorg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log('Cliente de Supabase conectado.');
