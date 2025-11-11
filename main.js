@@ -1,10 +1,9 @@
 /* =============================================
  * ECOTECHSOLUTIONS - MAIN JAVASCRIPT FILE
- * Versión 1.4.2 (Corrección de Estilos de Tabla)
+ * Versión 1.5.1 (Corrección de Pedidos y Perfiles)
  * ============================================= */
 
 /* ===== 1. CONFIGURACIÓN Y CLIENTE SUPABASE ===== */
-// Reemplaza con tus claves reales de Supabase
 const SUPABASE_URL = 'https://dtdtqedzfuxfnnipdorg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY';
 
@@ -13,6 +12,7 @@ console.log('Cliente de Supabase conectado.');
 
 
 /* ===== 2. LÓGICA DE PRODUCTOS (TIENDA E INICIO) ===== */
+
 async function cargarProducto(productoID = 1) {
     console.log(`Intentando cargar producto ID: ${productoID}...`);
     
@@ -27,12 +27,13 @@ async function cargarProducto(productoID = 1) {
         
     if (error) { 
         console.error('Error al cargar el producto:', error.message); 
-        return null;
+        return null; // Devolver null si falla
     }
     
     if (data && esPaginaDeProducto) {
         const producto = data;
         
+        // --- Actualizar la PÁGINA DE TIENDA (`tienda.html`) ---
         const nombreProductoEl = document.getElementById('producto-nombre');
         const precioProductoEl = document.getElementById('producto-precio');
         const stockProductoEl = document.getElementById('producto-stock');
@@ -45,13 +46,14 @@ async function cargarProducto(productoID = 1) {
             layoutTienda.dataset.productStock = producto.stock_disponible;
         }
         
+        // --- Actualizar la PÁGINA DE INICIO (`index.html`) ---
         const nombreIndexEl = document.getElementById('index-producto-nombre');
         const precioIndexEl = document.getElementById('index-producto-precio');
         if(nombreIndexEl) nombreIndexEl.textContent = producto.nombre;
         if(precioIndexEl) precioIndexEl.textContent = `$${producto.precio.toLocaleString('es-MX')}`;
     }
     
-    return data;
+    return data; // Devolver los datos del producto
 }
 
 
@@ -71,12 +73,13 @@ async function manejarRegistro(e) {
     }
     console.log('Usuario registrado en Auth:', authData.user);
 
+    // Insertar ID, rol y AHORA TAMBIÉN email
     const { error: profileError } = await db
         .from('perfiles')
         .insert({ 
             id: authData.user.id, 
             rol: 'cliente',
-            email: authData.user.email
+            email: authData.user.email // <--- CAMBIO IMPORTANTE
         });
         
     if (profileError) {
@@ -158,7 +161,7 @@ async function actualizarPerfil(e, user) {
             nombre_completo: nombre, 
             telefono: telefono, 
             direccion: direccion,
-            email: user.email
+            email: user.email // Actualizar email también
         })
         .eq('id', user.id);
         
@@ -217,7 +220,7 @@ function manejarAnadirAlCarrito() {
 }
 
 
-/* ===== 5. LÓGICA DE CHECKOUT (COMPRA) ===== */
+/* ===== 5. LÓGICA DE CHECKOUT (COMPRA) (ACTUALIZADA) ===== */
 
 async function cargarResumenCheckout() {
     console.log("Cargando resumen de checkout...");
@@ -306,6 +309,7 @@ async function manejarConfirmarCompra(e) {
         precio_unitario: producto.precio
     }];
 
+    // 1. Crear el pedido
     const { error: pedidoError } = await db
         .from('pedidos')
         .insert({
@@ -318,12 +322,13 @@ async function manejarConfirmarCompra(e) {
 
     if (pedidoError) {
         console.error("Error al guardar el pedido:", pedidoError);
-        alert("Error al guardar tu pedido: " + pedidoError.message);
+        alert("Error al guardar tu pedido: " + pedidoError.message + "\n\n(Asegúrate de que la tabla 'pedidos' y su RLS estén creadas correctamente.)");
         return;
     }
     
     console.log("¡Pedido guardado en la base de datos!");
 
+    // 2. Actualizar el stock (solo si el pedido se creó)
     const { error: updateError } = await db
         .from('productos')
         .update({ stock_disponible: nuevoStock })
@@ -335,6 +340,7 @@ async function manejarConfirmarCompra(e) {
         return; 
     }
 
+    // 3. Éxito
     console.log("¡Compra exitosa! Stock actualizado.");
     guardarCarrito({});
     alert("¡Gracias por tu compra! Tu pedido ha sido procesado.");
@@ -751,6 +757,13 @@ function actualizarUI(session) {
                 userInfo.style.display = 'grid';
                 cargarDatosPerfil(session.user);
                 document.getElementById('form-perfil').addEventListener('submit', (e) => actualizarPerfil(e, session.user));
+                
+                // Listeners para las pestañas
+                const btnTabDatos = document.getElementById('btn-tab-datos');
+                const btnTabPedidos = document.getElementById('btn-tab-pedidos');
+                if(btnTabDatos) btnTabDatos.addEventListener('click', () => manejarTabsCuenta('datos'));
+                if(btnTabPedidos) btnTabPedidos.addEventListener('click', () => manejarTabsCuenta('pedidos', session.user.id));
+                
                 document.getElementById('btn-logout').addEventListener('click', manejarLogout);
             }
         } else {
@@ -786,14 +799,11 @@ function actualizarUI(session) {
         }
     }
     
-    // --- ¡NUEVO! Lógica para 'admin-personal.html' ---
     else if (path.includes('admin-personal.html')) {
         const adminContainer = document.getElementById('admin-personal-container');
         if (session) {
-            // El usuario está logueado, ahora verificamos su rol
             initializeAdminPersonalPage(session.user);
         } else {
-            // No hay sesión, redirigir
             alert('Acceso denegado. Debes iniciar sesión.');
             window.location.href = 'panel.html';
         }
@@ -837,13 +847,13 @@ async function initializeAdminPersonalPage(user) {
     if (adminBar) renderAdminBar(adminBar, adminRole);
     
     // Cargar la tabla de usuarios (pasando el ID del admin)
-    await loadAllUsersAndProfiles(adminRole, user.id); // <--- ID del admin pasado aquí
+    await loadAllUsersAndProfiles(adminRole, user.id); 
 }
 
 /**
  * Carga todos los perfiles y usuarios (Función CORREGIDA)
  */
-async function loadAllUsersAndProfiles(adminRole, currentAdminId) { // <--- Recibe el ID del admin
+async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
     const tableBody = document.getElementById('user-table-body');
     tableBody.innerHTML = '<tr><td colspan="4">Cargando usuarios...</td></tr>';
 
@@ -863,25 +873,22 @@ async function loadAllUsersAndProfiles(adminRole, currentAdminId) { // <--- Reci
 
     tableBody.innerHTML = perfiles.map(p => {
         const esSistemas = p.rol === 'Sistemas';
-        // --- CORRECCIÓN AQUÍ ---
-        // Usamos el ID del admin que pasamos a la función
         const esMiMismoUsuario = p.id === currentAdminId; 
         const noPuedeEditar = (adminRole === 'Lider' && esSistemas);
         
         // --- CORRECCIÓN DE ESTILOS AQUÍ ---
-        // Envolvemos cada input/select en un <div>
         return `
             <tr data-user-id="${p.id}">
                 <td>${p.email || 'Email no encontrado'}</td>
                 <td>
-                    <div class="input-group" style="margin: 0;">
+                    <div class="input-group" style="margin-bottom: 0;">
                         <select class="input-group" data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
                             ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
                         </select>
                     </div>
                 </td>
                 <td>
-                    <div class="input-group" style="margin: 0;">
+                    <div class="input-group" style="margin-bottom: 0;">
                         <input type="text" class="input-group" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
                     </div>
                 </td>
@@ -963,22 +970,24 @@ function manejarTabsCuenta(tab, userId) {
     const btnPedidos = document.getElementById('btn-tab-pedidos');
 
     if (tab === 'datos') {
-        seccionDatos.style.display = 'block';
-        seccionPedidos.style.display = 'none';
-        btnDatos.classList.add('active');
-        btnPedidos.classList.remove('active');
+        if (seccionDatos) seccionDatos.style.display = 'block';
+        if (seccionPedidos) seccionPedidos.style.display = 'none';
+        if (btnDatos) btnDatos.classList.add('active');
+        if (btnPedidos) btnPedidos.classList.remove('active');
     } 
     else if (tab === 'pedidos') {
-        seccionDatos.style.display = 'none';
-        seccionPedidos.style.display = 'block';
-        btnDatos.classList.remove('active');
-        btnPedidos.classList.add('active');
+        if (seccionDatos) seccionDatos.style.display = 'none';
+        if (seccionPedidos) seccionPedidos.style.display = 'block';
+        if (btnDatos) btnDatos.classList.remove('active');
+        if (btnPedidos) btnPedidos.classList.add('active');
+        // Cargar los pedidos
         cargarMisPedidos(userId);
     }
 }
 
 async function cargarMisPedidos(userId) {
     const container = document.getElementById('pedidos-lista-container');
+    if (!container) return; // Salir si no estamos en la página correcta
     container.innerHTML = '<p>Cargando tus pedidos...</p>';
 
     const { data: pedidos, error } = await db
@@ -1000,9 +1009,10 @@ async function cargarMisPedidos(userId) {
 
     container.innerHTML = pedidos.map(pedido => {
         const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX');
-        const items = pedido.items.map(item => 
-            `<p>${item.nombre} (x${item.cantidad})</p>`
-        ).join('');
+        // Asegurarse de que 'items' exista y sea un array
+        const itemsHtml = (pedido.items && Array.isArray(pedido.items)) 
+            ? pedido.items.map(item => `<p>${item.nombre} (x${item.cantidad})</p>`).join('')
+            : '<p>Error en items</p>';
         
         return `
             <div class="pedido-card">
@@ -1016,7 +1026,7 @@ async function cargarMisPedidos(userId) {
                 </div>
                 <div class="order-info">
                     <span>Items:</span>
-                    <span class="info-value">${items}</span>
+                    <div class="info-value">${itemsHtml}</div>
                 </div>
                 <div class="order-info">
                     <span>Total:</span>
