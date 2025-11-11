@@ -1,11 +1,11 @@
 /* =============================================
  * ECOTECHSOLUTIONS - MAIN JAVASCRIPT FILE
- * Versión 1.5.1 (Corrección de Pedidos y Perfiles)
+ * Versión 1.5.2 (Corrección de Tabs de Cuenta y Pedidos)
  * ============================================= */
 
 /* ===== 1. CONFIGURACIÓN Y CLIENTE SUPABASE ===== */
-const SUPABASE_URL = 'https://dtdtqedzfuxfnnipdorg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY';
+const SUPABASE_URL = 'TU_SUPABASE_URL'; // <-- REEMPLAZA ESTO
+const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY'; // <-- REEMPLAZA ESTO
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log('Cliente de Supabase conectado.');
@@ -27,13 +27,11 @@ async function cargarProducto(productoID = 1) {
         
     if (error) { 
         console.error('Error al cargar el producto:', error.message); 
-        return null; // Devolver null si falla
+        return null;
     }
     
     if (data && esPaginaDeProducto) {
         const producto = data;
-        
-        // --- Actualizar la PÁGINA DE TIENDA (`tienda.html`) ---
         const nombreProductoEl = document.getElementById('producto-nombre');
         const precioProductoEl = document.getElementById('producto-precio');
         const stockProductoEl = document.getElementById('producto-stock');
@@ -45,15 +43,13 @@ async function cargarProducto(productoID = 1) {
             layoutTienda.dataset.productId = producto.id;
             layoutTienda.dataset.productStock = producto.stock_disponible;
         }
-        
-        // --- Actualizar la PÁGINA DE INICIO (`index.html`) ---
         const nombreIndexEl = document.getElementById('index-producto-nombre');
         const precioIndexEl = document.getElementById('index-producto-precio');
         if(nombreIndexEl) nombreIndexEl.textContent = producto.nombre;
         if(precioIndexEl) precioIndexEl.textContent = `$${producto.precio.toLocaleString('es-MX')}`;
     }
     
-    return data; // Devolver los datos del producto
+    return data;
 }
 
 
@@ -73,13 +69,12 @@ async function manejarRegistro(e) {
     }
     console.log('Usuario registrado en Auth:', authData.user);
 
-    // Insertar ID, rol y AHORA TAMBIÉN email
     const { error: profileError } = await db
         .from('perfiles')
         .insert({ 
             id: authData.user.id, 
             rol: 'cliente',
-            email: authData.user.email // <--- CAMBIO IMPORTANTE
+            email: authData.user.email
         });
         
     if (profileError) {
@@ -161,7 +156,7 @@ async function actualizarPerfil(e, user) {
             nombre_completo: nombre, 
             telefono: telefono, 
             direccion: direccion,
-            email: user.email // Actualizar email también
+            email: user.email
         })
         .eq('id', user.id);
         
@@ -758,11 +753,13 @@ function actualizarUI(session) {
                 cargarDatosPerfil(session.user);
                 document.getElementById('form-perfil').addEventListener('submit', (e) => actualizarPerfil(e, session.user));
                 
+                // --- ¡CORRECCIÓN AQUÍ! ---
                 // Listeners para las pestañas
                 const btnTabDatos = document.getElementById('btn-tab-datos');
                 const btnTabPedidos = document.getElementById('btn-tab-pedidos');
-                if(btnTabDatos) btnTabDatos.addEventListener('click', () => manejarTabsCuenta('datos'));
+                if(btnTabDatos) btnTabDatos.addEventListener('click', () => manejarTabsCuenta('datos', session.user.id));
                 if(btnTabPedidos) btnTabPedidos.addEventListener('click', () => manejarTabsCuenta('pedidos', session.user.id));
+                // --- FIN DE LA CORRECCIÓN ---
                 
                 document.getElementById('btn-logout').addEventListener('click', manejarLogout);
             }
@@ -961,9 +958,10 @@ async function handleUserDelete(event) {
 }
 
 
-/* ===== 9. LÓGICA DE "MIS PEDIDOS" (CLIENTE) ===== */
+/* ===== 9. LÓGICA DE "MIS PEDIDOS" (CLIENTE) (ACTUALIZADA) ===== */
 
 function manejarTabsCuenta(tab, userId) {
+    console.log("Cambiando a la pestaña:", tab); // Log de depuración
     const seccionDatos = document.getElementById('seccion-mis-datos');
     const seccionPedidos = document.getElementById('seccion-mis-pedidos');
     const btnDatos = document.getElementById('btn-tab-datos');
@@ -987,7 +985,7 @@ function manejarTabsCuenta(tab, userId) {
 
 async function cargarMisPedidos(userId) {
     const container = document.getElementById('pedidos-lista-container');
-    if (!container) return; // Salir si no estamos en la página correcta
+    if (!container) return; 
     container.innerHTML = '<p>Cargando tus pedidos...</p>';
 
     const { data: pedidos, error } = await db
@@ -1008,8 +1006,8 @@ async function cargarMisPedidos(userId) {
     }
 
     container.innerHTML = pedidos.map(pedido => {
-        const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX');
-        // Asegurarse de que 'items' exista y sea un array
+        // --- ARREGLO DEL ID DEL PEDIDO ---
+        const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
         const itemsHtml = (pedido.items && Array.isArray(pedido.items)) 
             ? pedido.items.map(item => `<p>${item.nombre} (x${item.cantidad})</p>`).join('')
             : '<p>Error en items</p>';
@@ -1017,12 +1015,12 @@ async function cargarMisPedidos(userId) {
         return `
             <div class="pedido-card">
                 <div class="pedido-header">
-                    <span class="pedido-id">Pedido #${pedido.id}</span>
+                    <span class="pedido-id">Pedido de ${fecha}</span>
                     <span class="badge badge-warning">${pedido.estado}</span>
                 </div>
                 <div class="order-info">
-                    <span>Fecha:</span>
-                    <span class="info-value">${fecha}</span>
+                    <span>Folio:</span>
+                    <span class="info-value">#${pedido.id}</span>
                 </div>
                 <div class="order-info">
                     <span>Items:</span>
