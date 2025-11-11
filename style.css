@@ -1,6 +1,6 @@
 /* ===================================
     ECOTECHSOLUTIONS - STYLE.CSS
-    Versión 4.0.0 - Optimizado 2025
+    Versión 5.0.0 - Menú Hamburguesa
     =================================== */
 
 /* ===== 1. VARIABLES CSS MODERNAS Y RESET ===== */
@@ -306,7 +306,7 @@ select:focus-visible {
     min-height: 80px;
 }
 
-/* ===== 3. NAVEGACIÓN OPTIMIZADA ===== */
+/* ===== 3. NAVEGACIÓN OPTIMIZADA (CON LÓGICA DE HAMBURGUESA) ===== */
 .main-nav { 
     display: flex; 
     justify-content: space-between; 
@@ -317,7 +317,6 @@ select:focus-visible {
     position: sticky; 
     top: 0;
     z-index: var(--z-sticky);
-    /* Mejora de rendimiento en scroll */
     backdrop-filter: blur(8px);
     background-color: rgba(255, 255, 255, 0.95);
 }
@@ -331,6 +330,7 @@ select:focus-visible {
     font-size: 1.3em;
     text-decoration: none;
     transition: transform var(--transition-base);
+    z-index: 10; /* Para estar sobre el menú móvil */
 }
 
 .main-nav .logo:hover {
@@ -349,6 +349,33 @@ select:focus-visible {
 
 .main-nav .logo:hover .company-name {
     color: var(--color-primary);
+}
+
+/* --- Botón de Hamburguesa --- */
+.mobile-nav-toggle {
+    display: none; /* Oculto en escritorio */
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 10; /* Para estar sobre el menú móvil */
+}
+
+.mobile-nav-toggle .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Contenedor de navegación */
+.primary-navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
 }
 
 .center-nav-links {
@@ -416,16 +443,18 @@ select:focus-visible {
     background-color: var(--color-bg);
 }
 
+/* (Tu CSS usa IDs, los mantendré) */
 .auth-links .nav-link[id="open-registro-modal-btn"],
-.auth-links .nav-link[id="open-cliente-login-modal-btn"] {
+.auth-links .nav-link[id="open-cliente-login-modal-btn"],
+.auth-links .btn-primary {
     background-color: var(--color-primary);
     color: white;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius);
 }
-
 .auth-links .nav-link[id="open-registro-modal-btn"]:hover,
-.auth-links .nav-link[id="open-cliente-login-modal-btn"]:hover {
+.auth-links .nav-link[id="open-cliente-login-modal-btn"]:hover,
+.auth-links .btn-primary:hover {
     background-color: var(--color-primary-dark);
     color: white;
     transform: translateY(-1px);
@@ -438,6 +467,8 @@ select:focus-visible {
     border-radius: var(--radius-full);
     transition: all var(--transition-base);
     cursor: pointer;
+    display: flex; /* Añadido para alinear el badge */
+    align-items: center;
 }
 
 .nav-icon:hover {
@@ -451,8 +482,19 @@ select:focus-visible {
     height: 24px;
     display: block;
 }
+/* Badge para el contador del carrito */
+.nav-icon .badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    font-size: 0.7em;
+    padding: 0.25em 0.5em;
+    min-width: 18px;
+    height: 18px;
+    line-height: 1;
+}
 
-/* ===== 4. HERO SECTION CON MEJORAS DE PERFORMANCE ===== */
+/* ===== 4. HERO SECTION ===== */
 .hero-section {
     position: relative;
     display: flex;
@@ -463,7 +505,6 @@ select:focus-visible {
     text-align: center;
     color: white;
     overflow: hidden;
-    /* Mejora de rendimiento para background */
     isolation: isolate;
 }
 
@@ -474,7 +515,6 @@ select:focus-visible {
     height: 100%;
     object-fit: cover; 
     z-index: -2;
-    /* Optimización de imagen */
     content-visibility: auto;
 }
 
@@ -550,7 +590,6 @@ select:focus-visible {
 /* ===== 5. SECCIONES DE PÁGINA ===== */
 .page-section {
     padding: var(--spacing-3xl) 0;
-    /* Mejora de rendimiento */
     contain: layout style;
 }
 
@@ -581,7 +620,9 @@ select:focus-visible {
 }
 
 /* ===== 6. SECCIÓN PRODUCTO ÚNICO OPTIMIZADA ===== */
-.featured-product-layout {
+/* (Usamos tus clases personalizadas .featured-product-layout-new, etc.) */
+.featured-product-layout,
+.featured-product-layout-new {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
     gap: var(--spacing-2xl);
@@ -666,7 +707,6 @@ select:focus-visible {
     height: 300px;
     object-fit: cover;
     transition: transform var(--transition-slow);
-    /* Mejora de rendimiento */
     will-change: transform;
 }
 
@@ -695,6 +735,12 @@ select:focus-visible {
     opacity: 0.8;
     transition: opacity var(--transition-base);
 }
+
+/* CORRECCIÓN: Usar img dentro del placeholder */
+.footer-col-1 .footer-logo-placeholder img {
+    width: 100%;
+}
+
 
 .footer-col-1 .footer-logo-placeholder:hover {
     opacity: 1;
@@ -760,6 +806,7 @@ select:focus-visible {
 }
 
 /* ===== 8. MODALES OPTIMIZADOS ===== */
+/* (Esto estiliza tus formularios de login/registro en cuenta.html) */
 .modal-overlay { 
     position: fixed; 
     inset: 0;
@@ -836,50 +883,6 @@ select:focus-visible {
     margin-top: var(--spacing-sm);
 }
 
-.modal-message { 
-    padding: var(--spacing-md);
-    border-radius: var(--radius); 
-    margin-top: var(--spacing-md);
-    font-size: 0.9em; 
-    display: none;
-    animation: slideDown var(--transition-slow) ease;
-}
-
-.modal-message.error {
-    background-color: #fee2e2;
-    border: 1px solid #fca5a5;
-    color: #991b1b;
-    display: block;
-}
-
-.modal-message.success {
-    background-color: #d1fae5;
-    border: 1px solid #6ee7b7;
-    color: #065f46;
-    display: block;
-}
-
-.secondary-card { 
-    background-color: transparent; 
-    box-shadow: none; 
-    color: var(--color-text-light); 
-    padding: var(--spacing-md);
-    margin-top: var(--spacing-md);
-    font-size: 0.9em;
-}
-
-.secondary-card a { 
-    color: var(--color-primary); 
-    font-weight: 600; 
-    text-decoration: none;
-    transition: color var(--transition-base);
-}
-
-.secondary-card a:hover {
-    color: var(--color-primary-dark);
-    text-decoration: underline;
-}
-
 /* ===== 9. PÁGINAS DE CUENTA OPTIMIZADAS ===== */
 .account-container {
     display: grid;
@@ -898,7 +901,7 @@ select:focus-visible {
     border: 1px solid var(--color-border);
     height: fit-content;
     position: sticky;
-    top: 100px;
+    top: 100px; /* (Altura del header + espacio) */
 }
 
 .account-sidebar nav {
@@ -997,7 +1000,7 @@ select:focus-visible {
 
 .orders-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+    grid-template-columns: 1fr; /* 1 pedido por fila */
     gap: var(--spacing-lg);
 }
 
@@ -1172,6 +1175,14 @@ button.loading {
     opacity: 0.7;
     cursor: not-allowed;
 }
+/* Spinner para botones que no son blancos */
+.btn-primary .spinner {
+     border-top-color: #fff;
+}
+.btn-secondary .spinner {
+     border-top-color: #fff;
+}
+
 
 /* ===== 12. PANEL DE ADMINISTRACIÓN ===== */
 .admin-bar.card { 
@@ -1183,15 +1194,21 @@ button.loading {
     flex-wrap: wrap; 
 }
 
-/* === CAMBIO 1: Se ha comentado 'width: 100%' para arreglar el layout del panel === */
 .admin-bar h4 { 
     margin: 0; 
     color: var(--color-text); 
     font-size: 1em;
-    /* width: 100%; */
+    width: 100%;
     margin-bottom: var(--spacing-sm);
     font-family: var(--font-sans);
 }
+@media (min-width: 768px) {
+    .admin-bar h4 {
+        width: auto;
+        margin-bottom: 0;
+    }
+}
+
 
 #maquinas-container { 
     display: grid; 
@@ -1287,6 +1304,16 @@ button.loading {
     font-size: 0.85em;
     padding: 0.4rem 0.8rem;
 }
+/* Estilo para que los inputs/selects en la tabla se vean bien */
+.user-table .input-group {
+    margin-bottom: 0;
+}
+.user-table .input-group input,
+.user-table .input-group select {
+    padding: 0.5rem 0.75rem;
+    font-size: 1em;
+}
+
 
 /* ===== 13. TIENDA Y CHECKOUT ===== */
 .shop-layout { 
@@ -1425,6 +1452,12 @@ button.loading {
     background-color: var(--color-primary);
     color: white;
     font-weight: bold;
+}
+/* Estilo para los inputs deshabilitados (Paro de Emergencia) */
+.switch-3-pos input[type="radio"]:disabled + label {
+    background-color: var(--color-bg);
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* ===== 15. FORTALEZA DE CONTRASEÑA ===== */
@@ -1795,7 +1828,7 @@ input.error {
     100% { opacity: 1; transform: translateY(0) rotate(0deg); }
 }
 
-/* ===== 23. RESPONSIVIDAD MEJORADA ===== */
+/* ===== 23. RESPONSIVIDAD MEJORADA (LÓGICA DE HAMBURGUESA) ===== */
 @media (max-width: 1024px) {
     :root {
         --spacing-3xl: 3rem;
@@ -1805,9 +1838,82 @@ input.error {
         grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
     }
     
-    .center-nav-links {
-        display: none;
+    /* --- INICIO LÓGICA DE HAMBURGUESA --- */
+    
+    /* 1. Ocultar enlaces de escritorio */
+    /* (Tu CSS ya lo hacía con .center-nav-links) */
+    /* .center-nav-links {
+        display: none; 
+    } */
+
+    /* 2. Mostrar el botón de hamburguesa */
+    .mobile-nav-toggle {
+        display: block;
     }
+    .mobile-nav-toggle svg {
+        width: 30px;
+        height: 30px;
+    }
+
+    /* 3. Estilo del contenedor del menú */
+    .primary-navigation {
+        position: fixed;
+        inset: 0 0 0 30%; /* Lado derecho de la pantalla */
+        
+        flex-direction: column;
+        align-items: flex-start; /* Alinear items a la izquierda */
+        padding: min(20vh, 10rem) var(--spacing-xl);
+        gap: var(--spacing-2xl);
+        
+        background-color: hsla(0, 0%, 100%, 0.95);
+        backdrop-filter: blur(8px);
+        
+        /* Oculto por defecto */
+        transform: translateX(100%);
+        transition: transform var(--transition-base);
+    }
+
+    /* 4. Estilo de los enlaces dentro del menú móvil */
+    .primary-navigation .center-nav-links {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xl);
+    }
+    .primary-navigation .center-nav-links .nav-link {
+        font-size: 1.2em;
+    }
+    
+    .primary-navigation .right-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xl);
+        border-top: 1px solid var(--color-border);
+        width: 100%;
+        padding-top: var(--spacing-xl);
+    }
+    .primary-navigation .auth-links {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+     .primary-navigation .auth-links .btn {
+         text-align: center;
+         justify-content: center;
+     }
+
+    /* 5. Clase [data-visible="true"] que añade JS */
+    .primary-navigation[data-visible="true"] {
+        transform: translateX(0%);
+    }
+
+    /* 6. Cambiar icono de hamburguesa a "X" */
+    .mobile-nav-toggle[aria-expanded="true"] svg {
+         /* (No reemplazaremos el SVG, solo para mantenerlo simple) */
+         /* (En un proyecto real, cambiarías el SVG a una X) */
+    }
+    /* --- FIN LÓGICA DE HAMBURGUESA --- */
+
     
     .main-nav {
         justify-content: space-between;
@@ -1858,23 +1964,17 @@ input.error {
     .account-content {
         padding: var(--spacing-lg);
     }
-    
-    /* === CAMBIO 2: Se ha comentado el bloque .admin-bar para arreglar el panel === */
-    /*
+
     .admin-bar {
-        flex-direction: column;
-        align-items: flex-start;
+       flex-direction: column;
+       align-items: flex-start;
     }
-    */
     
-    /* === CAMBIO 3: Se ha comentado el bloque #maquinas-container para arreglar el panel === */
-    /*
     #maquinas-container {
         grid-template-columns: 1fr;
     }
-    */
     
-    .featured-product-layout {
+    .featured-product-layout-new {
         grid-template-columns: 1fr;
         gap: var(--spacing-xl);
     }
@@ -1940,6 +2040,10 @@ input.error {
     :root {
         --spacing-xl: 1.5rem;
         --spacing-2xl: 1.75rem;
+    }
+    /* Mover el menú móvil para que ocupe más pantalla */
+    .primary-navigation {
+        inset: 0 0 0 20%; /* Ocupa 80% */
     }
 }
 
@@ -3041,19 +3145,14 @@ input.error {
 
 /* Page Section - Reducir padding */
 .page-section {
-    padding: 3rem 0; /* Antes: 5rem */
+    padding: 3rem 1rem; /* Antes: 5rem 0 */
+    margin-bottom: 2rem; /* Antes: 4rem 0 */
 }
-
-/* Títulos h2 - Reducir margen */
-h2 {
-    margin-bottom: 1.75rem; /* Antes: 2.5rem */
+.hero-section {
+    padding: 3rem 1rem; /* Reduce altura total */
 }
-
-/* Container padding */
-.container {
-    max-width: 1100px;
-    margin-inline: auto;
-    padding-inline: var(--spacing-lg);
+#nosotros, #producto, #nuestras-granja {
+    margin-bottom: 1.5rem;
 }
 
 /* ===== LAYOUT PRODUCTO - MÁS COMPACTO ===== */
