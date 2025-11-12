@@ -1591,3 +1591,34 @@ main {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-light);
 }
+
+/* Ajuste preciso para notificaciones visibles SIEMPRE encima de la navbar */
+.notification-container {
+    position: fixed;
+    top: 94px !important; /* Ajusta según el alto real de tu navbar */
+    right: 18px;
+    left: auto;
+    z-index: var(--z-notification);
+    pointer-events: none;
+    max-width: 400px;
+    width: 100%;
+    transition: top 0.3s;
+}
+
+@media (max-width: 900px) {
+    .notification-container {
+        top: 102px !important; /* nav más alta por tablet/mobile */
+        right: 8px;
+        left: 8px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .notification-container {
+        top: 98px !important;   /* navbar móvil más margen */
+        right: 3vw;
+        left: 3vw;
+        max-width: 96vw;
+    }
+}
