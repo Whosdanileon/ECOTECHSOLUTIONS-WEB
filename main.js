@@ -1,103 +1,407 @@
-/* =============================================
- * ECOTECHSOLUTIONS - MAIN JAVASCRIPT FILE
- * Versión 1.5.3 (Lógica de Menú Hamburguesa)
- * ============================================= */
+/* =====================================================
+ * ECOTECHSOLUTIONS - MAIN.JS MEJORADO
+ * Versión 2.0.0 (Refactorizado, Sincronizado y Funcional)
+ * ===================================================== */
 
-/* ===== 1. CONFIGURACIÓN Y CLIENTE SUPABASE ===== */
-const SUPABASE_URL = 'https://dtdtqedzfuxfnnipdorg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY';
-
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-console.log('Cliente de Supabase conectado.');
-
-
-/* ===== 2. LÓGICA DE PRODUCTOS (TIENDA E INICIO) ===== */
-
-async function cargarProducto(productoID = 1) {
-    console.log(`Intentando cargar producto ID: ${productoID}...`);
+/* ========== CONFIGURACIÓN CENTRALIZADA ========== */
+const CONFIG = {
+    SUPABASE_URL: 'https://dtdtqedzfuxfnnipdorg.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY',
     
-    const path = window.location.pathname;
-    const esPaginaDeProducto = path.includes('tienda.html') || path.includes('index.html') || path.endsWith('/ECOTECHSOLUTIONS-WEB/');
-
-    const { data, error } = await db
-        .from('productos')
-        .select('*')
-        .eq('id', productoID) 
-        .single();
-        
-    if (error) { 
-        console.error('Error al cargar el producto:', error.message); 
-        return null;
+    // Storage
+    CART_KEY: 'ecotech_cart',
+    USER_CACHE_KEY: 'ecotech_user_cache',
+    
+    // Timeouts
+    SESSION_TIMEOUT: 3600000, // 1 hora
+    LOADING_TIMEOUT: 5000,
+    
+    // Roles
+    ROLES: {
+        CLIENTE: 'Cliente',
+        OPERADOR: 'Operador',
+        SUPERVISOR: 'Supervisor',
+        MECANICO: 'Mecanico',
+        LIDER: 'Lider',
+        SISTEMAS: 'Sistemas'
+    },
+    
+    // Estados
+    MACHINE_STATES: {
+        EN_CICLO: 'En Ciclo',
+        DETENIDA: 'Detenida',
+        PARO_EMERGENCIA: 'Paro de Emergencia'
     }
-    
-    if (data && esPaginaDeProducto) {
-        const producto = data;
-        const nombreProductoEl = document.getElementById('producto-nombre');
-        const precioProductoEl = document.getElementById('producto-precio');
-        const stockProductoEl = document.getElementById('producto-stock');
-        const layoutTienda = document.querySelector('.shop-layout'); 
-        if (nombreProductoEl) nombreProductoEl.textContent = producto.nombre;
-        if (precioProductoEl) precioProductoEl.textContent = `$${producto.precio.toLocaleString('es-MX')} MXN`;
-        if (stockProductoEl) stockProductoEl.textContent = `${producto.stock_disponible}`;
-        if (layoutTienda) {
-            layoutTienda.dataset.productId = producto.id;
-            layoutTienda.dataset.productStock = producto.stock_disponible;
+};
+
+const MESSAGES = {
+    SUCCESS: {
+        LOGIN: '¡Bienvenido!',
+        REGISTER: '¡Registro exitoso!',
+        PRODUCT_ADDED: '¡Producto añadido al carrito!',
+        PROFILE_UPDATED: '¡Datos guardados con éxito!',
+        ORDER_PLACED: '¡Gracias por tu compra!',
+        USER_UPDATED: '¡Perfil actualizado!'
+    },
+    ERROR: {
+        LOGIN_FAILED: 'Credenciales inválidas',
+        REGISTER_FAILED: 'Error en el registro',
+        STOCK_INSUFFICIENT: 'Stock insuficiente',
+        SESSION_EXPIRED: 'Tu sesión ha expirado',
+        PERMISSION_DENIED: 'No tienes permisos'
+    }
+};
+
+/* Inicializar Supabase */
+const db = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+console.log('✅ Supabase conectado');
+
+/* ========== SISTEMA DE NOTIFICACIONES ========== */
+class NotificationSystem {
+    constructor() {
+        this.container = this.createContainer();
+        this.maxNotifications = 5;
+    }
+
+    createContainer() {
+        const container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        `;
+        document.body.appendChild(container);
+        return container;
+    }
+
+    show(message, type = 'info', duration = 5000) {
+        if (this.container.children.length >= this.maxNotifications) {
+            this.container.firstChild.remove();
         }
-        const nombreIndexEl = document.getElementById('index-producto-nombre');
-        const precioIndexEl = document.getElementById('index-producto-precio');
-        if(nombreIndexEl) nombreIndexEl.textContent = producto.nombre;
-        if(precioIndexEl) precioIndexEl.textContent = `$${producto.precio.toLocaleString('es-MX')}`;
+
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            background-color: ${this.getBackgroundColor(type)};
+            color: ${this.getTextColor(type)};
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease;
+            cursor: pointer;
+            min-width: 300px;
+        `;
+
+        const icon = this.getIcon(type);
+        notification.innerHTML = `
+            <span style="font-size: 20px;">${icon}</span>
+            <span style="flex: 1; font-weight: 500;">${message}</span>
+            <button onclick="this.parentElement.remove()" 
+                    style="background: none; border: none; color: inherit; 
+                           font-size: 18px; cursor: pointer; padding: 0;">×</button>
+        `;
+
+        this.container.appendChild(notification);
+
+        if (duration > 0) {
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        return notification;
     }
-    
+
+    getBackgroundColor(type) {
+        const colors = {
+            success: '#d1fae5',
+            error: '#fee2e2',
+            warning: '#fef3c7',
+            info: '#dbeafe'
+        };
+        return colors[type] || colors.info;
+    }
+
+    getTextColor(type) {
+        const colors = {
+            success: '#065f46',
+            error: '#991b1b',
+            warning: '#92400e',
+            info: '#1e40af'
+        };
+        return colors[type] || colors.info;
+    }
+
+    getIcon(type) {
+        const icons = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        return icons[type] || icons.info;
+    }
+
+    success(msg, dur = 5000) { return this.show(msg, 'success', dur); }
+    error(msg, dur = 5000) { return this.show(msg, 'error', dur); }
+    warning(msg, dur = 5000) { return this.show(msg, 'warning', dur); }
+    info(msg, dur = 5000) { return this.show(msg, 'info', dur); }
+}
+
+const notify = new NotificationSystem();
+
+/* ========== VALIDADOR DE FORMULARIOS ========== */
+class FormValidator {
+    validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    validatePhone(phone) {
+        return /^[0-9]{10}$/.test(phone.replace(/\D/g, ''));
+    }
+
+    validateAddress(address) {
+        return address.trim().length >= 10;
+    }
+
+    validatePassword(password) {
+        return password.length >= 6;
+    }
+
+    showError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.classList.add('input-error');
+        let errorDiv = field.parentNode.querySelector('.field-error-message');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'field-error-message';
+            field.parentNode.insertBefore(errorDiv, field.nextSibling);
+        }
+        errorDiv.textContent = message;
+    }
+
+    clearError(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.classList.remove('input-error');
+        const errorDiv = field.parentNode.querySelector('.field-error-message');
+        if (errorDiv) errorDiv.remove();
+    }
+}
+
+const validator = new FormValidator();
+
+/* ========== GESTOR DE SESIÓN ========== */
+class SessionManager {
+    constructor() {
+        this.currentUser = null;
+        this.currentProfile = null;
+        this.sessionTimeout = null;
+    }
+
+    async getCurrentSession() {
+        const { data: { session } } = await db.auth.getSession();
+        return session;
+    }
+
+    async loadUserProfile(userId) {
+        const { data, error } = await db.from('perfiles').select('*').eq('id', userId).single();
+        if (error) {
+            console.error('Error cargando perfil:', error);
+            return null;
+        }
+        this.currentProfile = data;
+        return data;
+    }
+
+    hasPermission(requiredRole) {
+        if (!this.currentProfile) return false;
+        const hierarchy = { Cliente: 1, Operador: 2, Supervisor: 3, Mecanico: 4, Lider: 5, Sistemas: 6 };
+        return (hierarchy[this.currentProfile.rol] || 0) >= (hierarchy[requiredRole] || 0);
+    }
+
+    canAccessArea(targetArea) {
+        if (!this.currentProfile) return false;
+        if (['Lider', 'Sistemas'].includes(this.currentProfile.rol)) return true;
+        return this.currentProfile.area === targetArea;
+    }
+
+    resetSessionTimeout() {
+        if (this.sessionTimeout) clearTimeout(this.sessionTimeout);
+        this.sessionTimeout = setTimeout(() => {
+            notify.warning('Tu sesión expirará en 1 minuto');
+            setTimeout(() => { manejarLogout(); }, 60000);
+        }, CONFIG.SESSION_TIMEOUT - 60000);
+    }
+
+    clearSession() {
+        if (this.sessionTimeout) clearTimeout(this.sessionTimeout);
+        this.currentUser = null;
+        this.currentProfile = null;
+    }
+}
+
+const sessionManager = new SessionManager();
+
+/* ========== GESTOR DE CARRITO ========== */
+class CartManager {
+    constructor() {
+        this.cart = this.loadCart();
+    }
+
+    loadCart() {
+        const json = localStorage.getItem(CONFIG.CART_KEY);
+        return json ? JSON.parse(json) : {};
+    }
+
+    saveCart() {
+        localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(this.cart));
+        this.updateBadge();
+    }
+
+    addItem(productId, quantity) {
+        if (!productId || quantity <= 0) return false;
+        this.cart[productId] = quantity;
+        this.saveCart();
+        notify.success(MESSAGES.SUCCESS.PRODUCT_ADDED);
+        return true;
+    }
+
+    removeItem(productId) {
+        delete this.cart[productId];
+        this.saveCart();
+    }
+
+    clearCart() {
+        this.cart = {};
+        localStorage.removeItem(CONFIG.CART_KEY);
+        this.updateBadge();
+    }
+
+    getTotalItems() {
+        return Object.values(this.cart).reduce((sum, qty) => sum + qty, 0);
+    }
+
+    updateBadge() {
+        const badge = document.getElementById('carrito-contador');
+        if (!badge) return;
+        const total = this.getTotalItems();
+        badge.textContent = total;
+        badge.style.display = total > 0 ? 'inline-block' : 'none';
+    }
+
+    isEmpty() {
+        return Object.keys(this.cart).length === 0;
+    }
+}
+
+const cartManager = new CartManager();
+
+/* ========== FUNCIONES DE PRODUCTOS ========== */
+async function cargarProducto(productoID = 1) {
+    console.log(`Cargando producto ${productoID}...`);
+    const path = window.location.pathname;
+    const esPaginaTienda = path.includes('tienda.html') || path.includes('index.html');
+
+    const { data, error } = await db.from('productos').select('*').eq('id', productoID).single();
+    if (error) { console.error('Error:', error.message); return null; }
+
+    if (data && esPaginaTienda) {
+        document.getElementById('producto-nombre')?.textContent = data.nombre;
+        document.getElementById('producto-precio')?.textContent = `$${data.precio.toLocaleString('es-MX')} MXN`;
+        document.getElementById('producto-stock')?.textContent = data.stock_disponible;
+        document.getElementById('index-producto-nombre')?.textContent = data.nombre;
+        document.getElementById('index-producto-precio')?.textContent = `$${data.precio.toLocaleString('es-MX')}`;
+        
+        const layout = document.querySelector('.shop-layout');
+        if (layout) {
+            layout.dataset.productId = data.id;
+            layout.dataset.productStock = data.stock_disponible;
+        }
+    }
     return data;
 }
 
-
-/* ===== 3. LÓGICA DE AUTENTICACIÓN Y PERFILES (CLIENTES) ===== */
-
-async function manejarRegistro(e) {
+/* ========== FUNCIONES DE AUTENTICACIÓN ========== */
+async function manejarLogin(e) {
     e.preventDefault();
-    const email = document.getElementById('registro-email').value;
-    const password = document.getElementById('registro-password').value;
-    console.log("Intentando registrar con:", email);
-    
-    const { data: authData, error: authError } = await db.auth.signUp({ email, password });
-    if (authError) {
-        console.error('Error en el registro:', authError.message);
-        alert('Error: ' + authError.message);
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    if (!validator.validateEmail(email)) {
+        notify.error('Email inválido');
         return;
     }
-    console.log('Usuario registrado en Auth:', authData.user);
 
-    const { error: profileError } = await db
-        .from('perfiles')
-        .insert({ 
-            id: authData.user.id, 
-            rol: 'cliente',
-            email: authData.user.email
-        });
-        
-    if (profileError) {
-        console.error('Error creando el perfil:', profileError.message);
-        alert('Error al crear el perfil: ' + profileError.message);
-    } else {
-        console.log('Perfil creado exitosamente.');
-        alert('¡Registro exitoso! Ahora puedes iniciar sesión.');
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    try {
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) { notify.error(MESSAGES.ERROR.LOGIN_FAILED); return; }
+
+        const profile = await sessionManager.loadUserProfile(data.user.id);
+        if (!profile) { notify.error('Perfil no encontrado'); return; }
+
+        sessionManager.currentUser = data.user;
+        sessionManager.resetSessionTimeout();
+        notify.success(MESSAGES.SUCCESS.LOGIN);
+
+        setTimeout(() => {
+            window.location.href = profile.rol === 'Cliente' ? 'cuenta.html' : 'panel.html';
+        }, 500);
+    } catch (error) {
+        notify.error('Error: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Entrar';
     }
 }
 
-async function manejarLogin(e) {
+async function manejarRegistro(e) {
     e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    console.log("Intentando iniciar sesión de CLIENTE con:", email);
-    const { data, error } = await db.auth.signInWithPassword({ email, password });
-    if (error) {
-        console.error('Error en el inicio de sesión de cliente:', error.message);
-        alert('Error: ' + error.message);
-    } else {
-        console.log('Inicio de sesión de cliente exitoso:', data.user);
-        window.location.href = 'cuenta.html';
+    const email = document.getElementById('registro-email').value.trim();
+    const password = document.getElementById('registro-password').value;
+
+    if (!validator.validateEmail(email)) { notify.error('Email inválido'); return; }
+    if (!validator.validatePassword(password)) { notify.error('Contraseña muy corta'); return; }
+
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    try {
+        const { data: authData, error: authError } = await db.auth.signUp({ email, password });
+        if (authError) { notify.error(authError.message); return; }
+
+        const { error: profileError } = await db.from('perfiles').insert({
+            id: authData.user.id,
+            email: authData.user.email,
+            rol: CONFIG.ROLES.CLIENTE
+        });
+
+        if (profileError) { notify.error('Error: ' + profileError.message); return; }
+
+        notify.success(MESSAGES.SUCCESS.REGISTER);
+        e.target.reset();
+        setTimeout(() => document.getElementById('form-login')?.scrollIntoView(), 1000);
+    } catch (error) {
+        notify.error('Error: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Registrarme';
     }
 }
 
@@ -105,493 +409,276 @@ async function manejarLoginPersonal(e) {
     e.preventDefault();
     const email = document.getElementById('personal-email').value;
     const password = document.getElementById('personal-password').value;
-    console.log("Intentando iniciar sesión de PERSONAL con:", email);
+
     const { data, error } = await db.auth.signInWithPassword({ email, password });
-    if (error) {
-        console.error('Error en el inicio de sesión de personal:', error.message);
-        alert('Error: ' + error.message);
-    } else {
-        console.log('Inicio de sesión de personal exitoso:', data.user);
-        window.location.reload(); 
-    }
+    if (error) { notify.error(error.message); return; }
+
+    window.location.reload();
 }
 
 async function manejarLogout() {
     const { error } = await db.auth.signOut();
-    if (error) console.error('Error al cerrar sesión:', error.message);
-    else window.location.href = 'index.html';
+    if (error) { notify.error('Error al cerrar sesión'); return; }
+
+    sessionManager.clearSession();
+    notify.success('Sesión cerrada', 2000);
+    setTimeout(() => { window.location.href = 'index.html'; }, 500);
 }
 
-async function cargarDatosPerfil(user) {
-    console.log("Cargando datos del perfil para el usuario:", user.id);
-    const emailInput = document.getElementById('profile-email');
-    if (emailInput) emailInput.value = user.email;
-    const { data, error } = await db
-        .from('perfiles')
-        .select('nombre_completo, telefono, direccion')
-        .eq('id', user.id)
-        .single();
-    if (error) {
-        console.error('Error cargando el perfil:', error.message);
-    } else if (data) {
-        const nameInput = document.getElementById('profile-name');
-        const phoneInput = document.getElementById('profile-phone');
-        const addressInput = document.getElementById('profile-address');
-        if (nameInput) nameInput.value = data.nombre_completo || '';
-        if (phoneInput) phoneInput.value = data.telefono || '';
-        if (addressInput) addressInput.value = data.direccion || '';
-    }
-}
-
-async function actualizarPerfil(e, user) {
-    e.preventDefault();
-    console.log("Actualizando perfil para el usuario:", user.id);
-    const nombre = document.getElementById('profile-name').value;
-    const telefono = document.getElementById('profile-phone').value;
-    const direccion = document.getElementById('profile-address').value;
-    
-    const { error } = await db
-        .from('perfiles')
-        .update({ 
-            nombre_completo: nombre, 
-            telefono: telefono, 
-            direccion: direccion,
-            email: user.email
-        })
-        .eq('id', user.id);
-        
-    if (error) {
-        console.error('Error actualizando el perfil:', error.message);
-        alert('Error al guardar: ' + error.message);
-    } else {
-        console.log("Perfil actualizado exitosamente.");
-        alert('¡Datos guardados con éxito!');
-    }
-}
-
-
-/* ===== 4. LÓGICA DEL CARRITO (LOCALSTORAGE) ===== */
-
-function leerCarrito() {
-    const carritoJSON = localStorage.getItem('carrito');
-    return carritoJSON ? JSON.parse(carritoJSON) : {};
-}
-
-function guardarCarrito(carrito) {
-    localStorage.setItem('carrito', JSON.stringify(carrito));
-    actualizarContadorCarrito(carrito);
-}
-
-function actualizarContadorCarrito(carrito) {
-    const contadorEl = document.getElementById('carrito-contador');
-    let totalItems = 0;
-    const cantidades = Object.values(carrito);
-    if (cantidades.length > 0) {
-        totalItems = cantidades.reduce((sum, current) => sum + current, 0);
-    }
-    if (contadorEl) {
-        if (totalItems > 0) {
-            contadorEl.textContent = totalItems;
-            contadorEl.style.display = 'inline-block';
-        } else {
-            contadorEl.style.display = 'none';
-        }
-    }
-}
-
+/* ========== FUNCIONES DE CARRITO ========== */
 function manejarAnadirAlCarrito() {
-    const layoutTienda = document.querySelector('.shop-layout');
-    const inputCantidad = document.getElementById('cantidad');
-    const id = layoutTienda.dataset.productId;
-    const stockMaximo = parseInt(layoutTienda.dataset.productStock);
-    const cantidad = parseInt(inputCantidad.value);
-    if (!id) return alert("Error: No se pudo identificar el producto.");
-    if (isNaN(cantidad) || cantidad <= 0) return alert("Por favor, introduce una cantidad válida.");
-    if (cantidad > stockMaximo) return alert(`Lo sentimos, solo quedan ${stockMaximo} unidades disponibles.`);
-    const carrito = leerCarrito();
-    carrito[id] = cantidad;
-    guardarCarrito(carrito);
-    alert(`¡${cantidad} paquete(s) añadidos al carrito!`);
+    const layout = document.querySelector('.shop-layout');
+    const input = document.getElementById('cantidad');
+    if (!layout || !input) return;
+
+    const productId = parseInt(layout.dataset.productId);
+    const stockMax = parseInt(layout.dataset.productStock);
+    const cantidad = parseInt(input.value);
+
+    if (isNaN(cantidad) || cantidad <= 0) { notify.error('Cantidad inválida'); return; }
+    if (cantidad > stockMax) { notify.error(`Solo hay ${stockMax} disponibles`); return; }
+
+    if (cartManager.addItem(productId, cantidad)) {
+        input.value = 1;
+    }
 }
 
-
-/* ===== 5. LÓGICA DE CHECKOUT (COMPRA) (ACTUALIZADA) ===== */
-
+/* ========== FUNCIONES DE CHECKOUT ========== */
 async function cargarResumenCheckout() {
-    console.log("Cargando resumen de checkout...");
-    const carrito = leerCarrito();
-    const [productoID, cantidad] = Object.entries(carrito)[0] || [];
-    if (!productoID) {
-        document.getElementById('checkout-items').innerHTML = "<p>Tu carrito está vacío.</p>";
+    const carrito = cartManager.cart;
+    const [productId, cantidad] = Object.entries(carrito)[0] || [];
+    
+    if (!productId) {
+        document.getElementById('checkout-items').innerHTML = '<p>Carrito vacío</p>';
         return;
     }
-    
-    const producto = await cargarProducto(productoID); 
-    if (!producto) {
-         document.getElementById('checkout-items').innerHTML = "<p>Error al cargar el producto.</p>";
-         return;
-    }
+
+    const producto = await cargarProducto(productId);
+    if (!producto) { document.getElementById('checkout-items').innerHTML = '<p>Error</p>'; return; }
 
     const subtotal = producto.precio * cantidad;
-    const envio = 0; 
-    const total = subtotal + envio;
-    
-    document.getElementById('checkout-items').innerHTML = `
-        <p>
-            <span>${producto.nombre} (x${cantidad})</span>
-            <span>$${subtotal.toLocaleString('es-MX')}</span>
-        </p>
-    `;
+    const total = subtotal;
+
+    document.getElementById('checkout-items').innerHTML = 
+        `<p><span>${producto.nombre} (x${cantidad})</span><span>$${subtotal.toLocaleString('es-MX')}</span></p>`;
     document.getElementById('checkout-subtotal').textContent = `$${subtotal.toLocaleString('es-MX')}`;
-    document.getElementById('checkout-envio').textContent = `$${envio.toLocaleString('es-MX')}`;
     document.getElementById('checkout-total').textContent = `$${total.toLocaleString('es-MX')}`;
 }
 
 async function autocompletarDatosEnvio(user) {
     const { data, error } = await db.from('perfiles').select('nombre_completo, telefono, direccion').eq('id', user.id).single();
-    if (error) {
-        console.error('Error cargando el perfil para autocompletar:', error.message);
-    } else if (data) {
-        const nameInput = document.getElementById('checkout-name');
-        const addressInput = document.getElementById('checkout-address');
-        const phoneInput = document.getElementById('checkout-phone');
-        if (nameInput) nameInput.value = data.nombre_completo || '';
-        if (addressInput) addressInput.value = data.direccion || '';
-        if (phoneInput) phoneInput.value = data.telefono || '';
+    if (!error && data) {
+        document.getElementById('checkout-name').value = data.nombre_completo || '';
+        document.getElementById('checkout-address').value = data.direccion || '';
+        document.getElementById('checkout-phone').value = data.telefono || '';
     }
 }
 
 async function manejarConfirmarCompra(e) {
     e.preventDefault();
-    console.log("Procesando compra...");
-    
-    const carrito = leerCarrito();
+
+    const carrito = cartManager.cart;
     const [productoID, cantidad] = Object.entries(carrito)[0] || [];
     const { data: { user } } = await db.auth.getUser();
 
-    if (!productoID || !user) {
-        alert("Error: Carrito vacío o sesión no encontrada. Por favor, inicia sesión de nuevo.");
-        return;
-    }
-    
+    if (!productoID || !user) { notify.error('Carrito vacío o no autenticado'); return; }
+
     const datosEnvio = {
         nombre: document.getElementById('checkout-name').value,
         direccion: document.getElementById('checkout-address').value,
         telefono: document.getElementById('checkout-phone').value
     };
-    
-    if (!datosEnvio.nombre || !datosEnvio.direccion) {
-        alert("Por favor, completa tu nombre y dirección de envío.");
-        return;
-    }
 
-    const { data: producto, error: stockError } = await db
-        .from('productos')
-        .select('nombre, precio, stock_disponible')
-        .eq('id', productoID)
-        .single();
+    if (!datosEnvio.nombre || !datosEnvio.direccion) { notify.error('Completa nombre y dirección'); return; }
 
-    if (stockError) { alert("Error al verificar el stock: " + stockError.message); return; }
+    const { data: producto, error: stockError } = await db.from('productos').select('nombre, precio, stock_disponible').eq('id', productoID).single();
+    if (stockError) { notify.error('Error: ' + stockError.message); return; }
 
     const nuevoStock = producto.stock_disponible - cantidad;
-    if (nuevoStock < 0) { alert("Error: Stock insuficiente. Alguien compró el producto."); return; }
-    
+    if (nuevoStock < 0) { notify.error('Stock insuficiente'); return; }
+
     const total = producto.precio * cantidad;
-    const itemsPedido = [{
-        id: productoID,
-        nombre: producto.nombre,
-        cantidad: cantidad,
-        precio_unitario: producto.precio
-    }];
+    const itemsPedido = [{ id: productoID, nombre: producto.nombre, cantidad, precio_unitario: producto.precio }];
 
-    // 1. Crear el pedido
-    const { error: pedidoError } = await db
-        .from('pedidos')
-        .insert({
-            user_id: user.id,
-            items: itemsPedido,
-            total: total,
-            datos_envio: datosEnvio,
-            estado: 'Procesando'
-        });
+    const { error: pedidoError } = await db.from('pedidos').insert({
+        user_id: user.id,
+        items: itemsPedido,
+        total: total,
+        datos_envio: datosEnvio,
+        estado: 'Procesando'
+    });
 
-    if (pedidoError) {
-        console.error("Error al guardar el pedido:", pedidoError);
-        alert("Error al guardar tu pedido: " + pedidoError.message + "\n\n(Asegúrate de que la tabla 'pedidos' y su RLS estén creadas correctamente.)");
-        return;
-    }
-    
-    console.log("¡Pedido guardado en la base de datos!");
+    if (pedidoError) { notify.error('Error: ' + pedidoError.message); return; }
 
-    // 2. Actualizar el stock (solo si el pedido se creó)
-    const { error: updateError } = await db
-        .from('productos')
-        .update({ stock_disponible: nuevoStock })
-        .eq('id', productoID);
-        
-    if (updateError) { 
-        console.error("¡Error CRÍTICO! El pedido se creó pero el stock no se actualizó:", updateError);
-        alert("Error al actualizar el inventario. Por favor, contacta a soporte.");
-        return; 
-    }
+    const { error: updateError } = await db.from('productos').update({ stock_disponible: nuevoStock }).eq('id', productoID);
+    if (updateError) { notify.error('Error al actualizar stock'); return; }
 
-    // 3. Éxito
-    console.log("¡Compra exitosa! Stock actualizado.");
-    guardarCarrito({});
-    alert("¡Gracias por tu compra! Tu pedido ha sido procesado.");
-    window.location.href = 'index.html';
+    cartManager.clearCart();
+    notify.success(MESSAGES.SUCCESS.ORDER_PLACED);
+    setTimeout(() => { window.location.href = 'index.html'; }, 1000);
 }
 
+/* ========== FUNCIONES DE PERFIL ========== */
+async function cargarDatosPerfil(user) {
+    document.getElementById('profile-email').value = user.email;
+    const { data, error } = await db.from('perfiles').select('nombre_completo, telefono, direccion').eq('id', user.id).single();
+    if (!error && data) {
+        document.getElementById('profile-name').value = data.nombre_completo || '';
+        document.getElementById('profile-phone').value = data.telefono || '';
+        document.getElementById('profile-address').value = data.direccion || '';
+    }
+}
 
-/* ===== 6. LÓGICA DEL PANEL DE PERSONAL (ROLES Y MÁQUINAS) ===== */
+async function actualizarPerfil(e, user) {
+    e.preventDefault();
+    const { error } = await db.from('perfiles').update({
+        nombre_completo: document.getElementById('profile-name').value,
+        telefono: document.getElementById('profile-phone').value,
+        direccion: document.getElementById('profile-address').value
+    }).eq('id', user.id);
 
+    if (error) { notify.error('Error: ' + error.message); }
+    else { notify.success(MESSAGES.SUCCESS.PROFILE_UPDATED); }
+}
+
+/* ========== FUNCIONES DE PEDIDOS ========== */
+function manejarTabsCuenta(tab, userId) {
+    const datosDiv = document.getElementById('seccion-mis-datos');
+    const pedidosDiv = document.getElementById('seccion-mis-pedidos');
+    const btnDatos = document.getElementById('btn-tab-datos');
+    const btnPedidos = document.getElementById('btn-tab-pedidos');
+
+    if (tab === 'datos') {
+        datosDiv.style.display = 'block';
+        pedidosDiv.style.display = 'none';
+        btnDatos.classList.add('active');
+        btnPedidos.classList.remove('active');
+    } else {
+        datosDiv.style.display = 'none';
+        pedidosDiv.style.display = 'block';
+        btnDatos.classList.remove('active');
+        btnPedidos.classList.add('active');
+        cargarMisPedidos(userId);
+    }
+}
+
+async function cargarMisPedidos(userId) {
+    const container = document.getElementById('pedidos-lista-container');
+    container.innerHTML = '<p>Cargando...</p>';
+
+    const { data: pedidos, error } = await db.from('pedidos').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    if (error) { container.innerHTML = '<p>Error al cargar</p>'; return; }
+    if (pedidos.length === 0) { container.innerHTML = '<p>Sin pedidos</p>'; return; }
+
+    container.innerHTML = pedidos.map(p => {
+        const fecha = new Date(p.created_at).toLocaleDateString('es-MX');
+        const items = (p.items && Array.isArray(p.items)) ? p.items.map(i => `<p>${i.nombre} (x${i.cantidad})</p>`).join('') : '';
+        return `
+            <div class="pedido-card">
+                <div class="pedido-header">
+                    <span class="pedido-id">Pedido de ${fecha}</span>
+                    <span class="badge badge-warning">${p.estado}</span>
+                </div>
+                <div class="order-info"><span>Items:</span><div class="info-value">${items}</div></div>
+                <div class="order-info"><span>Total:</span><span class="info-value total">$${p.total.toLocaleString('es-MX')}</span></div>
+            </div>
+        `;
+    }).join('');
+}
+
+/* ========== FUNCIONES DEL PANEL ========== */
 function renderAdminBar(adminBar, userRole) {
-    let adminHTML = '';
-    
-    if (userRole === 'Lider' || userRole === 'Sistemas') {
-        adminHTML = `
-            <h4>Panel de Administrador</h4>
-            <a href="admin-personal.html" class="btn btn-secondary"><i class="fa-solid fa-users-cog"></i> Administrar Personal</a>
-        `;
+    let html = '';
+    if (['Lider', 'Sistemas'].includes(userRole)) {
+        html = `<h4>Panel Admin</h4><a href="admin-personal.html" class="btn btn-secondary"><i class="fa-solid fa-users-cog"></i> Administrar Personal</a>`;
     }
-    
-    if (userRole === 'Sistemas') {
-        adminHTML += `
-            <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-chart-line"></i> Ver Reportes Globales</a>
-            <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-boxes-stacked"></i> Gestionar Inventario</a>
-            <a href="#" class="btn btn-secondary disabled"><i class="fa-solid fa-file-invoice"></i> Ver Pedidos</a>
-        `;
-    }
-    else if (userRole === 'Mecanico') adminHTML = `<h4>Panel de Mecánico</h4>`;
-    else if (userRole === 'Supervisor') adminHTML = `<h4>Panel de Supervisor</h4>`;
-    else if (userRole === 'Operador') adminHTML = `<h4>Panel de Operador</h4>`;
-
-    if (adminHTML) adminBar.innerHTML = adminHTML;
-    adminBar.style.display = adminHTML ? 'flex' : 'none';
+    adminBar.innerHTML = html;
+    adminBar.style.display = html ? 'flex' : 'none';
 }
 
 async function getMaquinas() {
-    console.log('🚚 Obteniendo lista de máquinas...');
-    const { data, error } = await db.from('maquinas').select('*'); 
+    const { data, error } = await db.from('maquinas').select('*');
     if (error) throw new Error(error.message);
     return data;
 }
 
 async function loadAndRenderMaquinas(container, userRole) {
-    container.innerHTML = '<p>Cargando máquinas...</p>';
+    container.innerHTML = '<p>Cargando...</p>';
     try {
         const maquinas = await getMaquinas();
-        console.log(`✓ ${maquinas.length} máquinas recibidas.`);
-        container.innerHTML = ''; 
+        container.innerHTML = '';
         if (maquinas.length > 0) {
-            maquinas.forEach(maquina => {
-                container.insertAdjacentHTML('beforeend', createMachineHTML(maquina, userRole));
-            });
-            maquinas.forEach(maquina => {
-                if (maquina.id === 1 && maquina.controles) {
-                    actualizarBotonesParo(maquina.controles.Paro === true);
-                }
-            });
+            maquinas.forEach(m => container.insertAdjacentHTML('beforeend', createMachineHTML(m, userRole)));
         } else {
-            container.innerHTML = '<p>No hay máquinas asignadas a tu área o disponibles.</p>';
+            container.innerHTML = '<p>Sin máquinas</p>';
         }
     } catch (error) {
-        console.error('❌ Error al obtener/renderizar máquinas:', error);
-        container.innerHTML = `<p style="color: red;">Error al cargar máquinas: ${error.message}</p>`;
-    }
-}
-
-function actualizarBotonesParo(estaEnParo) {
-    const controlesCiclo = document.getElementById('controles-ciclo-1');
-    const controlesManuales = document.getElementById('controles-manuales-1');
-    const controlesReset = document.getElementById('controles-reset-1');
-
-    if (estaEnParo) {
-        if (controlesCiclo) controlesCiclo.style.display = 'none';
-        if (controlesManuales) controlesManuales.style.display = 'none';
-        if (controlesReset) controlesReset.style.display = 'block';
-    } else {
-        if (controlesCiclo) controlesCiclo.style.display = 'block';
-        if (controlesManuales) controlesManuales.style.display = 'block';
-        if (controlesReset) controlesReset.style.display = 'none';
+        container.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
     }
 }
 
 function createMachineHTML(maquina, userRole) {
-    let controlesHTML = '';
-    const loteInfo = `<p id="lote-${maquina.id}"><strong>Lote Actual:</strong> ${maquina.lote_actual || 'N/A'}</p>`;
-    const canControlThisUser = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
+    const canControl = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
+    const estadoClass = maquina.estado?.toLowerCase() === 'en ciclo' ? 'badge-success' : 'badge-danger';
 
-    if (maquina.id === 1 && maquina.controles) {
+    let controlesHTML = '';
+    if (canControl && maquina.id === 1 && maquina.controles) {
         const { online_llenado, online_vaciado, online_arriba, online_abajo } = maquina.controles;
         const fillState = online_llenado ? 'llenado' : (online_vaciado ? 'vaciado' : 'fill-off');
         const trayState = online_arriba ? 'arriba' : (online_abajo ? 'abajo' : 'tray-off');
 
-        if (canControlThisUser) {
-            controlesHTML = `
-                <div class="controles" id="controles-ciclo-1">
-                    <p><strong>Ciclo de Proceso:</strong></p>
-                    <div class="btn-group">
-                        <button class="btn btn-primary btn-control" data-command="Inicio" data-value="true" data-maquina-id="1">Iniciar Ciclo</button>
-                        <button class="btn btn-danger btn-control" data-command="Paro" data-value="true" data-maquina-id="1">Paro de Emergencia</button>
-                    </div>
+        controlesHTML = `
+            <div class="controles">
+                <p><strong>Ciclo:</strong></p>
+                <button class="btn btn-primary btn-control" data-command="Inicio" data-value="true" data-maquina-id="1">Iniciar</button>
+                <button class="btn btn-danger btn-control" data-command="Paro" data-value="true" data-maquina-id="1">Paro</button>
+            </div>
+            <div class="controles-manuales">
+                <p><strong>Llenado/Vaciado:</strong></p>
+                <div class="switch-3-pos" data-maquina-id="1">
+                    <input type="radio" id="llenado-1" name="switch-fill" ${fillState === 'llenado' ? 'checked' : ''}>
+                    <label for="llenado-1">Llenar</label>
+                    <input type="radio" id="fill-off-1" name="switch-fill" ${fillState === 'fill-off' ? 'checked' : ''}>
+                    <label for="fill-off-1">OFF</label>
+                    <input type="radio" id="vaciado-1" name="switch-fill" ${fillState === 'vaciado' ? 'checked' : ''}>
+                    <label for="vaciado-1">Vaciar</label>
                 </div>
-                <div class="controles" id="controles-reset-1" style="display: none;">
-                    <p><strong>¡Paro de Emergencia Activo!</strong></p>
-                    <div class="btn-group">
-                        <button class="btn btn-success btn-control" data-command="Paro" data-value="false" data-maquina-id="1">Restablecer Paro</button>
-                    </div>
-                </div>
-                <div class="controles-manuales" id="controles-manuales-1">
-                    <div class="controles-detallados">
-                        <p><strong>Control Llenado/Vaciado:</strong></p>
-                        <div class="switch-3-pos" data-maquina-id="1">
-                            <input type="radio" id="llenado-1" name="switch-fill-1" data-command-on="online_llenado" data-command-off="online_vaciado" ${fillState === 'llenado' ? 'checked' : ''}>
-                            <label for="llenado-1">Llenado</label>
-                            <input type="radio" id="fill-off-1" name="switch-fill-1" data-commands-off="online_llenado,online_vaciado" ${fillState === 'fill-off' ? 'checked' : ''}>
-                            <label for="fill-off-1">OFF</label>
-                            <input type="radio" id="vaciado-1" name="switch-fill-1" data-command-on="online_vaciado" data-command-off="online_llenado" ${fillState === 'vaciado' ? 'checked' : ''}>
-                            <label for="vaciado-1">Vaciado</label>
-                        </div>
-                    </div>
-                    <div class="controles-detallados">
-                        <p><strong>Control de Charola:</strong></p>
-                        <div class="switch-3-pos" data-maquina-id="1">
-                            <input type="radio" id="arriba-1" name="switch-tray-1" data-command-on="online_arriba" data-command-off="online_abajo" ${trayState === 'arriba' ? 'checked' : ''}>
-                            <label for="arriba-1">Arriba</label>
-                            <input type="radio" id="tray-off-1" name="switch-tray-1" data-commands-off="online_arriba,online_abajo" ${trayState === 'tray-off' ? 'checked' : ''}>
-                            <label for="tray-off-1">OFF</label>
-                            <input type="radio" id="abajo-1" name="switch-tray-1" data-command-on="online_abajo" data-command-off="online_arriba" ${trayState === 'abajo' ? 'checked' : ''}>
-                            <label for="abajo-1">Abajo</label>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    } 
-    else if (canControlThisUser) {
-        controlesHTML = `<div class="controles"><p>Controles no disponibles para esta máquina.</p></div>`;
+            </div>
+        `;
     }
-    else if (userRole === 'Operador') {
-        controlesHTML = `<div class="controles"><p>Modo de solo lectura.</p></div>`;
-    }
-
-    const estadoClass = maquina.estado?.toLowerCase() === 'en ciclo' ? 'badge-success' : 'badge-danger';
 
     return `
-        <div class="card maquina" id="maquina-${maquina.id}" data-area="${maquina.area}">
-            <h3><i class="fa-solid fa-robot"></i> ${maquina.nombre || 'Máquina sin nombre'}</h3>
-            <p class="flex-between"><strong>Área:</strong> ${maquina.area || 'N/A'}</p>
-            <p class="flex-between"><strong>Estado:</strong> <span class="badge ${estadoClass}" id="estado-${maquina.id}">${maquina.estado || 'Desconocido'}</span></p>
-            ${(canControlThisUser || userRole === 'Operador') ? loteInfo : ''} 
+        <div class="card maquina" id="maquina-${maquina.id}">
+            <h3>${maquina.nombre || 'Máquina sin nombre'}</h3>
+            <p><strong>Área:</strong> ${maquina.area || 'N/A'}</p>
+            <p><strong>Estado:</strong> <span class="badge ${estadoClass}">${maquina.estado || 'Desconocido'}</span></p>
             ${controlesHTML}
-        </div>`;
+        </div>
+    `;
 }
 
 async function sendPlcCommand(maquinaId, commandName, commandValue, button) {
-    let originalText;
-    if (button) {
-        originalText = button.textContent;
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner"></span>';
-    }
-    
-    console.warn(`📡 SIMULACIÓN: Comando: ${commandName} -> ${commandValue} a Máquina ${maquinaId}`);
+    const originalText = button?.textContent;
+    if (button) { button.disabled = true; button.innerHTML = '<span class="spinner"></span>'; }
 
-    const { data: maquina, error: fetchError } = await db
-        .from('maquinas')
-        .select('controles, estado, lote_actual')
-        .eq('id', maquinaId)
-        .single();
+    const { data: maquina, error: fetchError } = await db.from('maquinas').select('controles, estado').eq('id', maquinaId).single();
+    if (fetchError) { notify.error('Error: ' + fetchError.message); return; }
 
-    if (fetchError) {
-        console.error('❌ Error al LEER la máquina antes de actualizar:', fetchError);
-        alert('Error al leer la máquina: ' + fetchError.message);
-        if (button) { button.disabled = false; button.textContent = originalText; }
-        return;
-    }
+    const newControls = { ...(maquina.controles || {}) };
+    let newState = maquina.estado;
 
-    const newControls = maquina.controles ? { ...maquina.controles } : {};
-    const newMaquinaState = {
-        estado: maquina.estado,
-        lote_actual: maquina.lote_actual
-    };
-
-    if (commandName === 'Paro' && commandValue === true) {
-        newMaquinaState.estado = 'Detenida';
-        newControls['Inicio'] = false;
-        newControls['online_llenado'] = false;
-        newControls['online_vaciado'] = false;
-        newControls['online_arriba'] = false;
-        newControls['online_abajo'] = false;
-        newControls['Paro'] = true;
-    } 
-    else if (commandName === 'Paro' && commandValue === false) {
-        newControls['Paro'] = false;
-    }
-    else if (newControls['Paro'] === true) {
-         console.warn("Simulación: Paro de Emergencia está activo. Ignorando comando.");
-         if (button) { button.disabled = false; button.textContent = originalText; }
-         return; 
-    }
-    else if (commandName === 'Inicio') {
-        newMaquinaState.estado = 'En Ciclo';
-        newMaquinaState.lote_actual = `LT-${Math.floor(Math.random() * 900) + 100}`;
+    if (commandName === 'Inicio') {
+        newState = 'En Ciclo';
         newControls['Inicio'] = true;
     }
-    else if (commandName === 'online_llenado' && commandValue) {
-        newControls['online_llenado'] = true;
-        newControls['online_vaciado'] = false;
-    }
-    else if (commandName === 'online_vaciado' && commandValue) {
-        newControls['online_llenado'] = false;
-        newControls['online_vaciado'] = true;
-    }
-    else if (commandName === 'online_arriba' && commandValue) {
-        newControls['online_arriba'] = true;
-        newControls['online_abajo'] = false;
-    }
-    else if (commandName === 'online_abajo' && commandValue) {
-        newControls['online_arriba'] = false;
-        newControls['online_abajo'] = true;
-    }
-    else if (commandName === 'apagar_llenado_vaciado') {
-        newControls['online_llenado'] = false;
-        newControls['online_vaciado'] = false;
-    }
-    else if (commandName === 'apagar_arriba_abajo') {
-        newControls['online_arriba'] = false;
-        newControls['online_abajo'] = false;
-    }
-    
-    if (commandName === 'Paro') {
-        actualizarBotonesParo(commandValue);
-    }
 
-    const { error: updateError } = await db.from('maquinas')
-        .update({ 
-            controles: newControls, 
-            estado: newMaquinaState.estado,
-            lote_actual: newMaquinaState.lote_actual
-        })
-        .eq('id', maquinaId);
-    
-    if (updateError) {
-        console.error(`❌ Error al actualizar la máquina (sim):`, updateError);
-        alert('Error en simulación: ' + updateError.message);
-    }
-    
-    setTimeout(() => {
-        if (button) {
-            button.disabled = false;
-            button.textContent = originalText;
-        }
-    }, 1000); 
+    const { error: updateError } = await db.from('maquinas').update({ controles: newControls, estado: newState }).eq('id', maquinaId);
+    if (updateError) { notify.error('Error: ' + updateError.message); }
+
+    if (button) { button.disabled = false; button.textContent = originalText; }
 }
 
-
-function setupEventListeners(container, userRole) {
-    console.log('👂 Configurando event listeners del panel...');
+function setupPanelEventListeners(container, userRole) {
     const canControl = ['Supervisor', 'Mecanico', 'Lider', 'Sistemas'].includes(userRole);
     if (!canControl) return;
 
@@ -599,470 +686,165 @@ function setupEventListeners(container, userRole) {
         const button = event.target.closest('button.btn-control');
         if (button && !button.disabled) {
             const command = button.dataset.command;
-            const value = (button.dataset.value === 'true'); 
+            const value = button.dataset.value === 'true';
             const maquinaId = button.dataset.maquinaId;
-            if (command && maquinaId) {
-                await sendPlcCommand(maquinaId, command, value, button);
-            }
-        }
-    });
-
-    container.addEventListener('change', async (event) => {
-        if (event.target.type === 'radio' && event.target.name.startsWith('switch-')) {
-            const radio = event.target;
-            const maquinaId = radio.closest('.switch-3-pos').dataset.maquinaId;
-            if (!maquinaId) return;
-            const commandOn = radio.dataset.commandOn;
-            const commandsToTurnOff = radio.dataset.commandsOff?.split(',');
-            if (commandOn) {
-                await sendPlcCommand(maquinaId, commandOn, true, null);
-            } else if (commandsToTurnOff) {
-                if (commandsToTurnOff.includes('online_llenado')) await sendPlcCommand(maquinaId, 'apagar_llenado_vaciado', false, null);
-                if (commandsToTurnOff.includes('online_arriba')) await sendPlcCommand(maquinaId, 'apagar_arriba_abajo', false, null);
-            }
+            if (command && maquinaId) await sendPlcCommand(maquinaId, command, value, button);
         }
     });
 }
 
 function subscribeToChanges(container, userRole, userArea) {
-    console.log('📡 Suscribiéndose a cambios en tiempo real para "maquinas"...');
-    const channel = db.channel('maquinas-changes')
-        .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'maquinas' }, 
-            (payload) => {
-                console.log('⚡ Cambio recibido:', payload);
-                const record = payload.new; 
+    console.log('📡 Suscribiendo a cambios...');
+    let reconnectAttempts = 0;
+
+    const setupSub = () => {
+        db.channel('maquinas-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'maquinas' }, (payload) => {
+                reconnectAttempts = 0;
+                const record = payload.new || payload.old;
                 if (!record) return;
 
-                const machineElement = document.getElementById(`maquina-${record.id}`);
-                const isInArea = (userRole === 'Operador' || userRole === 'Supervisor') ? record.area === userArea : true;
-                
-                if (payload.eventType === 'DELETE' && machineElement) {
-                    machineElement.remove();
-                } 
-                else if (payload.eventType === 'UPDATE' && machineElement && isInArea) {
-                    console.log(`🔄 Actualizando DOM para máquina: ${record.id}`);
+                const machineEl = document.getElementById(`maquina-${record.id}`);
+                const isInArea = ['Operador', 'Supervisor'].includes(userRole) ? record.area === userArea : true;
+
+                if (payload.eventType === 'UPDATE' && machineEl && isInArea) {
                     const statusSpan = document.getElementById(`estado-${record.id}`);
                     if (statusSpan) {
                         statusSpan.textContent = record.estado || 'Desconocido';
                         statusSpan.className = `badge ${record.estado?.toLowerCase() === 'en ciclo' ? 'badge-success' : 'badge-danger'}`;
                     }
-                    const loteP = document.getElementById(`lote-${record.id}`);
-                    if (loteP) {
-                         loteP.innerHTML = record.lote_actual ? `<strong>Lote Actual:</strong> ${record.lote_actual}` : '<strong>Lote Actual:</strong> N/A';
-                    }
-                    
-                    if (record.id === 1 && record.controles) {
-                        const { online_llenado, online_vaciado, online_arriba, online_abajo, Paro } = record.controles;
-                        
-                        actualizarBotonesParo(Paro === true);
-
-                        if (online_llenado) document.getElementById('llenado-1').checked = true;
-                        else if (online_vaciado) document.getElementById('vaciado-1').checked = true;
-                        else document.getElementById('fill-off-1').checked = true;
-
-                        if (online_arriba) document.getElementById('arriba-1').checked = true;
-                        else if (online_abajo) document.getElementById('abajo-1').checked = true;
-                        else document.getElementById('tray-off-1').checked = true;
-                    }
-                } 
-                else if (payload.eventType === 'INSERT' && !machineElement && isInArea) {
-                    container.insertAdjacentHTML('beforeend', createMachineHTML(record, userRole));
                 }
-            }
-        )
-        .subscribe((status, err) => {
-             if (status === 'SUBSCRIBED') console.log('✅ Conectado al canal de cambios de máquinas!');
-             else console.error(`❌ Error en canal Realtime: ${status}`, err || '');
-        });
+            })
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('✅ Conectado a cambios');
+                } else if (status === 'CHANNEL_ERROR' && reconnectAttempts < 3) {
+                    reconnectAttempts++;
+                    setTimeout(setupSub, 2000);
+                }
+            });
+    };
+
+    setupSub();
 }
 
 async function initializePanel(session) {
-    const panelLoginPrompt = document.getElementById('panel-login-form');
-    const panelContenido = document.getElementById('panel-contenido');
-    const headerTitle = document.getElementById('header-title');
-
-    const { data: profile, error } = await db
-        .from('perfiles')
-        .select('rol, area')
-        .eq('id', session.user.id)
-        .single();
-    
-    if (error || !profile) {
-        console.error('Error obteniendo perfil de personal:', error ? error.message : "Perfil no encontrado");
-        panelLoginPrompt.innerHTML = '<p style="color:red;">Error al cargar tu perfil. Contacta a sistemas.</p>';
-        panelLoginPrompt.style.display = 'block';
+    const { data: profile, error } = await db.from('perfiles').select('rol, area').eq('id', session.user.id).single();
+    if (error || !profile || profile.rol === 'Cliente') {
+        alert('Acceso denegado');
+        window.location.href = 'index.html';
         return;
     }
 
-    if (profile.rol === 'Cliente') {
-        alert('Acceso denegado. Esta área es solo para el personal autorizado.');
-        window.location.href = 'index.html'; 
-        return;
-    }
+    document.getElementById('panel-login-form').style.display = 'none';
+    document.getElementById('panel-contenido').style.display = 'block';
 
-    console.log(`✓ Perfil de personal obtenido: Rol=${profile.rol}, Área=${profile.area || 'N/A'}`);
-    panelLoginPrompt.style.display = 'none';
-    panelContenido.style.display = 'block';
-    if(headerTitle) headerTitle.textContent = "Panel de Control";
-
-    const { rol, area } = profile;
     const adminBar = document.getElementById('admin-bar');
     const container = document.getElementById('maquinas-container');
 
-    renderAdminBar(adminBar, rol);
-    await loadAndRenderMaquinas(container, rol);
-    setupEventListeners(container, rol);
-    subscribeToChanges(container, rol, area);
+    renderAdminBar(adminBar, profile.rol);
+    await loadAndRenderMaquinas(container, profile.rol);
+    setupPanelEventListeners(container, profile.rol);
+    subscribeToChanges(container, profile.rol, profile.area);
 }
 
-
-/* ===== 7. GESTOR DE UI GLOBAL (ACTUALIZADO) ===== */
-let currentUserProfile = null; // Caché para el perfil del usuario
-
+/* ========== GESTOR DE UI GLOBAL ========== */
 function actualizarUI(session) {
-    const authLinksContainer = document.getElementById('auth-links-container'); 
+    const authLinksContainer = document.getElementById('auth-links-container');
     const path = window.location.pathname;
 
-    // --- LÓGICA DE HEADER (GLOBAL) ---
     if (session) {
-        if (authLinksContainer) {
-            authLinksContainer.innerHTML = `
-                <a href="cuenta.html" class="nav-link">Mi Cuenta</a>
-                <button id="header-logout" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
-            `;
-            document.getElementById('header-logout').addEventListener('click', manejarLogout);
-        }
+        authLinksContainer.innerHTML = `
+            <a href="cuenta.html" class="nav-link">Mi Cuenta</a>
+            <button id="header-logout" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+        `;
+        document.getElementById('header-logout')?.addEventListener('click', manejarLogout);
     } else {
-        if (authLinksContainer) {
-             authLinksContainer.innerHTML = `
-                <a href="cuenta.html" class="nav-link">Iniciar Sesión</a>
-                <a href="cuenta.html" class="btn btn-primary btn-sm">Registrarse</a>
-            `;
-        }
+        authLinksContainer.innerHTML = `
+            <a href="cuenta.html" class="nav-link">Iniciar Sesión</a>
+            <a href="cuenta.html" class="btn btn-primary btn-sm">Registrarse</a>
+        `;
     }
 
-    // --- LÓGICA DE PÁGINA ESPECÍFICA ---
     if (path.includes('cuenta.html')) {
         const authForms = document.getElementById('auth-forms');
         const userInfo = document.getElementById('user-info');
         if (session) {
-            if (authForms) authForms.style.display = 'none';
-            if (userInfo) {
-                userInfo.style.display = 'grid';
-                cargarDatosPerfil(session.user);
-                document.getElementById('form-perfil').addEventListener('submit', (e) => actualizarPerfil(e, session.user));
-                
-                // --- ¡CORRECCIÓN AQUÍ! ---
-                // Listeners para las pestañas
-                const btnTabDatos = document.getElementById('btn-tab-datos');
-                const btnTabPedidos = document.getElementById('btn-tab-pedidos');
-                if(btnTabDatos) btnTabDatos.addEventListener('click', () => manejarTabsCuenta('datos', session.user.id));
-                if(btnTabPedidos) btnTabPedidos.addEventListener('click', () => manejarTabsCuenta('pedidos', session.user.id));
-                // --- FIN DE LA CORRECCIÓN ---
-                
-                document.getElementById('btn-logout').addEventListener('click', manejarLogout);
-            }
+            authForms.style.display = 'none';
+            userInfo.style.display = 'grid';
+            cargarDatosPerfil(session.user);
+            document.getElementById('form-perfil')?.addEventListener('submit', (e) => actualizarPerfil(e, session.user));
+            document.getElementById('btn-tab-datos')?.addEventListener('click', () => manejarTabsCuenta('datos', session.user.id));
+            document.getElementById('btn-tab-pedidos')?.addEventListener('click', () => manejarTabsCuenta('pedidos', session.user.id));
         } else {
-            if (authForms) authForms.style.display = 'block';
-            if (userInfo) userInfo.style.display = 'none';
+            authForms.style.display = 'block';
+            userInfo.style.display = 'none';
         }
-    }
-    
-    else if (path.includes('checkout.html')) {
-        const checkoutLoginPrompt = document.getElementById('checkout-login-prompt');
+    } else if (path.includes('checkout.html')) {
+        const checkoutPrompt = document.getElementById('checkout-login-prompt');
         const checkoutContainer = document.getElementById('checkout-container');
         if (session) {
-            if (checkoutLoginPrompt) checkoutLoginPrompt.style.display = 'none';
-            if (checkoutContainer) {
-                checkoutContainer.style.display = 'grid';
-                autocompletarDatosEnvio(session.user);
-                cargarResumenCheckout();
-            }
+            checkoutPrompt.style.display = 'none';
+            checkoutContainer.style.display = 'grid';
+            autocompletarDatosEnvio(session.user);
+            cargarResumenCheckout();
         } else {
-            if (checkoutLoginPrompt) checkoutLoginPrompt.style.display = 'block';
-            if (checkoutContainer) checkoutContainer.style.display = 'none';
+            checkoutPrompt.style.display = 'block';
+            checkoutContainer.style.display = 'none';
         }
-    }
-
-    else if (path.includes('panel.html')) {
-        const panelLoginPrompt = document.getElementById('panel-login-form');
-        const panelContenido = document.getElementById('panel-contenido');
+    } else if (path.includes('panel.html')) {
         if (session) {
             initializePanel(session);
         } else {
-            if (panelLoginPrompt) panelLoginPrompt.style.display = 'block';
-            if (panelContenido) panelContenido.style.display = 'none';
-        }
-    }
-    
-    else if (path.includes('admin-personal.html')) {
-        const adminContainer = document.getElementById('admin-personal-container');
-        if (session) {
-            initializeAdminPersonalPage(session.user);
-        } else {
-            alert('Acceso denegado. Debes iniciar sesión.');
-            window.location.href = 'panel.html';
+            document.getElementById('panel-login-form').style.display = 'block';
+            document.getElementById('panel-contenido').style.display = 'none';
         }
     }
 }
 
+/* ========== ENTRADA PRINCIPAL ========== */
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Iniciando ECOTECHSOLUTIONS...');
 
-/* ===== 8. LÓGICA DE GESTIÓN DE PERSONAL (NUEVO) ===== */
+    cartManager.updateBadge();
 
-/**
- * Inicializa la página de admin-personal.html
- */
-async function initializeAdminPersonalPage(user) {
-    // 1. Obtener el perfil del *administrador* (tú)
-    const { data: profile, error } = await db
-        .from('perfiles')
-        .select('rol')
-        .eq('id', user.id)
-        .single();
-
-    if (error || !profile) {
-        alert('Error al verificar tu permiso.');
-        window.location.href = 'panel.html';
-        return;
-    }
-    
-    const adminRole = profile.rol;
-    
-    // 2. Proteger la página
-    if (adminRole !== 'Sistemas' && adminRole !== 'Lider') {
-        alert('No tienes permiso para ver esta página.');
-        window.location.href = 'panel.html';
-        return;
+    const session = await sessionManager.getCurrentSession();
+    if (session) {
+        await sessionManager.loadUserProfile(session.user.id);
+        sessionManager.resetSessionTimeout();
+        sessionManager.currentUser = session.user;
     }
 
-    // 3. Si tiene permiso, mostrar el contenido y cargar los datos
-    const adminContainer = document.getElementById('admin-personal-container');
-    if (adminContainer) adminContainer.style.display = 'block';
-    
-    const adminBar = document.getElementById('admin-bar');
-    if (adminBar) renderAdminBar(adminBar, adminRole);
-    
-    // Cargar la tabla de usuarios (pasando el ID del admin)
-    await loadAllUsersAndProfiles(adminRole, user.id); 
-}
+    actualizarUI(session);
 
-/**
- * Carga todos los perfiles y usuarios (Función CORREGIDA)
- */
-async function loadAllUsersAndProfiles(adminRole, currentAdminId) {
-    const tableBody = document.getElementById('user-table-body');
-    tableBody.innerHTML = '<tr><td colspan="4">Cargando usuarios...</td></tr>';
-
-    // 1. Llamar a la función RPC que creamos en Supabase
-    const { data: perfiles, error: profileError } = await db
-        .rpc('get_all_user_profiles'); // <--- Llama a la función SQL
-        
-    if (profileError) {
-        console.error('Error cargando perfiles:', profileError);
-        tableBody.innerHTML = '<tr><td colspan="4" style="color:red;">Error al cargar perfiles. (Asegúrate de crear la función RPC `get_all_user_profiles` en el SQL Editor de Supabase)</td></tr>';
-        return;
-    }
-    
-    console.log('Perfiles cargados:', perfiles);
-
-    const rolesDisponibles = ['Cliente', 'Operador', 'Supervisor', 'Mecanico', 'Lider', 'Sistemas'];
-
-    tableBody.innerHTML = perfiles.map(p => {
-        const esSistemas = p.rol === 'Sistemas';
-        const esMiMismoUsuario = p.id === currentAdminId; 
-        const noPuedeEditar = (adminRole === 'Lider' && esSistemas);
-        
-        // --- CORRECCIÓN DE ESTILOS AQUÍ ---
-        return `
-            <tr data-user-id="${p.id}">
-                <td>${p.email || 'Email no encontrado'}</td>
-                <td>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <select class="input-group" data-field="rol" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
-                            ${rolesDisponibles.map(r => `<option value="${r}" ${p.rol === r ? 'selected' : ''}>${r}</option>`).join('')}
-                        </select>
-                    </div>
-                </td>
-                <td>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <input type="text" class="input-group" data-field="area" value="${p.area || ''}" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>
-                    </div>
-                </td>
-                <td class="btn-group">
-                    <button class="btn btn-primary btn-sm btn-save-user" ${esSistemas || noPuedeEditar ? 'disabled' : ''}>Guardar</button>
-                    <button class="btn btn-danger btn-sm btn-delete-user" ${esSistemas || esMiMismoUsuario || adminRole !== 'Sistemas' ? 'disabled' : ''}>Borrar</button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    // Añadir listeners a los nuevos botones
-    document.querySelectorAll('.btn-save-user').forEach(btn => {
-        btn.addEventListener('click', handleUserUpdate);
-    });
-    document.querySelectorAll('.btn-delete-user').forEach(btn => {
-        btn.addEventListener('click', handleUserDelete);
-    });
-}
-
-/**
- * Maneja el clic en "Guardar" en la tabla de usuarios
- */
-async function handleUserUpdate(event) {
-    const row = event.target.closest('tr');
-    const userId = row.dataset.userId;
-    const newRol = row.querySelector('select[data-field="rol"]').value;
-    const newArea = row.querySelector('input[data-field="area"]').value;
-
-    console.log(`Actualizando usuario ${userId}: Rol=${newRol}, Área=${newArea}`);
-    
-    const { error } = await db
-        .from('perfiles')
-        .update({ rol: newRol, area: newArea })
-        .eq('id', userId);
-        
-    if (error) {
-        console.error('Error al actualizar perfil:', error);
-        alert('Error al guardar: ' + error.message);
-    } else {
-        alert('¡Perfil de usuario actualizado!');
-    }
-}
-
-/**
- * Maneja el clic en "Borrar" en la tabla de usuarios
- */
-async function handleUserDelete(event) {
-    const row = event.target.closest('tr');
-    const userId = row.dataset.userId;
-    
-    if (!confirm(`¿Estás seguro de que quieres BORRAR a este usuario?\nID: ${userId}\n¡Esta acción es irreversible y borrará sus datos de Auth y Perfil!`)) {
-        return;
-    }
-    
-    console.log(`Borrando usuario ${userId}...`);
-    
-    // Llamar a la función RPC 'delete_user_and_profile'
-    const { data, error } = await db.rpc('delete_user_and_profile', {
-        user_id_to_delete: userId
-    });
-    
-    if (error) {
-        console.error('Error al borrar usuario:', error);
-        alert('Error al borrar: ' + error.message + '\n\n(Asegúrate de que la función RPC `delete_user_and_profile` exista y tenga permisos de `SECURITY DEFINER` y que el rol `postgres` tenga permiso de DELETE en `auth.users`.)');
-    } else {
-        alert(data); // Debería decir "Usuario ... borrado exitosamente"
-        row.remove(); // Quitarlo de la tabla
-    }
-}
-
-
-/* ===== 9. LÓGICA DE "MIS PEDIDOS" (CLIENTE) (ACTUALIZADA) ===== */
-
-function manejarTabsCuenta(tab, userId) {
-    console.log("Cambiando a la pestaña:", tab); // Log de depuración
-    const seccionDatos = document.getElementById('seccion-mis-datos');
-    const seccionPedidos = document.getElementById('seccion-mis-pedidos');
-    const btnDatos = document.getElementById('btn-tab-datos');
-    const btnPedidos = document.getElementById('btn-tab-pedidos');
-
-    if (tab === 'datos') {
-        if (seccionDatos) seccionDatos.style.display = 'block';
-        if (seccionPedidos) seccionPedidos.style.display = 'none';
-        if (btnDatos) btnDatos.classList.add('active');
-        if (btnPedidos) btnPedidos.classList.remove('active');
-    } 
-    else if (tab === 'pedidos') {
-        if (seccionDatos) seccionDatos.style.display = 'none';
-        if (seccionPedidos) seccionPedidos.style.display = 'block';
-        if (btnDatos) btnDatos.classList.remove('active');
-        if (btnPedidos) btnPedidos.classList.add('active');
-        // Cargar los pedidos
-        cargarMisPedidos(userId);
-    }
-}
-
-async function cargarMisPedidos(userId) {
-    const container = document.getElementById('pedidos-lista-container');
-    if (!container) return; 
-    container.innerHTML = '<p>Cargando tus pedidos...</p>';
-
-    const { data: pedidos, error } = await db
-        .from('pedidos')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error("Error al cargar pedidos:", error);
-        container.innerHTML = '<p style="color:red;">No se pudieron cargar tus pedidos.</p>';
-        return;
-    }
-    
-    if (pedidos.length === 0) {
-        container.innerHTML = '<p>No has realizado ningún pedido todavía.</p>';
-        return;
-    }
-
-    container.innerHTML = pedidos.map(pedido => {
-        // --- ARREGLO DEL ID DEL PEDIDO ---
-        const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-        const itemsHtml = (pedido.items && Array.isArray(pedido.items)) 
-            ? pedido.items.map(item => `<p>${item.nombre} (x${item.cantidad})</p>`).join('')
-            : '<p>Error en items</p>';
-        
-        return `
-            <div class="pedido-card">
-                <div class="pedido-header">
-                    <span class="pedido-id">Pedido de ${fecha}</span>
-                    <span class="badge badge-warning">${pedido.estado}</span>
-                </div>
-                <div class="order-info">
-                    <span>Folio:</span>
-                    <span class="info-value">#${pedido.id}</span>
-                </div>
-                <div class="order-info">
-                    <span>Items:</span>
-                    <div class="info-value">${itemsHtml}</div>
-                </div>
-                <div class="order-info">
-                    <span>Total:</span>
-                    <span class="info-value total">$${pedido.total.toLocaleString('es-MX')}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-
-/* ===== 10. PUNTO DE ENTRADA (DOMCONTENTLOADED) ===== */
-
-document.addEventListener('DOMContentLoaded', () => {
-    
-    const carritoActual = leerCarrito();
-    actualizarContadorCarrito(carritoActual);
-    
-    db.auth.getSession().then(({ data: { session } }) => {
-        actualizarUI(session); 
-    });
-    
     const path = window.location.pathname;
-    if (path.includes('tienda.html') || path.includes('index.html') || path.endsWith('/ECOTECHSOLUTIONS-WEB/')) {
-        cargarProducto();
+    if (path.includes('tienda.html') || path.includes('index.html')) {
+        await cargarProducto();
     }
 
-    // Listeners de auth
-    const formLogin = document.getElementById('form-login');
-    const formRegistro = document.getElementById('form-registro');
-    const formLoginPersonal = document.getElementById('form-login-personal');
-    if (formLogin) formLogin.addEventListener('submit', manejarLogin);
-    if (formRegistro) formRegistro.addEventListener('submit', manejarRegistro);
-    if (formLoginPersonal) formLoginPersonal.addEventListener('submit', manejarLoginPersonal); 
+    // Event listeners
+    document.getElementById('form-login')?.addEventListener('submit', manejarLogin);
+    document.getElementById('form-registro')?.addEventListener('submit', manejarRegistro);
+    document.getElementById('form-login-personal')?.addEventListener('submit', manejarLoginPersonal);
+    document.getElementById('btn-anadir-carrito')?.addEventListener('click', manejarAnadirAlCarrito);
+    document.getElementById('form-checkout')?.addEventListener('submit', manejarConfirmarCompra);
+    document.getElementById('btn-logout')?.addEventListener('click', manejarLogout);
 
-    // Listeners de tienda
-    const btnCarrito = document.getElementById('btn-anadir-carrito');
-    if (btnCarrito) btnCarrito.addEventListener('click', manejarAnadirAlCarrito);
-    const formCheckout = document.getElementById('form-checkout');
-    if (formCheckout) formCheckout.addEventListener('submit', manejarConfirmarCompra);
+    // Escuchar cambios globales de sesión
+    db.auth.onAuthStateChange((event, newSession) => {
+        if (event === 'SIGNED_IN' && !sessionManager.currentUser) {
+            window.location.reload();
+        }
+        if (event === 'SIGNED_OUT' && sessionManager.currentUser) {
+            sessionManager.clearSession();
+            actualizarUI(null);
+        }
+    });
+
+    // Resetear timeout en actividad
+    document.addEventListener('mousemove', () => {
+        if (sessionManager.currentUser) sessionManager.resetSessionTimeout();
+    });
+
+    console.log('✅ ECOTECHSOLUTIONS iniciado correctamente');
 });

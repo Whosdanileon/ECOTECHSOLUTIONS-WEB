@@ -2914,3 +2914,26 @@ input.error {
     backface-visibility: hidden;
     perspective: 1000px;
 }
+
+/* ===== NOTIFICACIONES TOAST ===== */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
