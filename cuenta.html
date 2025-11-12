@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <!-- 1. HEADER (Idéntico) -->
+    <!-- HEADER -->
     <nav class="main-nav">
         <a href="index.html" class="logo">
             <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
@@ -24,110 +24,111 @@
         </div>
         <div class="right-nav">
              <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito">
+                <!-- ICONO DE CARRITO -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
-            <div class="auth-links" id="auth-links-container">
-                <!-- JS insertará los botones de login/logout aquí -->
-            </div>
+            <div class="auth-links" id="auth-links-container"><!-- JS añadirá login/logout --></div>
         </div>
     </nav>
 
-    <!-- 2. CONTENIDO PRINCIPAL DE "MI CUENTA" (ACTUALIZADO) -->
+    <!-- CONTENIDO PRINCIPAL -->
     <main class="page-section">
         <div class="container">
 
-            <!-- Sección para NO logueados -->
+            <!-- FORMULARIOS DE LOGIN Y REGISTRO (SI NO LOGUEADO) -->
             <div id="auth-forms" style="display: none;">
-                <div class="modal-content" style="margin: auto; animation: none; transform: none;">
-                    <!-- Formulario de Login -->
+                <div class="modal-content">
+                    <!-- Login -->
                     <form id="form-login">
                         <h3 class="login-title">Iniciar Sesión</h3>
                         <div class="input-group">
                             <label for="login-email">Correo Electrónico</label>
-                            <input type="email" id="login-email" required>
+                            <input type="email" id="login-email" name="login-email" required>
                         </div>
                         <div class="input-group">
                             <label for="login-password">Contraseña</label>
-                            <input type="password" id="login-password" required>
+                            <input type="password" id="login-password" name="login-password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-login">Entrar</button>
+                        <button type="submit" class="btn btn-primary btn-login">
+                            <i class="fa-solid fa-sign-in-alt"></i> Entrar
+                        </button>
                     </form>
-                    
                     <hr class="product-divider">
-                    
-                    <!-- Formulario de Registro -->
+                    <!-- Registro -->
                     <form id="form-registro">
                         <h3 class="login-title">Crear Cuenta Nueva</h3>
                         <div class="input-group">
                             <label for="registro-email">Correo Electrónico</label>
-                            <input type="email" id="registro-email" required>
+                            <input type="email" id="registro-email" name="registro-email" required>
                         </div>
                         <div class="input-group">
                             <label for="registro-password">Contraseña (mín. 6 caracteres)</label>
-                            <input type="password" id="registro-password" required minlength="6">
+                            <input type="password" id="registro-password" name="registro-password" required minlength="6">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-login">Registrarme</button>
+                        <button type="submit" class="btn btn-primary btn-login">
+                            <i class="fa-solid fa-user-plus"></i> Registrarme
+                        </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Sección para SÍ logueados (usando .account-container) -->
+            <!-- PANEL DE CUENTA (SI LOGUEADO) -->
             <div id="user-info" class="account-container" style="display: none;">
-                
-                <!-- Sidebar de Cuenta (Botones actualizados) -->
+                <!-- Sidebar con tabs -->
                 <aside class="account-sidebar">
                     <nav>
-                        <!-- (Añadimos IDs a los botones) -->
-                        <button id="btn-tab-datos" class="account-nav-link active">Mis Datos</button>
-                        <button id="btn-tab-pedidos" class="account-nav-link">Mis Pedidos</button>
-                        <button id="btn-logout" class="account-nav-link btn-logout" style="color: var(--color-danger);">Cerrar Sesión</button>
+                        <button id="btn-tab-datos" class="account-nav-link active">
+                            <i class="fa-solid fa-user"></i> Mis Datos
+                        </button>
+                        <button id="btn-tab-pedidos" class="account-nav-link">
+                            <i class="fa-solid fa-box"></i> Mis Pedidos
+                        </button>
+                        <button id="btn-logout" class="account-nav-link btn-logout" style="color: var(--color-danger);">
+                            <i class="fa-solid fa-sign-out-alt"></i> Cerrar Sesión
+                        </button>
                     </nav>
                 </aside>
-
-                <!-- Contenido de Cuenta (ACTUALIZADO CON SECCIONES) -->
+                <!-- Contenido de tabs -->
                 <section class="account-content">
-                    
-                    <!-- Sección 1: Mis Datos (Visible por defecto) -->
+                    <!-- TAB: Mis Datos -->
                     <div id="seccion-mis-datos" class="content-section active" style="display: block;">
                         <h2>Mis Datos</h2>
                         <form id="form-perfil">
                             <div class="input-group">
                                 <label>Correo Electrónico</label>
-                                <input type="email" id="profile-email" disabled>
+                                <input type="email" id="profile-email" name="profile-email" disabled>
                             </div>
                             <div class="input-group">
                                 <label for="profile-name">Nombre Completo</label>
-                                <input type="text" id="profile-name" placeholder="Tu nombre y apellidos">
+                                <input type="text" id="profile-name" name="profile-name" placeholder="Tu nombre y apellidos">
                             </div>
                             <div class="input-group">
                                 <label for="profile-phone">Teléfono (Opcional)</label>
-                                <input type="text" id="profile-phone" placeholder="10 dígitos sin espacios">
+                                <input type="tel" id="profile-phone" name="profile-phone" placeholder="10 dígitos sin espacios">
                             </div>
                             <div class="input-group">
                                 <label for="profile-address">Dirección de Envío Principal</label>
-                                <textarea id="profile-address" placeholder="Incluye: calle, número, colonia, ciudad y código postal"></textarea>
+                                <textarea id="profile-address" name="profile-address" placeholder="Incluye: calle, número, colonia, ciudad y código postal"></textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-save"></i> Guardar Cambios
+                            </button>
                         </form>
                     </div>
-
-                    <!-- Sección 2: Mis Pedidos (Oculta por defecto) -->
+                    <!-- TAB: Mis Pedidos -->
                     <div id="seccion-mis-pedidos" class="content-section" style="display: none;">
                         <h2>Mis Pedidos</h2>
                         <div id="pedidos-lista-container" class="orders-grid">
-                            <!-- JS insertará los pedidos aquí -->
                             <p>Cargando tus pedidos...</p>
                         </div>
                     </div>
-                    
                 </section>
-                
             </div>
         </div>
     </main>
 
-    <!-- 3. FOOTER (Idéntico) -->
+    <!-- FOOTER -->
     <footer class="site-footer">
         <div class="container">
             <div class="footer-grid">
@@ -158,9 +159,8 @@
             </div>
         </div>
     </footer>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
-
 </body>
 </html>
