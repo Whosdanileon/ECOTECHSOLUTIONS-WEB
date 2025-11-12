@@ -1458,7 +1458,7 @@ async function handleUserDelete(event) {
     }
 }
 
-/* ===== 11. LÓGICA DE PESTAÑAS DE CUENTA ===== */
+/* ===== LÓGICA DE PESTAÑAS DE CUENTA ===== */
 
 function manejarTabsCuenta(tab, userId) {
     const seccionDatos = document.getElementById('seccion-mis-datos');
@@ -1496,28 +1496,44 @@ async function cargarMisPedidos(userId) {
 
         if (error) throw error;
         
-        if (pedidos.length === 0) {
+        if (!pedidos || pedidos.length === 0) {
             container.innerHTML = '<p>No has realizado ningún pedido todavía.</p>';
             return;
         }
 
         container.innerHTML = pedidos.map(pedido => {
-            const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX', { 
-                year: 'numeric', month: 'long', day: 'numeric' 
-            });
-            const itemsHtml = (pedido.items && Array.isArray(pedido.items)) 
-                ? pedido.items.map(item => `<p>• ${item.nombre} (x${item.cantidad})</p>`).join('')
-                : '<p>Error en items</p>';
+            // Convertir a string correctamente
+            const pedidoId = String(pedido.id);
+            const folioPedido = pedidoId.substring(0, 8);
             
+            // Formatear fecha
+            const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Procesar items del pedido
+            const itemsHtml = (pedido.items && Array.isArray(pedido.items)) 
+                ? pedido.items.map(item => `
+                    <p style="margin: 0.5rem 0;">
+                        • ${item.nombre || 'Producto'} (x${item.cantidad || 1})
+                    </p>
+                `).join('')
+                : '<p>Error en items del pedido</p>';
+            
+            // Retornar HTML del pedido
             return `
-                <div class="pedido-card">
+                <div class="pedido-card" data-pedido-id="${pedidoId}">
                     <div class="pedido-header">
                         <span class="pedido-id">Pedido de ${fecha}</span>
-                        <span class="badge badge-warning">${pedido.estado}</span>
+                        <span class="badge ${pedido.estado === 'Procesando' ? 'badge-warning' : pedido.estado === 'Enviado' ? 'badge-success' : 'badge-info'}">
+                            ${pedido.estado || 'Pendiente'}
+                        </span>
                     </div>
                     <div class="order-info">
                         <span>Folio:</span>
-                        <span class="info-value">#${pedido.id.substring(0, 8)}...</span>
+                        <span class="info-value">#${folioPedido}...</span>
                     </div>
                     <div class="order-info">
                         <span>Productos:</span>
@@ -1525,15 +1541,16 @@ async function cargarMisPedidos(userId) {
                     </div>
                     <div class="order-info">
                         <span>Total:</span>
-                        <span class="info-value total">$${pedido.total.toLocaleString('es-MX')}</span>
+                        <span class="info-value total">$${(pedido.total || 0).toLocaleString('es-MX')}</span>
                     </div>
                 </div>
             `;
         }).join('');
         
     } catch (error) {
-        console.error("❌ Error:", error);
-        container.innerHTML = '<p style="color:red;">Error al cargar pedidos</p>';
+        console.error("❌ Error cargando pedidos:", error);
+        container.innerHTML = `<p style="color:var(--color-danger);">Error al cargar pedidos: ${error.message}</p>`;
+        notify.error('Error al cargar pedidos: ' + error.message);
     }
 }
 
