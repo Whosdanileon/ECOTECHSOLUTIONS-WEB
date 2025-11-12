@@ -1,9 +1,38 @@
-/* =============================================
- * ECOTECHSOLUTIONS - MAIN JAVASCRIPT MEJORADO
- * Versión 2.0 (Notificaciones, Validación, Sincronización)
- * ============================================= */
+/* =====================================================
+ * ECOTECHSOLUTIONS - MAIN.JS MEJORADO
+ * Versión 2.0.0 (Refactorizado, Sincronizado y Funcional)
+ * ===================================================== */
 
-/* ===== 0. SISTEMA DE NOTIFICACIONES TOAST (NUEVO) ===== */
+/* ========== CONFIGURACIÓN CENTRALIZADA ========== */
+const CONFIG = {
+    SUPABASE_URL: 'https://dtdtqedzfuxfnnipdorg.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY',
+    
+    // Storage
+    CART_KEY: 'ecotech_cart',
+    USER_CACHE_KEY: 'ecotech_user_cache',
+    
+    // Timeouts
+    SESSION_TIMEOUT: 3600000, // 1 hora
+    LOADING_TIMEOUT: 5000,
+    
+    // Roles
+    ROLES: {
+        CLIENTE: 'Cliente',
+        OPERADOR: 'Operador',
+        SUPERVISOR: 'Supervisor',
+        MECANICO: 'Mecanico',
+        LIDER: 'Lider',
+        SISTEMAS: 'Sistemas'
+    },
+    
+    // Estados
+    MACHINE_STATES: {
+        EN_CICLO: 'En Ciclo',
+        DETENIDA: 'Detenida',
+        PARO_EMERGENCIA: 'Paro de Emergencia'
+    }
+};
 
 class NotificationSystem {
     constructor() {
