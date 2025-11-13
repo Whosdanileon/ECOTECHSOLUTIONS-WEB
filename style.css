@@ -1595,14 +1595,14 @@ main {
 /* Ajuste preciso para notificaciones visibles SIEMPRE encima de la navbar */
 .notification-container {
     position: fixed;
-    top: 94px !important; /* Ajusta según el alto real de tu navbar */
-    right: 10px;
+    top: 98px !important; /* Ajusta según el alto real de tu navbar */
+    right: 50px;
     left: auto;
     z-index: var(--z-notification);
     pointer-events: none;
     max-width: 400px;
     width: 100%;
-    transition: top 0.3s;
+    transition: top 0.5s;
 }
 
 @media (max-width: 900px) {
