@@ -1596,8 +1596,8 @@ main {
 .notification-container {
     position: fixed;
     top: 94px !important; /* Ajusta según el alto real de tu navbar */
-    right: 15px;
-    left: 20px;
+    right: 10px;
+    left: auto;
     z-index: var(--z-notification);
     pointer-events: none;
     max-width: 400px;
