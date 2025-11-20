@@ -3,99 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Personal - ECOTECHSOLUTIONS</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
-<body>
-
-    <nav class="main-nav">
-        <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
-            <span id="header-title"></span> 
-        </a>
-        <div class="center-nav-links">
-            <a href="index.html#nosotros" class="nav-link">NOSOTROS</a>
-            <a href="tienda.html" class="nav-link">PRODUCTO</a>
-            <a href="index.html#galeria" class="nav-link">GALERÍA</a>
-        </div>
-        <div class="right-nav">
-            <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
-            </a>
-            <div class="auth-links" id="auth-links-container">
-                </div>
-        </div>
-    </nav>
-
-    <main class="page-section">
-        <div class="container">
-            
-            <div id="panel-login-form" style="display: none;">
-                <div class="modal-content" style="margin: auto; animation: none; transform: none; max-width: 420px;">
-                    <form id="form-login-personal">
-                        <h3 class="login-title">Acceso de Personal</h3>
-                        <div class="input-group">
-                            <label for="personal-email">Correo Electrónico</label>
-                            <input type="email" id="personal-email" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="personal-password">Contraseña</label>
-                            <input type="password" id="personal-password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-login">Entrar al Panel</button>
-                    </form>
-                </div>
-            </div>
-
-            <div id="panel-contenido" style="display: none;">
-                <div id="admin-bar" class="admin-bar card" style="display: none;"></div>
-
-                <div id="maquinas-container" class="mt-4">
-                    <p>Cargando máquinas...</p>
-                </div>
-            </div>
-            
-        </div>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col-1">
-                    <img src="images/logo.png" alt="Logo" class="footer-logo-placeholder">
-                </div>
-                <div class="footer-col-2">
-                    <h4>Datos</h4>
-                    <p>
-                        Av. Blv, Place, #123<br>
-                        Tlaxcala, México<br>
-                        +52 247 123 4567<br>
-                        info@ecotech.com
-                    </p>
-                </div>
-                <div class="footer-col-3">
-                    <h4>Política de la Tienda</h4>
-                    <ul>
-                        <li><a href="#">Envío y entrega</a></li>
-                        <li><a href="#">Términos y condiciones</a></li>
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="panel.html">Acceso Personal</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="copyright">
-                © 2025 ECOTECHSOLUTIONS. Todos los derechos reservados.
-            </div>
-        </div>
-    </footer>
+    <title>Panel de Control - ECOTECH</title>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-light">
+
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-header">
+                <img src="images/logo.png" alt="Logo" class="login-logo">
+                <h2>Acceso Restringido</h2>
+                <p>Sistema de Control Industrial</p>
+            </div>
+            <form id="panel-login-form">
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="login-email" placeholder="usuario@ecotech.com" required>
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="login-password" placeholder="Contraseña" required>
+                </div>
+                <button type="submit" class="btn-login">Ingresar al Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-layout" class="dashboard-layout" style="display: none;">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="images/logo.png" alt="EcoTech">
+                <span>ECOTECH</span>
+            </div>
+
+            <div class="user-profile-mini">
+                <div class="avatar-circle"><i class="fa-solid fa-user"></i></div>
+                <div class="user-info">
+                    <span id="sidebar-username">Cargando...</span>
+                    <small id="sidebar-role">...</small>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active" onclick="switchTab('planta')">
+                        <a href="#"><i class="fa-solid fa-industry"></i> Control Planta</a>
+                    </li>
+                    <li onclick="switchTab('personal')">
+                        <a href="#"><i class="fa-solid fa-users-gear"></i> Gestión Personal</a>
+                    </li>
+                    <li onclick="switchTab('reportes')">
+                        <a href="#"><i class="fa-solid fa-chart-pie"></i> Reportes</a>
+                    </li>
+                    <li onclick="switchTab('mensajes')">
+                        <a href="#"><i class="fa-solid fa-envelope"></i> Mensajes <span class="badge-mini">3</span></a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="btn-logout-panel" class="btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <section id="view-planta" class="dashboard-view active">
+                <header class="view-header">
+                    <h1>Control de Planta en Tiempo Real</h1>
+                    <div class="status-indicator online">
+                        <span class="dot"></span> Conectado a PLC
+                    </div>
+                </header>
+                
+                <div id="maquinas-container" class="maquinas-grid">
+                    <div class="spinner"></div>
+                </div>
+            </section>
+
+            <section id="view-personal" class="dashboard-view">
+                <header class="view-header">
+                    <h1>Gestión de Recursos Humanos</h1>
+                    <button class="btn-secondary"><i class="fa-solid fa-user-plus"></i> Nuevo Empleado</button>
+                </header>
+
+                <div id="admin-personal-container" class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Área Asignada</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-reportes" class="dashboard-view">
+                <header class="view-header">
+                    <h1>Reportes de Producción</h1>
+                    <div class="date-filter">
+                        <input type="date" value="2025-11-19">
+                    </div>
+                </header>
+
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>Eficiencia General (OEE)</h3>
+                        <div class="big-number">87%</div>
+                        <p class="trend up">▲ 2.4% vs semana anterior</p>
+                    </div>
+                    <div class="report-card">
+                        <h3>Unidades Producidas</h3>
+                        <div class="big-number">1,240</div>
+                        <p>Lote: LT-2025-A</p>
+                    </div>
+                    <div class="report-card alert-card">
+                        <h3>Paros de Emergencia</h3>
+                        <div class="big-number text-danger">3</div>
+                        <p>Revisar Máquina 1</p>
+                    </div>
+                </div>
+                
+                <div class="chart-placeholder">
+                    <p><i class="fa-solid fa-chart-area"></i> Gráfica de Temperatura (Últimas 24h)</p>
+                    <div class="fake-graph"></div>
+                </div>
+            </section>
+
+            <section id="view-mensajes" class="dashboard-view">
+                <header class="view-header">
+                    <h1>Mensajes Internos</h1>
+                </header>
+                
+                <div class="messages-layout">
+                    <div class="message-list">
+                        <div class="msg-item unread">
+                            <div class="msg-avatar">S</div>
+                            <div class="msg-preview">
+                                <strong>Sistemas</strong>
+                                <p>Mantenimiento programado para el viernes...</p>
+                            </div>
+                            <span class="msg-time">10:30 AM</span>
+                        </div>
+                        <div class="msg-item">
+                            <div class="msg-avatar">L</div>
+                            <div class="msg-preview">
+                                <strong>Lider Producción</strong>
+                                <p>Revisar lote #455 en Deshidratadora.</p>
+                            </div>
+                            <span class="msg-time">Ayer</span>
+                        </div>
+                    </div>
+                    <div class="message-compose">
+                        <h3>Enviar Comunicado</h3>
+                        <form>
+                            <select class="form-input">
+                                <option>Para: Todos</option>
+                                <option>Para: Mantenimiento</option>
+                                <option>Para: Operadores</option>
+                            </select>
+                            <textarea class="form-input" rows="5" placeholder="Escribe tu mensaje aquí..."></textarea>
+                            <button type="button" class="btn-primary">Enviar</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
 
+    <script>
+        function switchTab(tabName) {
+            // 1. Quitar clase active de todos los links
+            document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+            // 2. Poner active al clickeado (truco simple buscando por onclick)
+            event.currentTarget.classList.add('active');
+
+            // 3. Ocultar todas las vistas
+            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+            // 4. Mostrar la vista deseada
+            document.getElementById('view-' + tabName).classList.add('active');
+        }
+    </script>
 </body>
 </html>
