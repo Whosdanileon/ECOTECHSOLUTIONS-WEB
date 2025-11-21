@@ -3,13 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compra Lemna Minor premium. Suplemento proteico 100% orgánico para acuicultura sostenible. Presentación de 1kg.">
+    <meta name="theme-color" content="#4CAF50">
+    
     <title>Tienda - ECOTECHSOLUTIONS</title>
+    
     <link rel="stylesheet" href="style.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        /* Estilos específicos para la página de tienda */
+        /* Estilos específicos de la Tienda (Preservados para mantener tu diseño exacto) */
         .tienda-wrapper {
             max-width: 1200px;
             margin: 0 auto;
@@ -43,6 +50,7 @@
             width: 100%;
             height: auto;
             display: block;
+            mix-blend-mode: multiply; /* Truco para que la imagen se integre mejor */
         }
 
         .producto-detalles {
@@ -81,6 +89,7 @@
             background: #e8f5e9;
             border-radius: 8px;
             font-weight: 500;
+            font-size: 0.9rem;
         }
 
         .producto-stock-numero {
@@ -137,6 +146,9 @@
             margin: 0 0 1rem 0;
             color: var(--color-primary-dark);
             font-size: 1.1rem;
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
         }
 
         .nutrition-highlights p {
@@ -178,37 +190,20 @@
                 grid-template-columns: 1fr;
                 gap: 2rem;
             }
-
             .producto-imagen-wrapper {
                 position: static;
             }
-
             .nutrition-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 640px) {
-            .tienda-wrapper {
-                padding: 1rem 0.5rem;
-            }
-
-            .producto-container {
-                padding: 1rem;
-            }
-
-            .producto-titulo {
-                font-size: 1.5rem;
-            }
-
-            .producto-precio {
-                font-size: 1.75rem;
-            }
-
-            .nutrition-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.5rem;
-            }
+            .tienda-wrapper { padding: 1rem 0.5rem; }
+            .producto-container { padding: 1rem; }
+            .producto-titulo { font-size: 1.5rem; }
+            .producto-precio { font-size: 1.75rem; }
+            .nutrition-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
         }
     </style>
 </head>
@@ -229,29 +224,28 @@
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
             <div class="auth-links" id="auth-links-container">
-            </div>
+                </div>
         </div>
     </nav>
 
     <main class="page-section">
-        <div class="tienda-wrapper shop-layout" data-product-id="">
+        <div class="tienda-wrapper shop-layout" data-pid="" data-stock="">
             
             <div class="producto-container">
-                <!-- Imagen del producto -->
                 <div class="producto-imagen-wrapper">
                     <div class="producto-imagen">
-                        <img src="images/product-bag.png" alt="Suplemento de Lemna Minor">
+                        <img src="images/product-bag.png" alt="Bolsa de Suplemento de Lemna Minor">
                     </div>
                 </div>
 
-                <!-- Detalles del producto -->
                 <div class="producto-detalles">
-                    <h1 class="producto-titulo" id="producto-nombre">Cargando...</h1>
+                    <h1 class="producto-titulo" id="producto-nombre">Cargando producto...</h1>
                     
-                    <p class="producto-precio" id="producto-precio">$---.-- MXN</p>
+                    <p class="producto-precio" id="producto-precio">$---.--</p>
                     
                     <div class="producto-stock">
-                        <span>📦 Disponible:</span>
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>Disponible:</span>
                         <span class="producto-stock-numero" id="producto-stock">--</span>
                         <span>paquetes en stock</span>
                     </div>
@@ -261,7 +255,7 @@
                     </p>
 
                     <div class="nutrition-highlights">
-                        <h4>🌿 Información Nutricional</h4>
+                        <h4><i class="fa-solid fa-leaf"></i> Información Nutricional</h4>
                         <p>Valores aproximados por cada 100g de producto</p>
 
                         <div class="nutrition-grid">
@@ -294,10 +288,10 @@
 
                         <div class="botones-compra">
                             <button id="btn-anadir-carrito" class="btn btn-primary btn-lg">
-                                Añadir al Carrito
+                                <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
                             </button>
                             <a href="checkout.html" class="btn btn-secondary">
-                                Comprar Ahora
+                                <i class="fa-solid fa-credit-card"></i> Ir a Pagar
                             </a>
                         </div>
                     </div>
@@ -311,11 +305,10 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col-1">
-                    <img src="images/logo.png" alt="Logo" class="footer-logo-placeholder">
-                    <div class="social-links"></div>
+                    <img src="images/logo.png" alt="Logo EcoTech" class="footer-logo-placeholder">
                 </div>
                 <div class="footer-col-2">
-                    <h4>Datos</h4>
+                    <h4>Contacto</h4>
                     <p>
                         Av. Blv, Place, #123<br>
                         Tlaxcala, México<br>
@@ -324,7 +317,7 @@
                     </p>
                 </div>
                 <div class="footer-col-3">
-                    <h4>Política de la Tienda</h4>
+                    <h4>Enlaces Rápidos</h4>
                     <ul>
                         <li><a href="#">Envío y entrega</a></li>
                         <li><a href="#">Términos y condiciones</a></li>

@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow"> <meta name="theme-color" content="#1b2b1b">
     <title>Panel de Control - ECOTECH</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-light">
@@ -15,18 +17,18 @@
     <div id="login-overlay" class="login-overlay">
         <div class="login-box">
             <div class="login-header">
-                <img src="images/logo.png" alt="Logo" class="login-logo">
+                <img src="images/logo.png" alt="Logo EcoTech">
                 <h2>Acceso Restringido</h2>
                 <p>Sistema de Control Industrial</p>
             </div>
             <form id="panel-login-form">
                 <div class="input-group">
-                    <i class="fa-solid fa-envelope"></i>
-                    <input type="email" id="login-email" placeholder="usuario@ecotech.com" required>
+                    <label for="login-email"><i class="fa-solid fa-envelope"></i> Usuario</label>
+                    <input type="email" id="login-email" class="form-input" placeholder="usuario@ecotech.com" required>
                 </div>
                 <div class="input-group">
-                    <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="login-password" placeholder="Contraseña" required>
+                    <label for="login-password"><i class="fa-solid fa-lock"></i> Contraseña</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="Contraseña" required>
                 </div>
                 <button type="submit" class="btn-login">Ingresar al Sistema</button>
             </form>
@@ -37,7 +39,7 @@
         
         <aside class="sidebar">
             <div class="sidebar-header">
-                <img src="images/logo.png" alt="EcoTech">
+                <img src="images/logo.png" alt="EcoTech Logo">
                 <span>ECOTECH</span>
             </div>
 
@@ -45,7 +47,7 @@
                 <div class="avatar-circle"><i class="fa-solid fa-user"></i></div>
                 <div class="user-info">
                     <span id="sidebar-username">Cargando...</span>
-                    <small id="sidebar-role">...</small>
+                    <small id="sidebar-role">Verificando rol...</small>
                 </div>
             </div>
 
@@ -84,17 +86,22 @@
                 </header>
                 
                 <div id="maquinas-container" class="maquinas-grid">
-                    <div class="spinner"></div>
+                    <div class="text-center p-5">
+                        <i class="fa-solid fa-circle-notch fa-spin fa-2x text-muted"></i>
+                        <p>Cargando sistemas...</p>
+                    </div>
                 </div>
             </section>
 
             <section id="view-personal" class="dashboard-view">
                 <header class="view-header">
                     <h1>Gestión de Recursos Humanos</h1>
-                    <button class="btn-secondary"><i class="fa-solid fa-user-plus"></i> Nuevo Empleado</button>
+                    <button class="btn btn-secondary btn-sm">
+                        <i class="fa-solid fa-user-plus"></i> Nuevo Empleado
+                    </button>
                 </header>
 
-                <div id="admin-personal-container" class="table-responsive">
+                <div class="table-responsive">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -105,7 +112,8 @@
                             </tr>
                         </thead>
                         <tbody id="user-table-body">
-                            </tbody>
+                            <tr><td colspan="4" class="text-center">Cargando usuarios...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </section>
@@ -114,7 +122,7 @@
                 <header class="view-header">
                     <h1>Reportes de Producción</h1>
                     <div class="date-filter">
-                        <input type="date" value="2025-11-19">
+                        <input type="date" class="form-input" style="width: auto; padding: 5px;" value="2025-11-19">
                     </div>
                 </header>
 
@@ -129,7 +137,7 @@
                         <div class="big-number">1,240</div>
                         <p>Lote: LT-2025-A</p>
                     </div>
-                    <div class="report-card alert-card">
+                    <div class="report-card">
                         <h3>Paros de Emergencia</h3>
                         <div class="big-number text-danger">3</div>
                         <p>Revisar Máquina 1</p>
@@ -137,7 +145,8 @@
                 </div>
                 
                 <div class="chart-placeholder">
-                    <p><i class="fa-solid fa-chart-area"></i> Gráfica de Temperatura (Últimas 24h)</p>
+                    <i class="fa-solid fa-chart-area fa-3x text-muted mb-2"></i>
+                    <p>Gráfica de Temperatura (Últimas 24h)</p>
                     <div class="fake-graph"></div>
                 </div>
             </section>
@@ -166,16 +175,17 @@
                             <span class="msg-time">Ayer</span>
                         </div>
                     </div>
+
                     <div class="message-compose">
                         <h3>Enviar Comunicado</h3>
-                        <form>
+                        <form id="chat-form">
                             <select class="form-input">
                                 <option>Para: Todos</option>
                                 <option>Para: Mantenimiento</option>
                                 <option>Para: Operadores</option>
                             </select>
                             <textarea class="form-input" rows="5" placeholder="Escribe tu mensaje aquí..."></textarea>
-                            <button type="button" class="btn-primary">Enviar</button>
+                            <button type="submit" class="btn btn-primary">Enviar</button>
                         </form>
                     </div>
                 </div>
@@ -186,19 +196,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
-
-    <script>
-        function switchTab(tabName) {
-            // 1. Quitar clase active de todos los links
-            document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
-            // 2. Poner active al clickeado (truco simple buscando por onclick)
-            event.currentTarget.classList.add('active');
-
-            // 3. Ocultar todas las vistas
-            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
-            // 4. Mostrar la vista deseada
-            document.getElementById('view-' + tabName).classList.add('active');
-        }
-    </script>
 </body>
 </html>

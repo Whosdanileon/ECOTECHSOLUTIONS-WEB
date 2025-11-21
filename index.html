@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EcoTech Solutions: Transformamos Lemna Minor en superalimento sostenible para acuicultura. Alta proteína, 100% orgánico y tecnología de punta.">
+    <meta name="author" content="ECOTECHSOLUTIONS">
+    <meta name="theme-color" content="#4CAF50">
+    
     <title>ECOTECHSOLUTIONS - Nutrición Acuícola Sostenible</title>
+    
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
     <nav class="main-nav">
         <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+            <img src="images/logo.png" alt="Logotipo de ECOTECHSOLUTIONS">
         </a>
         <div class="center-nav-links">
             <a href="#nosotros" class="nav-link">NOSOTROS</a>
@@ -21,18 +27,22 @@
             <a href="#galeria" class="nav-link">GALERÍA</a>
         </div>
         <div class="right-nav">
-            <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito de compras">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
             <div class="auth-links" id="auth-links-container">
-            </div>
+                </div>
         </div>
     </nav>
 
     <main>
         <section class="hero-section">
-            <img src="images/hero-background.jpg" alt="Campo de Lemna Minor" class="hero-background-image">
+            <img src="images/hero-background.jpg" alt="Campo de cultivo de Lemna Minor" class="hero-background-image">
             <div class="hero-overlay"></div>
             <div class="hero-content">
                 <p class="hero-subtitle">Publicando el futuro</p>
@@ -46,20 +56,23 @@
             <div class="container">
                 <div class="about-content">
                     <h2>Sobre Nosotros</h2>
-                    <p>En ECOTECHSOLUTIONS, transformamos la Lemna Minor, una de las plantas de más rápido crecimiento en el mundo, en un superalimento sostenible para peces. Nuestro proceso super-filtrado garantiza un producto puro y sostenible.</p>
+                    <p>En ECOTECHSOLUTIONS, transformamos la <strong>Lemna Minor</strong>, una de las plantas de más rápido crecimiento en el mundo, en un superalimento sostenible para peces. Nuestro proceso super-filtrado garantiza un producto puro y libre de contaminantes.</p>
                 </div>
                 <div class="about-pillars">
                     <div class="pillar">
+                        <i class="fa-solid fa-leaf fa-2x" style="color: var(--color-primary); margin-bottom: 10px;"></i>
                         <h4>100% Sostenible</h4>
-                        <p>Proceso patentado con 0% químicos</p>
+                        <p>Proceso patentado con 0% químicos nocivos.</p>
                     </div>
                     <div class="pillar">
+                        <i class="fa-solid fa-dna fa-2x" style="color: var(--color-primary); margin-bottom: 10px;"></i>
                         <h4>Alta Proteína</h4>
-                        <p>38% a 42% por cada 100g</p>
+                        <p>38% a 42% de proteína por cada 100g.</p>
                     </div>
                     <div class="pillar">
+                        <i class="fa-solid fa-microchip fa-2x" style="color: var(--color-primary); margin-bottom: 10px;"></i>
                         <h4>Tecnología</h4>
-                        <p>Producción vertical automatizada</p>
+                        <p>Producción vertical automatizada y monitoreada.</p>
                     </div>
                 </div>
             </div>
@@ -67,39 +80,63 @@
 
         <section id="producto" class="page-section bg-light">
             <div class="container">
-                <h2>Nuestro Producto</h2>
+                <h2>Nuestro Producto Estrella</h2>
                 <div class="featured-product-layout-new">
                     <div class="product-left-column">
                         <div class="featured-product-image">
-                            <img src="images/product-bag.png" alt="Suplemento de Lemna Minor">
+                            <img src="images/product-bag.png" alt="Bolsa de Suplemento de Lemna Minor">
                         </div>
                         <div class="product-description-compact">
-                            <h3 id="index-producto-nombre">Cargando...</h3>
+                            <h3 id="index-producto-nombre">Cargando producto...</h3>
                             <p>El superalimento para una acuicultura sostenible y rentable. Alto en proteína y 100% orgánico.</p>
                             <div class="product-price">
-                                <span class="price-amount" id="index-producto-precio">$---</span>
+                                <span class="price-amount" id="index-producto-precio">...</span>
                                 <span class="price-unit">MXN Bolsa 1kg</span>
                             </div>
-                            <a href="tienda.html" class="btn btn-primary">Comprar Ahora</a>
+                            <a href="tienda.html" class="btn btn-primary">Ver Detalles</a>
                         </div>
                     </div>
                     <div class="product-right-column">
                         <div class="nutrition-info-static">
-                            <h4>Información Nutricional</h4>
+                            <h4><i class="fa-solid fa-flask"></i> Información Nutricional</h4>
                             <p class="portion-text">Valores aproximados por cada 100g de producto.</p>
                             <div class="nutrition-highlights-grid">
-                                <div class="nutrition-highlight-item"><span class="nutrition-label">Proteína</span><span class="nutrition-value">54g</span></div>
-                                <div class="nutrition-highlight-item"><span class="nutrition-label">Grasa</span><span class="nutrition-value">9g</span></div>
-                                <div class="nutrition-highlight-item"><span class="nutrition-label">Fibra</span><span class="nutrition-value">13g</span></div>
-                                <div class="nutrition-highlight-item"><span class="nutrition-label">Energía</span><span class="nutrition-value">330 Kcal</span></div>
+                                <div class="nutrition-highlight-item">
+                                    <span class="nutrition-label">Proteína</span>
+                                    <span class="nutrition-value">42g</span>
+                                </div>
+                                <div class="nutrition-highlight-item">
+                                    <span class="nutrition-label">Grasa</span>
+                                    <span class="nutrition-value">9g</span>
+                                </div>
+                                <div class="nutrition-highlight-item">
+                                    <span class="nutrition-label">Fibra</span>
+                                    <span class="nutrition-value">13g</span>
+                                </div>
+                                <div class="nutrition-highlight-item">
+                                    <span class="nutrition-label">Energía</span>
+                                    <span class="nutrition-value">330 Kcal</span>
+                                </div>
                             </div>
                             <div class="nutrition-table-compact">
                                 <table>
                                     <tbody>
-                                        <tr class="highlight-row"><td>Proteína Cruda</td><td>42g</td></tr>
-                                        <tr><td>Carbohidratos</td><td>12g</td></tr>
-                                        <tr><td>Calcio</td><td>2.8g</td></tr>
-                                        <tr><td>Fósforo</td><td>1.2g</td></tr>
+                                        <tr class="highlight-row">
+                                            <td>Proteína Cruda</td>
+                                            <td>42g</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Carbohidratos</td>
+                                            <td>12g</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Calcio</td>
+                                            <td>2.8g</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Fósforo</td>
+                                            <td>1.2g</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -113,9 +150,15 @@
             <div class="container">
                 <h2>Nuestra Granja</h2>
                 <div class="gallery-grid">
-                    <div class="gallery-item"><img src="images/hero-background.jpg" alt="Galería 1"></div>
-                    <div class="gallery-item"><img src="images/product-bag.png" alt="Galería 2"></div>
-                    <div class="gallery-item"><img src="images/hero-background.jpg" alt="Galería 3"></div>
+                    <div class="gallery-item">
+                        <img src="images/hero-background.jpg" alt="Cultivo de Lemna en estanques" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/product-bag.png" alt="Producto final empaquetado" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/hero-background.jpg" alt="Vista detallada de la planta" loading="lazy">
+                    </div>
                 </div>
             </div>
         </section>
@@ -125,25 +168,26 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col-1">
-                    <img src="images/logo.png" alt="Logo" class="footer-logo-placeholder">
-                    <div class="social-links"></div>
+                    <img src="images/logo.png" alt="Logo EcoTech" class="footer-logo-placeholder">
+                    <div class="social-links">
+                        </div>
                 </div>
                 <div class="footer-col-2">
-                    <h4>Datos</h4>
+                    <h4>Contacto</h4>
                     <p>
                         Av. Blv, Place, #123<br>
                         Tlaxcala, México<br>
-                        +52 247 123 4567<br>
-                        info@ecotech.com
+                        <a href="tel:+522471234567">+52 247 123 4567</a><br>
+                        <a href="mailto:info@ecotech.com">info@ecotech.com</a>
                     </p>
                 </div>
                 <div class="footer-col-3">
-                    <h4>Política de la Tienda</h4>
+                    <h4>Enlaces Rápidos</h4>
                     <ul>
-                        <li><a href="#">Envío y entrega</a></li>
+                        <li><a href="tienda.html">Tienda</a></li>
                         <li><a href="#">Términos y condiciones</a></li>
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="panel.html">Acceso Personal</a></li>
+                        <li><a href="#">Preguntas Frecuentes</a></li>
+                        <li><a href="panel.html">Acceso Personal (Intranet)</a></li>
                     </ul>
                 </div>
             </div>
