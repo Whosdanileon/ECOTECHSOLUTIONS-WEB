@@ -1,5 +1,5 @@
 /* ==========================================================================
- * ECOTECHSOLUTIONS - MAIN.JS v19 (CHECKOUT DISPLAY FIX)
+ * ECOTECHSOLUTIONS - MAIN.JS v20 (CLEAN TECH FINAL)
  * ========================================================================== */
 
 /* 1. CONFIGURACIÓN */
@@ -72,12 +72,24 @@ window.switchTab = function(tabName) {
 const Auth = {
     login: async (e) => {
         e.preventDefault();
+        const emailInput = document.getElementById('login-email');
+        const passInput = document.getElementById('login-password');
+        
+        if(!emailInput || !passInput) return;
+
+        const load = notify.loading('Iniciando sesión...');
         const { data, error } = await db.auth.signInWithPassword({
-            email: document.getElementById('login-email').value,
-            password: document.getElementById('login-password').value
+            email: emailInput.value,
+            password: passInput.value
         });
-        if (error) notify.error('Error: ' + error.message);
-        else window.location.reload();
+        
+        notify.close(load);
+
+        if (error) {
+            notify.error('Error: ' + error.message);
+        } else {
+            window.location.reload();
+        }
     },
 
     register: async (e) => {
@@ -255,7 +267,7 @@ const Dashboard = {
             Dashboard.renderMachines(p.rol);
             Dashboard.initChat(p);
             Dashboard.subscribeRealtime();
-            if(CONFIG.ROLES_SYS.includes(p.rol) || CONFIG.ROLES.ADMIN.includes(p.rol)) {
+            if(CONFIG.ROLES.SYS.includes(p.rol) || CONFIG.ROLES.ADMIN.includes(p.rol)) {
                 Dashboard.initAdminUsers(p.rol);
             }
         }
@@ -304,6 +316,7 @@ const Dashboard = {
         }
     },
 
+    // --- RENDERIZADO "CLEAN TECH" ---
     renderMachines: async (rol) => {
         const container = document.getElementById('maquinas-container');
         const { data } = await db.from('maquinas').select('*').order('id');
@@ -315,33 +328,98 @@ const Dashboard = {
             let body = '';
 
             if (m.id === 1) {
+                // MÁQUINA 1: DISEÑO LIMPIO
+                const isActive = m.estado === 'En Ciclo';
                 const ctrls = isAdmin ? `
-                <div class="plc-controls">
-                    <div class="control-row"><span>Ciclo:</span><div class="btn-group">
-                        <button class="btn btn-sm btn-light" onclick="window.plcCmd(1,'Inicio')"><i class="fa-solid fa-play" style="color:green"></i></button>
-                        <button class="btn btn-sm btn-danger" onclick="window.plcCmd(1,'Paro')"><i class="fa-solid fa-stop"></i></button>
-                    </div></div>
-                    <div class="control-row"><span>Tanque:</span><div class="toggle-switch">
-                        <input type="radio" name="tk" id="tk-in" ${m.controles.online_llenado?'checked':''} onclick="window.plcSw(1,'online_llenado')"><label for="tk-in">In</label>
-                        <input type="radio" name="tk" id="tk-off" ${(!m.controles.online_llenado&&!m.controles.online_vaciado)?'checked':''} onclick="window.plcSw(1,'fill_off')"><label for="tk-off">Off</label>
-                        <input type="radio" name="tk" id="tk-out" ${m.controles.online_vaciado?'checked':''} onclick="window.plcSw(1,'online_vaciado')"><label for="tk-out">Out</label>
-                    </div></div>
-                    <div class="control-row"><span>Charola:</span><div class="toggle-switch">
-                        <input type="radio" name="ch" id="ch-up" ${m.controles.online_arriba?'checked':''} onclick="window.plcSw(1,'online_arriba')"><label for="ch-up">Up</label>
-                        <input type="radio" name="ch" id="ch-off" ${(!m.controles.online_arriba&&!m.controles.online_abajo)?'checked':''} onclick="window.plcSw(1,'tray_off')"><label for="ch-off">Off</label>
-                        <input type="radio" name="ch" id="ch-dn" ${m.controles.online_abajo?'checked':''} onclick="window.plcSw(1,'online_abajo')"><label for="ch-dn">Dn</label>
-                    </div></div>
-                </div>` : '<p style="color:#666;">Solo lectura</p>';
-                body = `<p class="m-area">${m.area}</p>${ctrls}`;
+                <div class="machine-interface">
+                    <div class="action-buttons">
+                        <button class="btn-action btn-start ${isActive ? 'active' : ''}" onclick="window.plcCmd(1,'Inicio')">
+                            <i class="fa-solid fa-play"></i> INICIAR
+                        </button>
+                        <button class="btn-action btn-stop" onclick="window.plcCmd(1,'Paro')">
+                            <i class="fa-solid fa-stop"></i> PARO
+                        </button>
+                    </div>
+
+                    <div class="control-group">
+                        <span class="control-label">Válvulas del Tanque</span>
+                        <div class="segmented-control">
+                            <div class="segmented-option">
+                                <input type="radio" name="tk" id="tk-in" ${m.controles.online_llenado?'checked':''} onclick="window.plcSw(1,'online_llenado')">
+                                <label for="tk-in">Entrada</label>
+                            </div>
+                            <div class="segmented-option">
+                                <input type="radio" name="tk" id="tk-off" ${(!m.controles.online_llenado&&!m.controles.online_vaciado)?'checked':''} onclick="window.plcSw(1,'fill_off')">
+                                <label for="tk-off">Cerrado</label>
+                            </div>
+                            <div class="segmented-option">
+                                <input type="radio" name="tk" id="tk-out" ${m.controles.online_vaciado?'checked':''} onclick="window.plcSw(1,'online_vaciado')">
+                                <label for="tk-out">Salida</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group" style="margin-bottom:0">
+                        <span class="control-label">Elevador de Charola</span>
+                        <div class="segmented-control">
+                            <div class="segmented-option">
+                                <input type="radio" name="ch" id="ch-up" ${m.controles.online_arriba?'checked':''} onclick="window.plcSw(1,'online_arriba')">
+                                <label for="ch-up">Subir</label>
+                            </div>
+                            <div class="segmented-option">
+                                <input type="radio" name="ch" id="ch-off" ${(!m.controles.online_arriba&&!m.controles.online_abajo)?'checked':''} onclick="window.plcSw(1,'tray_off')">
+                                <label for="ch-off">Freno</label>
+                            </div>
+                            <div class="segmented-option">
+                                <input type="radio" name="ch" id="ch-dn" ${m.controles.online_abajo?'checked':''} onclick="window.plcSw(1,'online_abajo')">
+                                <label for="ch-dn">Bajar</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>` : '<p class="text-muted text-center" style="padding:20px; background:#f9fafb; border-radius:8px;">Modo Visualización</p>';
+                
+                body = `<div class="m-area"><i class="fa-solid fa-location-arrow"></i> ${m.area}</div>${ctrls}`;
+                
             } else if (m.id === 2) {
+                // MÁQUINA 2: TERMÓMETRO LIMPIO
                 const t = m.controles.escalda_db;
-                const ctrls = isAdmin ? `<div class="plc-controls"><div class="btn-group w-100"><button class="btn btn-${m.controles.startremoto?'secondary':'light'}" onclick="window.plcRmt(2,true)">START</button><button class="btn btn-danger" onclick="window.plcRmt(2,false)">STOP</button></div></div>` : '';
-                body = `<div class="thermometer"><span id="temp-val-2" class="big-number">${t.toFixed(1)} °C</span><div class="progress-bg"><div id="temp-bar-2" class="progress-fill" style="width:${Math.min(t,100)}%"></div></div></div>${ctrls}`;
+                const ctrls = isAdmin ? `
+                <div class="action-buttons" style="margin-top:24px; margin-bottom:0;">
+                    <button class="btn-action btn-start ${m.controles.startremoto ? 'active' : ''}" onclick="window.plcRmt(2,true)">
+                        AUTO
+                    </button>
+                    <button class="btn-action btn-stop" onclick="window.plcRmt(2,false)">
+                        PARO EM.
+                    </button>
+                </div>` : '';
+                
+                body = `
+                <div class="clean-gauge">
+                    <div class="gauge-readout">
+                        ${t.toFixed(1)}<span class="gauge-unit">°C</span>
+                    </div>
+                    <div class="text-muted" style="font-size:0.9rem">Temperatura Actual</div>
+                    
+                    <div class="gauge-bar-bg">
+                        <div id="temp-bar-2" class="gauge-bar-fill" style="width:${Math.min(t,100)}%"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-top:5px;">
+                        <span>0°C</span>
+                        <span>Objetivo: 65°C</span>
+                        <span>100°C</span>
+                    </div>
+                </div>${ctrls}`;
             }
 
             container.insertAdjacentHTML('beforeend', `
                 <div class="card machine-card" id="machine-${m.id}">
-                    <div class="m-header"><h4>${m.nombre}</h4><span class="status-badge ${m.estado==='En Ciclo'||(m.id===2&&m.controles.startremoto)?'on':'off'}">${m.id===2?(m.controles.startremoto?'ON':'OFF'):m.estado}</span></div>
+                    <div class="m-header">
+                        <h4>${m.nombre}</h4>
+                        <div class="status-pill ${m.estado==='En Ciclo'||(m.id===2&&m.controles.startremoto)?'on':'off'}">
+                            <span class="status-pill dot"></span>
+                            ${m.id===2?(m.controles.startremoto?'OPERANDO':'DETENIDA'):m.estado}
+                        </div>
+                    </div>
                     <div class="m-body">${body}</div>
                 </div>`);
         });
@@ -394,26 +472,53 @@ const Dashboard = {
     },
 
     subscribeRealtime: () => {
+        // Escucha cambios en la base de datos en tiempo real
         db.channel('machines').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maquinas' }, p => {
             const m = p.new;
             const card = document.getElementById(`machine-${m.id}`);
             if(!card) return;
-            const badge = card.querySelector('.status-badge');
-            
-            if(m.id===1) {
-                badge.textContent = m.estado; badge.className = `status-badge ${m.estado==='En Ciclo'?'on':'off'}`;
-                const chk = (id,v) => { const e=document.getElementById(id); if(e) e.checked=v; };
-                chk('tk-in', m.controles.online_llenado); chk('tk-out', m.controles.online_vaciado); chk('tk-off', !m.controles.online_llenado&&!m.controles.online_vaciado);
-            } else if(m.id===2) {
-                document.getElementById('temp-val-2').textContent = m.controles.escalda_db.toFixed(1)+' °C';
-                document.getElementById('temp-bar-2').style.width = Math.min(m.controles.escalda_db,100)+'%';
-                badge.textContent = m.controles.startremoto?'ON':'OFF'; badge.className = `status-badge ${m.controles.startremoto?'on':'off'}`;
+
+            // 1. ACTUALIZAR VISUALIZADOR DE ESTADO
+            const pill = card.querySelector('.status-pill');
+            if(pill) {
+                const isActive = m.id === 2 ? m.controles.startremoto : (m.estado === 'En Ciclo');
+                const statusText = m.id === 2 ? (isActive ? 'OPERANDO' : 'DETENIDA') : m.estado;
+                pill.className = `status-pill ${isActive ? 'on' : 'off'}`;
+                pill.innerHTML = `<span class="status-pill dot"></span> ${statusText}`;
+            }
+
+            // 2. ACTUALIZAR CONTROLES
+            if(m.id === 1) {
+                const btnStart = card.querySelector('.btn-start');
+                if(btnStart) {
+                    if(m.estado === 'En Ciclo') btnStart.classList.add('active');
+                    else btnStart.classList.remove('active');
+                }
+                const setChk = (id, val) => { const el = document.getElementById(id); if(el) el.checked = val; };
+                setChk('tk-in', m.controles.online_llenado);
+                setChk('tk-off', !m.controles.online_llenado && !m.controles.online_vaciado);
+                setChk('tk-out', m.controles.online_vaciado);
+                setChk('ch-up', m.controles.online_arriba);
+                setChk('ch-off', !m.controles.online_arriba && !m.controles.online_abajo);
+                setChk('ch-dn', m.controles.online_abajo);
+            } else if(m.id === 2) {
+                const readout = card.querySelector('.gauge-readout');
+                if(readout) readout.innerHTML = `${m.controles.escalda_db.toFixed(1)}<span class="gauge-unit">°C</span>`;
+                const bar = document.getElementById('temp-bar-2');
+                if(bar) bar.style.width = Math.min(m.controles.escalda_db, 100) + '%';
+                const btnStart = card.querySelector('.btn-start');
+                if(btnStart) {
+                    if(m.controles.startremoto) btnStart.classList.add('active');
+                    else btnStart.classList.remove('active');
+                }
             }
         }).subscribe();
     }
-};
+}; // IMPORTANTE: Este punto y coma final cierra el objeto Dashboard
 
-/* --- GLOBALES HTML --- */
+/* ==========================================================================
+ * 7. GLOBALES HTML (Para onclick)
+ * ========================================================================== */
 window.plcCmd = async (id, act) => {
     const {data} = await db.from('maquinas').select('controles').eq('id',id).single();
     let c=data.controles; if(act==='Inicio'){c.Inicio=true;c.Paro=false;}else{c.Inicio=false;c.Paro=true;c.online_llenado=false;}
@@ -429,16 +534,20 @@ window.plcRmt = async (id, s) => {
     await db.from('maquinas').update({controles:{...data.controles, startremoto:s}}).eq('id',id);
 };
 
-/* --- BOOTSTRAP --- */
+/* ==========================================================================
+ * 8. BOOTSTRAP (INICIALIZACIÓN)
+ * ========================================================================== */
 document.addEventListener('DOMContentLoaded', async () => {
     Store.updateCount();
     const { data: { session } } = await db.auth.getSession();
     const user = session?.user;
     const path = window.location.pathname;
 
+    // Header Links
     const header = document.getElementById('auth-links-container');
     if(header) header.innerHTML = user ? `<a href="cuenta.html" class="nav-link">Mi Cuenta</a>` : `<a href="cuenta.html" class="nav-link">Acceder</a>`;
 
+    // Router
     if(path.includes('cuenta')) {
         if(user) {
             document.getElementById('auth-forms').style.display='none';
@@ -463,8 +572,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('login-overlay').style.display='none';
             document.getElementById('dashboard-layout').style.display='flex';
             Dashboard.init(user);
+            // Botón logout del panel
+            const btnOut = document.getElementById('btn-logout-panel');
+            if(btnOut) btnOut.onclick = Auth.logout;
         } else {
-            document.getElementById('panel-login-form').onsubmit = Auth.login;
+            // Manejar login desde el panel
+            const loginForm = document.getElementById('panel-login-form');
+            if(loginForm) loginForm.onsubmit = Auth.login;
         }
     }
     else if(path.includes('tienda') || path.includes('index') || path.endsWith('/')) {
@@ -472,7 +586,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btn = document.getElementById('btn-anadir-carrito');
         if(btn) btn.onclick = Store.addToCart;
     }
-    // FIX: LÓGICA DE CHECKOUT CORREGIDA AQUÍ
     else if(path.includes('checkout')) {
         if(user) {
             if(document.getElementById('checkout-login-prompt')) document.getElementById('checkout-login-prompt').style.display='none';

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow"> <meta name="theme-color" content="#1b2b1b">
+    <meta name="robots" content="noindex, nofollow"> 
+    <meta name="theme-color" content="#1b2b1b">
     <title>Panel de Control - ECOTECH</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,9 +40,7 @@
         
         <aside class="sidebar">
             <div class="sidebar-header">
-                <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="Logotipo de ECOTECHSOLUTIONS">
-        </a>
+                <img src="images/logo.png" alt="EcoTech Logo">
                 <span>ECOTECH</span>
             </div>
 
@@ -90,7 +89,7 @@
                 <div id="maquinas-container" class="maquinas-grid">
                     <div class="text-center p-5">
                         <i class="fa-solid fa-circle-notch fa-spin fa-2x text-muted"></i>
-                        <p>Cargando sistemas...</p>
+                        <p>Iniciando comunicación con PLC...</p>
                     </div>
                 </div>
             </section>
@@ -147,9 +146,18 @@
                 </div>
                 
                 <div class="chart-placeholder">
-                    <i class="fa-solid fa-chart-area fa-3x text-muted mb-2"></i>
-                    <p>Gráfica de Temperatura (Últimas 24h)</p>
-                    <div class="fake-graph"></div>
+                    <i class="fa-solid fa-chart-area fa-2x text-muted mb-2"></i>
+                    <p style="margin-bottom: 20px;">Historial de Temperatura (Últimas 24h)</p>
+                    
+                    <div class="fake-graph" style="background: white; border:1px solid #eee; height: 200px; display:flex; align-items:flex-end; justify-content:space-around; padding: 10px; gap:5px; border-radius: 8px;">
+                        <div style="width:10%; height:40%; background:#3498db; border-radius:3px 3px 0 0;" title="00:00 - 40°C"></div>
+                        <div style="width:10%; height:65%; background:#3498db; border-radius:3px 3px 0 0;" title="04:00 - 65°C"></div>
+                        <div style="width:10%; height:50%; background:#3498db; border-radius:3px 3px 0 0;" title="08:00 - 50°C"></div>
+                        <div style="width:10%; height:80%; background:#2ecc71; border-radius:3px 3px 0 0;" title="12:00 - 80°C (Óptimo)"></div>
+                        <div style="width:10%; height:60%; background:#3498db; border-radius:3px 3px 0 0;" title="16:00 - 60°C"></div>
+                        <div style="width:10%; height:75%; background:#3498db; border-radius:3px 3px 0 0;" title="20:00 - 75°C"></div>
+                        <div style="width:10%; height:90%; background:#e74c3c; border-radius:3px 3px 0 0;" title="23:59 - 90°C (Alerta)"></div>
+                    </div>
                 </div>
             </section>
 
