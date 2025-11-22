@@ -597,3 +597,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
+
+/* ==========================================================================
+ * 9. RESPONSIVIDAD MÓVIL
+ * ========================================================================== */
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    
+    sidebar.classList.toggle('active');
+    
+    if(sidebar.classList.contains('active')) {
+        overlay.classList.add('show');
+        // Mostrar botón de cerrar dentro del sidebar en móvil
+        const closeBtn = document.getElementById('close-sidebar-btn');
+        if(closeBtn) { 
+            closeBtn.style.display = window.innerWidth <= 968 ? 'block' : 'none'; 
+        }
+    } else {
+        overlay.classList.remove('show');
+    }
+};
+
+window.toggleSidebarIfMobile = function() {
+    if (window.innerWidth <= 968) {
+        window.toggleSidebar();
+    }
+};
+
+// Listener para cerrar menú al redimensionar a escritorio (por si acaso)
+window.addEventListener('resize', () => {
+    if(window.innerWidth > 968) {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('mobile-overlay').classList.remove('show');
+        const closeBtn = document.getElementById('close-sidebar-btn');
+        if(closeBtn) closeBtn.style.display = 'none';
+    }
+});
