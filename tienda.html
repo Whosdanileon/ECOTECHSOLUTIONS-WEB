@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Compra Lemna Minor premium. Suplemento proteico 100% orgánico para acuicultura sostenible. Presentación de 1kg.">
-    <meta name="theme-color" content="#4CAF50">
+    <meta name="theme-color" content="#4e7c30">
     
     <title>Tienda - ECOTECHSOLUTIONS</title>
     
@@ -19,7 +19,7 @@
 
     <nav class="main-nav">
         <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo" style="height: 40px; width: auto;">
         </a>
         <div class="center-nav-links">
             <a href="index.html#nosotros" class="nav-link">NOSOTROS</a>
@@ -27,12 +27,11 @@
             <a href="index.html#galeria" class="nav-link">GALERÍA</a>
         </div>
         <div class="right-nav">
-            <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito">
+            <a href="checkout.html" class="nav-icon" id="carrito-link" aria-label="Ver carrito">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
-            <div class="auth-links" id="auth-links-container">
-                </div>
+            <div class="auth-links" id="auth-links-container"></div>
         </div>
     </nav>
 
@@ -49,22 +48,22 @@
                 <div class="producto-detalles">
                     <h1 class="producto-titulo" id="producto-nombre">Cargando producto...</h1>
                     
-                    <p class="producto-precio" id="producto-precio">$---.--</p>
+                    <p class="producto-precio-grande" id="producto-precio">$---.--</p>
                     
-                    <div class="producto-stock">
+                    <div class="producto-stock" style="margin-bottom: 20px; color: #666;">
                         <i class="fa-solid fa-box-open"></i>
                         <span>Disponible:</span>
-                        <span class="producto-stock-numero" id="producto-stock">--</span>
-                        <span>paquetes en stock</span>
+                        <span class="producto-stock-numero" id="producto-stock" style="font-weight: bold; color: var(--color-primary);">--</span>
+                        <span>paquetes</span>
                     </div>
 
-                    <p class="producto-descripcion">
+                    <p class="producto-descripcion" style="font-size: 1.1rem; margin-bottom: 30px;">
                         Suplemento premium de Lemna Minor, empaquetado en un conveniente lote de 4 bolsas de 1kg cada una. Alto en proteína (42%) y 100% orgánico para una acuicultura sostenible y rentable.
                     </p>
 
                     <div class="nutrition-highlights">
                         <h4><i class="fa-solid fa-leaf"></i> Información Nutricional</h4>
-                        <p>Valores aproximados por cada 100g de producto</p>
+                        <p style="font-size: 0.9rem; margin-bottom: 15px;">Valores aproximados por cada 100g</p>
 
                         <div class="nutrition-grid">
                             <div class="nutrition-item">
@@ -87,18 +86,18 @@
                     </div>
 
                     <div class="compra-box">
-                        <h4>Realizar compra</h4>
+                        <h4 style="margin-bottom: 15px;">Realizar compra</h4>
                         
                         <div class="cantidad-selector">
                             <label for="cantidad">Cantidad:</label>
-                            <input type="number" id="cantidad" name="cantidad" value="1" min="1">
+                            <input type="number" id="cantidad" name="cantidad" value="1" min="1" class="form-input" style="width: 80px; display: inline-block; margin-bottom: 0;">
                         </div>
 
-                        <div class="botones-compra">
+                        <div class="botones-compra" style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <button id="btn-anadir-carrito" class="btn btn-primary btn-lg">
                                 <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
                             </button>
-                            <a href="checkout.html" class="btn btn-secondary">
+                            <a href="checkout.html" class="btn btn-light btn-lg" style="border: 1px solid #ddd;">
                                 <i class="fa-solid fa-credit-card"></i> Ir a Pagar
                             </a>
                         </div>
@@ -113,7 +112,7 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col-1">
-                    <img src="images/logo.png" alt="Logo EcoTech" class="footer-logo-placeholder">
+                    <img src="images/logo.png" alt="Logo EcoTech" class="footer-logo-placeholder" style="height: 35px; width: auto;">
                 </div>
                 <div class="footer-col-2">
                     <h4>Contacto</h4>

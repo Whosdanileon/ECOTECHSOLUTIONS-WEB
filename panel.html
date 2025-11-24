@@ -18,20 +18,22 @@
     <div id="login-overlay" class="login-overlay">
         <div class="login-box">
             <div class="login-header">
-                <img src="images/logo.png" alt="Logo EcoTech">
-                <h2>Acceso Restringido</h2>
-                <p>Sistema de Control Industrial</p>
+                <img src="images/logo.png" alt="Logo EcoTech" style="height: 50px; width: auto;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Acceso Restringido</h2>
+                <p style="color: #666; font-size: 0.9rem;">Sistema de Control Industrial</p>
             </div>
-            <form id="panel-login-form">
+            <form id="panel-login-form" style="margin-top: 2rem; text-align: left;">
                 <div class="input-group">
                     <label for="login-email"><i class="fa-solid fa-envelope"></i> Usuario</label>
                     <input type="email" id="login-email" class="form-input" placeholder="usuario@ecotech.com" required>
                 </div>
                 <div class="input-group">
                     <label for="login-password"><i class="fa-solid fa-lock"></i> Contraseña</label>
-                    <input type="password" id="login-password" class="form-input" placeholder="Contraseña" required>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••" required>
                 </div>
-                <button type="submit" class="btn-login">Ingresar al Sistema</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Ingresar al Sistema
+                </button>
             </form>
         </div>
     </div>
@@ -40,16 +42,16 @@
         
         <nav class="mobile-header">
             <div style="display:flex; align-items:center; gap:15px;">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menú">
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <img src="images/logo.png" alt="Logo" style="height: 28px;">
-                    <span style="font-weight:700; font-size:1.1rem; letter-spacing:0.5px;">ECOTECH</span>
+                    <img src="images/logo.png" alt="Logo" style="height: 24px; filter: brightness(0) invert(1);">
+                    <span style="font-weight:700; font-size:1rem; letter-spacing:0.5px;">ECOTECH HMI</span>
                 </div>
             </div>
             <div style="width:32px; height:32px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9rem;">
-                <i class="fa-solid fa-user"></i>
+                <i class="fa-solid fa-user-shield"></i>
             </div>
         </nav>
 
@@ -57,21 +59,21 @@
 
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()" style="position:absolute; right:15px; top:20px; display:none; color:white;" id="close-sidebar-btn">
+                <button onclick="toggleSidebar()" style="position:absolute; right:15px; top:20px; display:none; background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;" id="close-sidebar-btn">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
                 
-                <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
-        </a>
-                <a href="index.html" class="nav-link">ECOTECH</a>
+                <a href="index.html" class="logo" style="display: flex; align-items: center; gap: 10px; color: white; text-decoration: none;">
+                    <img src="images/logo.png" alt="Logo" style="height: 28px; filter: brightness(0) invert(1);">
+                    <span>ECOTECH</span>
+                </a>
             </div>
 
             <div class="user-profile-mini">
                 <div class="avatar-circle"><i class="fa-solid fa-user"></i></div>
                 <div class="user-info">
                     <span id="sidebar-username">Cargando...</span>
-                    <small id="sidebar-role">Verificando rol...</small>
+                    <small id="sidebar-role" style="color: var(--color-success);">Verificando...</small>
                 </div>
             </div>
 
@@ -87,14 +89,14 @@
                         <a href="#"><i class="fa-solid fa-chart-pie"></i> Reportes</a>
                     </li>
                     <li onclick="switchTab('mensajes'); toggleSidebarIfMobile()">
-                        <a href="#"><i class="fa-solid fa-envelope"></i> Mensajes <span class="badge-mini">3</span></a>
+                        <a href="#"><i class="fa-solid fa-envelope"></i> Mensajes <span class="badge-mini">Live</span></a>
                     </li>
                 </ul>
             </nav>
 
             <div class="sidebar-footer">
                 <button id="btn-logout-panel" class="btn-logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                    <i class="fa-solid fa-power-off"></i> Cerrar Sesión
                 </button>
             </div>
         </aside>
@@ -103,16 +105,22 @@
             
             <section id="view-planta" class="dashboard-view active">
                 <header class="view-header">
-                    <h1>Control de Planta en Tiempo Real</h1>
-                    <div class="status-indicator online">
-                        <span class="dot"></span> Conectado a PLC
-                    </div>
-                </header>
+    <div>
+        <h1>Control de Planta</h1>
+        <div class="status-indicator">
+            <span class="dot"></span> Conectando...
+        </div>
+    </div>
+    
+    <button id="btn-global-stop" class="btn-global-stop" onclick="window.toggleGlobalEmergency()">
+        <i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA
+    </button>
+</header>
                 
                 <div id="maquinas-container" class="maquinas-grid">
-                    <div class="text-center p-5">
-                        <i class="fa-solid fa-circle-notch fa-spin fa-2x text-muted"></i>
-                        <p>Sincronizando sistemas...</p>
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color: #cbd5e1;"></i>
+                        <p style="margin-top: 1rem; color: #64748b;">Sincronizando con PLC...</p>
                     </div>
                 </div>
             </section>
@@ -120,23 +128,25 @@
             <section id="view-personal" class="dashboard-view">
                 <header class="view-header">
                     <h1>Gestión de Recursos Humanos</h1>
-                    <button class="btn btn-primary btn-sm"> <i class="fa-solid fa-user-plus"></i> Nuevo Empleado
-                    </button>
+                    <button class="btn btn-primary btn-sm"> <i class="fa-solid fa-user-plus"></i> Nuevo Empleado</button>
                 </header>
 
-                <div class="table-responsive card"> <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Rol</th>
-                                <th>Área Asignada</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            <tr><td colspan="4" class="text-center">Cargando usuarios...</td></tr>
-                        </tbody>
-                    </table>
+                <div class="card" style="overflow: hidden;"> 
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Rol Asignado</th>
+                                    <th>Área</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body">
+                                <tr><td colspan="4" class="text-center" style="padding: 2rem;">Cargando usuarios...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -144,82 +154,81 @@
                 <header class="view-header">
                     <h1>Reportes de Producción</h1>
                     <div class="date-filter">
-                        <input type="date" class="form-input" style="width: auto; padding: 8px;" value="2025-11-22">
+                        <button class="btn btn-secondary btn-sm"><i class="fa-solid fa-calendar"></i> Hoy</button>
                     </div>
                 </header>
 
                 <div class="reports-grid">
                     <div class="report-card">
                         <h3>Eficiencia General (OEE)</h3>
-                        <div class="big-number">87%</div>
-                        <p class="trend up">▲ 2.4% vs semana anterior</p>
+                        <div class="big-number" style="color: var(--color-success);">87%</div>
+                        <p class="trend up"><i class="fa-solid fa-arrow-trend-up"></i> 2.4% vs ayer</p>
                     </div>
                     <div class="report-card">
-                        <h3>Unidades Producidas</h3>
+                        <h3>Producción Actual</h3>
                         <div class="big-number">1,240</div>
-                        <p>Lote: LT-2025-A</p>
+                        <p>Unidades / Turno A</p>
                     </div>
                     <div class="report-card">
-                        <h3>Paros de Emergencia</h3>
-                        <div class="big-number text-danger">3</div>
-                        <p>Revisar Máquina 1</p>
+                        <h3>Alertas Activas</h3>
+                        <div class="big-number" style="color: var(--color-danger);">0</div>
+                        <p>Sistema estable</p>
                     </div>
                 </div>
                 
-                <div class="card chart-placeholder" style="border:none; background:white; padding:20px; border-radius:12px; box-shadow:var(--shadow-sm);">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; color:var(--color-text-light);">
+                <div class="card" style="padding: 1.5rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; color:#64748b;">
                         <i class="fa-solid fa-chart-area"></i>
-                        <strong>Historial de Temperatura (Últimas 24h)</strong>
+                        <strong>Historial de Temperatura (Últimas 8h)</strong>
                     </div>
                     
                     <div class="fake-graph" style="height: 200px; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
-                        <div style="width:12%; height:40%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.8;"></div>
-                        <div style="width:12%; height:65%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.8;"></div>
-                        <div style="width:12%; height:50%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.8;"></div>
-                        <div style="width:12%; height:80%; background:#10b981; border-radius:4px 4px 0 0; opacity:0.9;"></div>
-                        <div style="width:12%; height:60%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.8;"></div>
-                        <div style="width:12%; height:75%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.8;"></div>
-                        <div style="width:12%; height:90%; background:#ef4444; border-radius:4px 4px 0 0; opacity:0.9;"></div>
+                        <div style="width:12%; height:40%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
+                        <div style="width:12%; height:65%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
+                        <div style="width:12%; height:50%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
+                        <div style="width:12%; height:80%; background:#10b981; border-radius:4px 4px 0 0; opacity:0.8;"></div>
+                        <div style="width:12%; height:60%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
+                        <div style="width:12%; height:75%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
+                        <div style="width:12%; height:55%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
+                        <div style="width:12%; height:70%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.6;"></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-top:5px;">
-                        <span>00:00</span>
-                        <span>04:00</span>
-                        <span>08:00</span>
-                        <span>12:00</span>
-                        <span>16:00</span>
-                        <span>20:00</span>
-                        <span>23:59</span>
+                        <span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span>
                     </div>
                 </div>
             </section>
 
             <section id="view-mensajes" class="dashboard-view">
                 <header class="view-header">
-                    <h1>Mensajes Internos</h1>
+                    <h1>Comunicación Interna</h1>
                 </header>
                 
                 <div class="messages-layout">
-                    <div class="message-list">
-                        <div class="msg-item unread">
-                            <div class="msg-avatar">S</div>
-                            <div class="msg-preview">
-                                <strong>Sistemas</strong>
-                                <p>Mantenimiento programado para el viernes...</p>
-                            </div>
-                            <span class="msg-time">10:30 AM</span>
+                    <div class="message-list" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                        <div style="text-align: center; padding: 20px; color: #94a3b8;">
+                            <i class="fa-regular fa-comments fa-2x"></i>
+                            <p>Cargando historial...</p>
                         </div>
                     </div>
 
-                    <div class="message-compose card" style="padding:20px;">
-                        <h3 style="margin-bottom:15px;">Enviar Comunicado</h3>
+                    <div class="message-compose card" style="padding: 20px; height: fit-content;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Nuevo Mensaje</h3>
                         <form id="chat-form">
-                            <select class="form-input">
-                                <option>Para: Todos</option>
-                                <option>Para: Mantenimiento</option>
-                                <option>Para: Operadores</option>
-                            </select>
-                            <textarea class="form-input" rows="5" placeholder="Escribe tu mensaje aquí..."></textarea>
-                            <button type="submit" class="btn btn-primary" style="width:100%">Enviar Mensaje</button>
+                            <div class="input-group">
+                                <label>Destinatario</label>
+                                <select class="form-input">
+                                    <option>Canal General (Planta)</option>
+                                    <option>Mantenimiento</option>
+                                    <option>Supervisores</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Mensaje</label>
+                                <textarea class="form-input" rows="4" placeholder="Escribe aquí..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width:100%">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar
+                            </button>
                         </form>
                     </div>
                 </div>

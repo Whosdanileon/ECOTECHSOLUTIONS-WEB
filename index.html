@@ -10,6 +10,7 @@
     <title>ECOTECHSOLUTIONS - Nutrición Acuícola Sostenible</title>
     
     <link rel="stylesheet" href="style.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,7 +20,7 @@
 
     <nav class="main-nav">
         <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="Logotipo de ECOTECHSOLUTIONS">
+            <img src="images/logo.png" alt="Logotipo de ECOTECHSOLUTIONS" style="height: 40px; width: auto;">
         </a>
         <div class="center-nav-links">
             <a href="#nosotros" class="nav-link">NOSOTROS</a>
@@ -27,7 +28,7 @@
             <a href="#galeria" class="nav-link">GALERÍA</a>
         </div>
         <div class="right-nav">
-            <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito de compras">
+            <a href="checkout.html" class="nav-icon" id="carrito-link" aria-label="Ver carrito de compras">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -35,8 +36,7 @@
                 </svg>
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
-            <div class="auth-links" id="auth-links-container">
-                </div>
+            <div class="auth-links" id="auth-links-container"></div>
         </div>
     </nav>
 
@@ -96,10 +96,12 @@
                             <a href="tienda.html" class="btn btn-primary">Ver Detalles</a>
                         </div>
                     </div>
+                    
                     <div class="product-right-column">
                         <div class="nutrition-info-static">
                             <h4><i class="fa-solid fa-flask"></i> Información Nutricional</h4>
                             <p class="portion-text">Valores aproximados por cada 100g de producto.</p>
+                            
                             <div class="nutrition-highlights-grid">
                                 <div class="nutrition-highlight-item">
                                     <span class="nutrition-label">Proteína</span>
@@ -117,7 +119,7 @@
                                     <span class="nutrition-label">Energía</span>
                                     <span class="nutrition-value">330 Kcal</span>
                                 </div>
-                                 <div class="nutrition-highlight-item">
+                                <div class="nutrition-highlight-item">
                                     <span class="nutrition-label">Proteína Cruda</span>
                                     <span class="nutrition-value">42g</span>
                                 </div>
@@ -163,8 +165,6 @@
             <div class="footer-grid">
                 <div class="footer-col-1">
                     <img src="images/logo.png" alt="Logo EcoTech" class="footer-logo-placeholder">
-                    <div class="social-links">
-                        </div>
                 </div>
                 <div class="footer-col-2">
                     <h4>Contacto</h4>
