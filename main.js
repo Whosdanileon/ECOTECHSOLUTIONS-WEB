@@ -1,9 +1,10 @@
 /* ==========================================================================
- * ECOTECHSOLUTIONS - MAIN.JS v20 (CLEAN TECH FINAL)
+ * ECOTECHSOLUTIONS - MAIN.JS v21 (OPTIMIZED & SECURE)
  * ========================================================================== */
 
-/* 1. CONFIGURACIÓN */
+/* 1. CONFIGURACIÓN Y ESTADO */
 const CONFIG = {
+    // NOTA: Asegúrate de tener Row Level Security (RLS) activado en Supabase para proteger los datos.
     SUPABASE_URL: 'https://dtdtqedzfuxfnnipdorg.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY',
     CART_KEY: 'ecotech_cart',
@@ -14,42 +15,90 @@ const CONFIG = {
     }
 };
 
+// Estado global para suscripciones
+const State = {
+    realtimeSubscription: null
+};
+
+// Inicialización de Supabase
 const db = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-console.log('✅ EcoTech System: Online');
+console.log('✅ EcoTech System: Online & Secure');
 
 /* ==========================================================================
- * 2. UTILIDADES
+ * 2. UTILIDADES Y SEGURIDAD
  * ========================================================================== */
 const notify = {
     show: (msg, type = 'info') => {
         let container = document.getElementById('notification-container');
         if (!container) {
-            container = document.createElement('div'); container.id = 'notification-container'; container.className = 'notification-container';
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.className = 'notification-container';
             document.body.appendChild(container);
         }
         const div = document.createElement('div');
         div.className = `notification notification-${type} show`;
-        div.innerHTML = `<div class="notification-icon">${type==='success'?'<i class="fa-solid fa-check"></i>':(type==='error'?'<i class="fa-solid fa-times"></i>':'<i class="fa-solid fa-info"></i>')}</div><div class="notification-content">${msg}</div>`;
+        
+        let icon = '<i class="fa-solid fa-info"></i>';
+        if (type === 'success') icon = '<i class="fa-solid fa-check"></i>';
+        if (type === 'error') icon = '<i class="fa-solid fa-times"></i>';
+        if (type === 'loading') icon = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+
+        // Sanitizamos el mensaje por seguridad si es texto dinámico
+        div.innerHTML = `<div class="notification-icon">${icon}</div><div class="notification-content">${msg}</div>`;
         container.appendChild(div);
-        setTimeout(() => { div.classList.remove('show'); setTimeout(() => div.remove(), 300); }, 4000);
+
+        if (type !== 'loading') {
+            setTimeout(() => {
+                div.classList.remove('show');
+                setTimeout(() => div.remove(), 300);
+            }, 4000);
+        }
         return div;
     },
     success: (m) => notify.show(m, 'success'),
     error: (m) => notify.show(m, 'error'),
     loading: (m) => notify.show(m, 'loading'),
-    close: (div) => { if(div) { div.classList.remove('show'); setTimeout(() => div.remove(), 300); } }
+    close: (div) => {
+        if (div) {
+            div.classList.remove('show');
+            setTimeout(() => div.remove(), 300);
+        }
+    }
 };
 
 const Utils = {
     formatCurrency: (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val),
-    formatTime: (dateStr) => new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+    
+    formatTime: (dateStr) => {
+        if (!dateStr) return '--:--';
+        return new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    },
+
     validate: (form) => {
         let valid = true;
         form.querySelectorAll('[required]').forEach(i => {
-            if (!i.value.trim()) { i.classList.add('input-error'); valid = false; }
-            else i.classList.remove('input-error');
+            if (!i.value.trim()) {
+                i.classList.add('input-error');
+                valid = false;
+            } else {
+                i.classList.remove('input-error');
+            }
         });
         return valid;
+    },
+
+    // PREVENCIÓN DE XSS: Escapa caracteres peligrosos antes de insertar HTML
+    escapeHtml: (text) => {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.toString().replace(/[&<>"']/g, (m) => map[m]);
     }
 };
 
@@ -57,13 +106,14 @@ const Utils = {
  * 3. FUNCIONES GLOBALES (UI)
  * ========================================================================== */
 window.switchTab = function(tabName) {
+    // UI Feedback inmediato
     document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
     const btn = document.querySelector(`.sidebar-nav li[onclick*="${tabName}"]`);
-    if(btn) btn.classList.add('active');
+    if (btn) btn.classList.add('active');
 
     document.querySelectorAll('.dashboard-view').forEach(v => v.classList.remove('active'));
     const view = document.getElementById('view-' + tabName);
-    if(view) view.classList.add('active');
+    if (view) view.classList.add('active');
 };
 
 /* ==========================================================================
@@ -74,78 +124,125 @@ const Auth = {
         e.preventDefault();
         const emailInput = document.getElementById('login-email');
         const passInput = document.getElementById('login-password');
-        
-        if(!emailInput || !passInput) return;
+
+        if (!emailInput || !passInput) return;
 
         const load = notify.loading('Iniciando sesión...');
         const { data, error } = await db.auth.signInWithPassword({
-            email: emailInput.value,
+            email: emailInput.value.trim(),
             password: passInput.value
         });
-        
+
         notify.close(load);
 
         if (error) {
             notify.error('Error: ' + error.message);
         } else {
+            // Recargar para actualizar UI basada en sesión
             window.location.reload();
         }
     },
 
     register: async (e) => {
         e.preventDefault();
-        const email = document.getElementById('registro-email').value;
+        const emailInput = document.getElementById('registro-email');
+        const passInput = document.getElementById('registro-password');
+        
+        const email = emailInput.value.trim();
+        const password = passInput.value;
+
+        if (password.length < 6) {
+            return notify.error('La contraseña debe tener al menos 6 caracteres');
+        }
+
+        const load = notify.loading('Creando cuenta...');
         const { data, error } = await db.auth.signUp({
             email: email,
-            password: document.getElementById('registro-password').value
+            password: password
         });
-        if (error) notify.error(error.message);
-        else {
-            await db.from('perfiles').insert([{ id: data.user.id, email: email, rol: 'Cliente', nombre_completo: 'Nuevo Usuario' }]);
-            notify.success('Cuenta creada. Inicia sesión.');
+
+        notify.close(load);
+
+        if (error) {
+            notify.error(error.message);
+        } else {
+            // Crear perfil inicial
+            const { error: profileError } = await db.from('perfiles').insert([
+                { id: data.user.id, email: email, rol: 'Cliente', nombre_completo: 'Nuevo Usuario' }
+            ]);
+            
+            if(profileError) console.error("Error creando perfil:", profileError);
+            notify.success('Cuenta creada exitosamente. Por favor inicia sesión.');
         }
     },
 
-    logout: async () => { 
+    logout: async () => {
         const load = notify.loading('Cerrando sesión...');
-        await db.auth.signOut(); 
+        // Limpiar suscripciones realtime antes de salir
+        if (State.realtimeSubscription) {
+            supabase.removeChannel(State.realtimeSubscription);
+            State.realtimeSubscription = null;
+        }
+        await db.auth.signOut();
         notify.close(load);
-        window.location.href = 'index.html'; 
+        window.location.href = 'index.html';
     },
 
     loadProfile: async (user) => {
         try {
-            const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
+            const { data: p, error } = await db.from('perfiles').select('*').eq('id', user.id).single();
+            if (error && error.code !== 'PGRST116') throw error; // Ignorar error si no existe perfil aun
+
             if (p) {
-                if(document.getElementById('profile-name')) document.getElementById('profile-name').value = p.nombre_completo || '';
-                if(document.getElementById('profile-phone')) document.getElementById('profile-phone').value = p.telefono || '';
-                if(document.getElementById('profile-address')) document.getElementById('profile-address').value = p.direccion || '';
-                if(document.getElementById('profile-email')) document.getElementById('profile-email').value = user.email;
+                const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+                setVal('profile-name', p.nombre_completo);
+                setVal('profile-phone', p.telefono);
+                setVal('profile-address', p.direccion);
+                setVal('profile-email', user.email);
             }
-        } catch (err) { console.log("Perfil incompleto"); }
-        
+        } catch (err) {
+            console.error("Error cargando perfil:", err);
+            notify.error("Error al cargar datos del perfil");
+        }
+
         const list = document.getElementById('pedidos-lista-container');
         if (list) {
             const { data: orders } = await db.from('pedidos').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+            
             if (orders && orders.length > 0) {
                 list.innerHTML = orders.map(o => `
                     <div class="pedido-card">
-                        <div class="pedido-header"><strong>Pedido #${String(o.id).slice(0,8)}</strong><span class="badge badge-primary">${o.estado || 'Procesando'}</span></div>
-                        <div class="order-info"><span>${new Date(o.created_at).toLocaleDateString()}</span><strong>${Utils.formatCurrency(o.total)}</strong></div>
+                        <div class="pedido-header">
+                            <strong>Pedido #${String(o.id).slice(0, 8)}</strong>
+                            <span class="badge badge-primary">${Utils.escapeHtml(o.estado) || 'Procesando'}</span>
+                        </div>
+                        <div class="order-info">
+                            <span>${new Date(o.created_at).toLocaleDateString()}</span>
+                            <strong>${Utils.formatCurrency(o.total)}</strong>
+                        </div>
                     </div>`).join('');
-            } else { list.innerHTML = '<p style="text-align:center; color:#666;">No tienes pedidos registrados.</p>'; }
+            } else {
+                list.innerHTML = '<p style="text-align:center; color:#666; padding: 20px;">No tienes pedidos registrados aún.</p>';
+            }
         }
     },
 
     saveProfile: async (e, user) => {
         e.preventDefault();
+        const load = notify.loading('Guardando...');
+        
         const updates = {
-            nombre_completo: document.getElementById('profile-name').value,
-            telefono: document.getElementById('profile-phone').value,
-            direccion: document.getElementById('profile-address').value
+            nombre_completo: document.getElementById('profile-name').value.trim(),
+            telefono: document.getElementById('profile-phone').value.trim(),
+            direccion: document.getElementById('profile-address').value.trim(),
+            updated_at: new Date()
         };
+
         const { error } = await db.from('perfiles').update(updates).eq('id', user.id);
-        if(error) notify.error('Error al guardar'); else notify.success('Datos actualizados');
+        
+        notify.close(load);
+        if (error) notify.error('Error al guardar cambios');
+        else notify.success('Datos actualizados correctamente');
     }
 };
 
@@ -156,179 +253,313 @@ const Store = {
     loadProduct: async () => {
         const el = document.getElementById('producto-nombre');
         const elIndex = document.getElementById('index-producto-nombre');
-        if(!el && !elIndex) return;
+        
+        if (!el && !elIndex) return;
 
-        const { data } = await db.from('productos').select('*').eq('id', 1).single();
-        if(data) {
-            if(el) {
-                el.textContent = data.nombre;
-                document.getElementById('producto-precio').textContent = Utils.formatCurrency(data.precio);
-                document.getElementById('producto-stock').textContent = data.stock_disponible;
-                const layout = document.querySelector('.shop-layout');
-                if(layout) { layout.dataset.pid = data.id; layout.dataset.stock = data.stock_disponible; }
+        try {
+            const { data, error } = await db.from('productos').select('*').eq('id', 1).single();
+            if (error) throw error;
+
+            if (data) {
+                // Actualización página Producto
+                if (el) {
+                    el.textContent = data.nombre;
+                    document.getElementById('producto-precio').textContent = Utils.formatCurrency(data.precio);
+                    document.getElementById('producto-stock').textContent = data.stock_disponible;
+                    
+                    const layout = document.querySelector('.shop-layout');
+                    if (layout) {
+                        layout.dataset.pid = data.id;
+                        layout.dataset.stock = data.stock_disponible;
+                    }
+
+                    // Deshabilitar botón si no hay stock
+                    const btn = document.getElementById('btn-anadir-carrito');
+                    if (data.stock_disponible <= 0 && btn) {
+                        btn.disabled = true;
+                        btn.textContent = "Agotado";
+                    }
+                }
+                // Actualización página Index
+                if (elIndex) {
+                    elIndex.textContent = data.nombre;
+                    document.getElementById('index-producto-precio').textContent = Utils.formatCurrency(data.precio);
+                }
             }
-            if(elIndex) {
-                elIndex.textContent = data.nombre;
-                document.getElementById('index-producto-precio').textContent = Utils.formatCurrency(data.precio);
-            }
+        } catch (err) {
+            console.error(err);
         }
     },
 
     addToCart: () => {
         const layout = document.querySelector('.shop-layout');
-        if(!layout) return;
-        const qty = parseInt(document.getElementById('cantidad').value);
+        if (!layout) return;
+
+        const qtyInput = document.getElementById('cantidad');
+        const qty = parseInt(qtyInput.value);
         const max = parseInt(layout.dataset.stock);
-        if(qty > max) return notify.error('Stock insuficiente');
-        
+
+        if (isNaN(qty) || qty <= 0) return notify.error('Cantidad inválida');
+        if (qty > max) return notify.error(`Solo hay ${max} unidades disponibles`);
+
         let cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
-        cart[layout.dataset.pid] = (cart[layout.dataset.pid]||0) + qty;
+        const pid = layout.dataset.pid;
+        
+        cart[pid] = (cart[pid] || 0) + qty;
+        
+        // Validar que la suma en carrito no supere stock
+        if (cart[pid] > max) {
+            cart[pid] = max;
+            notify.show('Se ajustó al máximo stock disponible', 'info');
+        } else {
+            notify.success('Añadido al carrito');
+        }
+
         localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(cart));
-        notify.success('Añadido al carrito');
         Store.updateCount();
     },
 
     updateCount: () => {
         const c = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const el = document.getElementById('carrito-contador');
-        if(el) { el.textContent = Object.values(c).reduce((a,b)=>a+b,0); el.style.display = el.textContent==='0'?'none':'inline-block'; }
+        if (el) {
+            const count = Object.values(c).reduce((a, b) => a + b, 0);
+            el.textContent = count;
+            el.style.display = count === 0 ? 'none' : 'inline-block';
+        }
     },
 
     initCheckout: async (user) => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const container = document.getElementById('checkout-items');
-        if(!Object.keys(cart).length) { container.innerHTML = '<p>Carrito vacío</p>'; return; }
-
-        const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
-        if(p) {
-            if(document.getElementById('checkout-name')) document.getElementById('checkout-name').value = p.nombre_completo || '';
-            if(document.getElementById('checkout-phone')) document.getElementById('checkout-phone').value = p.telefono || '';
-            if(document.getElementById('checkout-address')) document.getElementById('checkout-address').value = p.direccion || '';
+        
+        if (!Object.keys(cart).length) {
+            if(container) container.innerHTML = '<p class="text-muted">Tu carrito está vacío.</p>';
+            const btn = document.getElementById('btn-confirmar-compra');
+            if(btn) btn.disabled = true;
+            return;
         }
 
-        let total = 0, html = '', itemsToBuy = []; 
-        for(const [pid, qty] of Object.entries(cart)) {
+        // Auto-llenado de datos
+        try {
+            const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
+            if (p) {
+                const setVal = (id, val) => { 
+                    const i = document.getElementById(id); 
+                    if(i && !i.value) i.value = val || ''; 
+                };
+                setVal('checkout-name', p.nombre_completo);
+                setVal('checkout-phone', p.telefono);
+                setVal('checkout-address', p.direccion);
+            }
+        } catch(e) {}
+
+        let total = 0, html = '', itemsToBuy = [];
+        
+        for (const [pid, qty] of Object.entries(cart)) {
             const { data } = await db.from('productos').select('*').eq('id', pid).single();
-            if(data) {
-                const sub = data.precio * qty; total += sub;
-                itemsToBuy.push({ id: pid, nombre: data.nombre, cantidad: qty, precio: data.precio });
-                html += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-                    <span>${data.nombre} x${qty}</span><strong>${Utils.formatCurrency(sub)}</strong></div>`;
+            if (data) {
+                const sub = data.precio * qty;
+                total += sub;
+                itemsToBuy.push({
+                    id: pid,
+                    nombre: data.nombre,
+                    cantidad: qty,
+                    precio: data.precio
+                });
+                html += `
+                <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
+                    <span>${Utils.escapeHtml(data.nombre)} <small class="text-muted">x${qty}</small></span>
+                    <strong>${Utils.formatCurrency(sub)}</strong>
+                </div>`;
             }
         }
-        container.innerHTML = html;
-        document.getElementById('checkout-total').textContent = Utils.formatCurrency(total);
+        
+        if (container) container.innerHTML = html;
+        const totalEl = document.getElementById('checkout-total');
+        if(totalEl) totalEl.textContent = Utils.formatCurrency(total);
+        
+        const subtotalEl = document.getElementById('checkout-subtotal');
+        if(subtotalEl) subtotalEl.textContent = Utils.formatCurrency(total); // Asumiendo envío 0 por ahora
 
-        document.getElementById('form-checkout').onsubmit = async (e) => {
-            e.preventDefault();
-            const load = notify.loading('Procesando pedido...');
-            
-            const envio = {
-                nombre: document.getElementById('checkout-name').value,
-                direccion: document.getElementById('checkout-address').value,
-                telefono: document.getElementById('checkout-phone').value
+        const form = document.getElementById('form-checkout');
+        if (form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const load = notify.loading('Procesando pedido...');
+
+                const envio = {
+                    nombre: document.getElementById('checkout-name').value,
+                    direccion: document.getElementById('checkout-address').value,
+                    telefono: document.getElementById('checkout-phone').value
+                };
+
+                // 1. Crear Pedido
+                const { error: orderError } = await db.from('pedidos').insert({
+                    user_id: user.id,
+                    items: itemsToBuy,
+                    total: total,
+                    datos_envio: envio,
+                    estado: 'Pagado'
+                });
+
+                if (orderError) {
+                    notify.close(load);
+                    notify.error('Error al procesar: ' + orderError.message);
+                    return;
+                }
+
+                // 2. Descontar Stock (Idealmente esto se hace con una función RPC en Supabase para atomicidad)
+                for (const item of itemsToBuy) {
+                    const { data: prod } = await db.from('productos').select('stock_disponible').eq('id', item.id).single();
+                    if (prod) {
+                        await db.from('productos').update({ 
+                            stock_disponible: Math.max(0, prod.stock_disponible - item.cantidad) 
+                        }).eq('id', item.id);
+                    }
+                }
+
+                notify.close(load);
+                notify.success('¡Compra realizada con éxito!');
+                localStorage.removeItem(CONFIG.CART_KEY);
+                setTimeout(() => window.location.href = 'cuenta.html', 2000);
             };
-
-            const { error: orderError } = await db.from('pedidos').insert({
-                user_id: user.id, items: itemsToBuy, total: total, datos_envio: envio, estado: 'Pagado'
-            });
-
-            if (orderError) { 
-                notify.close(load); 
-                notify.error('Error: ' + orderError.message); 
-                return; 
-            }
-
-            for(const item of itemsToBuy) {
-                const { data: prod } = await db.from('productos').select('stock_disponible').eq('id', item.id).single();
-                if (prod) await db.from('productos').update({ stock_disponible: prod.stock_disponible - item.cantidad }).eq('id', item.id);
-            }
-
-            notify.close(load); 
-            notify.success('¡Compra realizada!');
-            localStorage.removeItem(CONFIG.CART_KEY);
-            setTimeout(() => window.location.href = 'cuenta.html', 2000);
-        };
+        }
     }
 };
 
 /* ==========================================================================
- * 6. DASHBOARD
+ * 6. DASHBOARD (PANEL DE CONTROL)
  * ========================================================================== */
 const Dashboard = {
     init: async (user) => {
-        const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
-        document.getElementById('sidebar-username').textContent = p.nombre_completo || 'Usuario';
-        document.getElementById('sidebar-role').textContent = p.rol;
-        
-        Dashboard.applyPermissions(p.rol);
-
-        if (CONFIG.ROLES.STAFF.includes(p.rol)) {
-            Dashboard.renderMachines(p.rol);
-            Dashboard.initChat(p);
-            Dashboard.subscribeRealtime();
-            if(CONFIG.ROLES.SYS.includes(p.rol) || CONFIG.ROLES.ADMIN.includes(p.rol)) {
-                Dashboard.initAdminUsers(p.rol);
+        try {
+            const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
+            if (!p) {
+                notify.error('Perfil de usuario no encontrado.');
+                return;
             }
+
+            document.getElementById('sidebar-username').textContent = p.nombre_completo || 'Usuario';
+            document.getElementById('sidebar-role').textContent = p.rol;
+
+            Dashboard.applyPermissions(p.rol);
+
+            // Cargar módulos si es STAFF
+            if (CONFIG.ROLES.STAFF.includes(p.rol)) {
+                await Dashboard.renderMachines(p.rol);
+                Dashboard.initChat(p);
+                Dashboard.subscribeRealtime(); // Única llamada a suscripción
+                
+                if (CONFIG.ROLES.SYS.includes(p.rol) || CONFIG.ROLES.ADMIN.includes(p.rol)) {
+                    Dashboard.initAdminUsers(p.rol);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            notify.error('Error inicializando panel');
         }
     },
 
     applyPermissions: (rol) => {
         const tabPersonal = document.querySelector("li[onclick*='personal']");
-        if (!CONFIG.ROLES.ADMIN.includes(rol)) {
-            if(tabPersonal) tabPersonal.style.display = 'none';
+        const hasAccess = CONFIG.ROLES.ADMIN.includes(rol);
+        
+        if (tabPersonal) tabPersonal.style.display = hasAccess ? 'block' : 'none';
+        
+        if (!hasAccess) {
             const viewPersonal = document.getElementById('view-personal');
-            if(viewPersonal) viewPersonal.innerHTML = '<div style="padding:50px;text-align:center;"><h3>⛔ Acceso Denegado</h3></div>';
-        } else {
-            if(tabPersonal) tabPersonal.style.display = 'block';
+            if (viewPersonal) viewPersonal.innerHTML = '<div style="padding:50px;text-align:center;"><h3>⛔ Acceso Denegado</h3><p>No tienes permisos suficientes para ver esta sección.</p></div>';
         }
     },
 
     initChat: async (profile) => {
         const list = document.querySelector('.message-list');
-        const form = document.getElementById('chat-form') || document.querySelector('.message-compose form');
-        if(!list) return;
+        const form = document.getElementById('chat-form');
+        
+        if (!list) return;
 
-        const render = (m) => {
-            const texto = m.mensaje || m.content || ''; 
+        const renderMessage = (m) => {
+            const texto = Utils.escapeHtml(m.mensaje || m.content || '');
+            const sender = Utils.escapeHtml(m.sender);
+            const role = Utils.escapeHtml(m.role || 'Staff');
+            const initial = sender.charAt(0).toUpperCase();
+
+            // Evitar duplicados simples por ID si ya existe
+            if (document.querySelector(`[data-msg-id="${m.id}"]`)) return;
+
             const html = `
-                <div class="msg-item" style="padding:10px; background:white; border:1px solid #eee; margin-bottom:10px; border-radius:5px; display:flex; gap:10px;">
-                    <div class="msg-avatar" style="width:35px; height:35px; background:#eee; border-radius:50%; display:flex; align-items:center; justify-content:center;">${m.sender.charAt(0)}</div>
-                    <div><strong>${m.sender}</strong> <small style="color:#888">(${m.role || 'Staff'})</small><p style="margin:0; color:#555">${texto}</p></div>
+                <div class="msg-item" data-msg-id="${m.id}" style="animation: fadeIn 0.3s ease;">
+                    <div class="msg-avatar">${initial}</div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>${sender}</strong>
+                            <small style="color:#888; font-size:0.75rem;">${Utils.formatTime(m.created_at)}</small>
+                        </div>
+                        <small style="color:#666; font-style:italic;">${role}</small>
+                        <p style="margin:5px 0 0; color:#333;">${texto}</p>
+                    </div>
                 </div>`;
             list.insertAdjacentHTML('afterbegin', html);
         };
 
-        const { data } = await db.from('mensajes').select('*').order('created_at', { ascending: false }).limit(15);
-        if(data) { list.innerHTML = ''; data.forEach(render); }
+        // Cargar últimos mensajes
+        const { data } = await db.from('mensajes').select('*').order('created_at', { ascending: false }).limit(20);
+        if (data) {
+            list.innerHTML = '';
+            // Invertimos para que el orden visual sea correcto (nuevos arriba en insertAdjacentHTML)
+            [...data].reverse().forEach(renderMessage);
+        }
 
-        db.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes' }, p => render(p.new)).subscribe();
-
-        if(form) {
+        // Listener para nuevos mensajes (se maneja en subscribeRealtime, pero aquí configuramos el envío)
+        if (form) {
             form.onsubmit = async (e) => {
                 e.preventDefault();
-                const txt = form.querySelector('textarea').value;
-                if(txt.trim()) {
-                    const { error } = await db.from('mensajes').insert({ mensaje: txt, sender: profile.nombre_completo || 'Usuario', role: profile.rol });
-                    if(error) notify.error("Error: " + error.message); else form.querySelector('textarea').value = '';
+                const textarea = form.querySelector('textarea');
+                const txt = textarea.value.trim();
+                
+                if (txt) {
+                    const btn = form.querySelector('button');
+                    const originalText = btn.textContent;
+                    btn.disabled = true; btn.textContent = 'Enviando...';
+
+                    const { error } = await db.from('mensajes').insert({
+                        mensaje: txt,
+                        sender: profile.nombre_completo || 'Usuario',
+                        role: profile.rol
+                    });
+
+                    btn.disabled = false; btn.textContent = originalText;
+
+                    if (error) notify.error("Error al enviar: " + error.message);
+                    else textarea.value = '';
                 }
             };
         }
+        
+        // Exponemos renderMessage para usarlo en realtime
+        Dashboard.renderChatMessage = renderMessage;
     },
 
-    // --- RENDERIZADO "CLEAN TECH" ---
     renderMachines: async (rol) => {
         const container = document.getElementById('maquinas-container');
+        if (!container) return;
+
         const { data } = await db.from('maquinas').select('*').order('id');
-        if(!container || !data) return;
-        container.innerHTML = '';
+        if (!data) return;
+
+        container.innerHTML = ''; // Limpiar loader
 
         data.forEach(m => {
             const isAdmin = CONFIG.ROLES.ADMIN.includes(rol);
             let body = '';
+            
+            // Sanitización básica de nombres
+            const safeName = Utils.escapeHtml(m.nombre);
+            const safeArea = Utils.escapeHtml(m.area);
 
             if (m.id === 1) {
-                // MÁQUINA 1: DISEÑO LIMPIO
+                // MÁQUINA 1: Control de Tanques y Elevador
                 const isActive = m.estado === 'En Ciclo';
                 const ctrls = isAdmin ? `
                 <div class="machine-interface">
@@ -345,15 +576,15 @@ const Dashboard = {
                         <span class="control-label">Válvulas del Tanque</span>
                         <div class="segmented-control">
                             <div class="segmented-option">
-                                <input type="radio" name="tk" id="tk-in" ${m.controles.online_llenado?'checked':''} onclick="window.plcSw(1,'online_llenado')">
+                                <input type="radio" name="tk" id="tk-in" ${m.controles.online_llenado ? 'checked' : ''} onclick="window.plcSw(1,'online_llenado')">
                                 <label for="tk-in">Entrada</label>
                             </div>
                             <div class="segmented-option">
-                                <input type="radio" name="tk" id="tk-off" ${(!m.controles.online_llenado&&!m.controles.online_vaciado)?'checked':''} onclick="window.plcSw(1,'fill_off')">
+                                <input type="radio" name="tk" id="tk-off" ${(!m.controles.online_llenado && !m.controles.online_vaciado) ? 'checked' : ''} onclick="window.plcSw(1,'fill_off')">
                                 <label for="tk-off">Cerrado</label>
                             </div>
                             <div class="segmented-option">
-                                <input type="radio" name="tk" id="tk-out" ${m.controles.online_vaciado?'checked':''} onclick="window.plcSw(1,'online_vaciado')">
+                                <input type="radio" name="tk" id="tk-out" ${m.controles.online_vaciado ? 'checked' : ''} onclick="window.plcSw(1,'online_vaciado')">
                                 <label for="tk-out">Salida</label>
                             </div>
                         </div>
@@ -363,26 +594,26 @@ const Dashboard = {
                         <span class="control-label">Elevador de Charola</span>
                         <div class="segmented-control">
                             <div class="segmented-option">
-                                <input type="radio" name="ch" id="ch-up" ${m.controles.online_arriba?'checked':''} onclick="window.plcSw(1,'online_arriba')">
+                                <input type="radio" name="ch" id="ch-up" ${m.controles.online_arriba ? 'checked' : ''} onclick="window.plcSw(1,'online_arriba')">
                                 <label for="ch-up">Subir</label>
                             </div>
                             <div class="segmented-option">
-                                <input type="radio" name="ch" id="ch-off" ${(!m.controles.online_arriba&&!m.controles.online_abajo)?'checked':''} onclick="window.plcSw(1,'tray_off')">
+                                <input type="radio" name="ch" id="ch-off" ${(!m.controles.online_arriba && !m.controles.online_abajo) ? 'checked' : ''} onclick="window.plcSw(1,'tray_off')">
                                 <label for="ch-off">Freno</label>
                             </div>
                             <div class="segmented-option">
-                                <input type="radio" name="ch" id="ch-dn" ${m.controles.online_abajo?'checked':''} onclick="window.plcSw(1,'online_abajo')">
+                                <input type="radio" name="ch" id="ch-dn" ${m.controles.online_abajo ? 'checked' : ''} onclick="window.plcSw(1,'online_abajo')">
                                 <label for="ch-dn">Bajar</label>
                             </div>
                         </div>
                     </div>
                 </div>` : '<p class="text-muted text-center" style="padding:20px; background:#f9fafb; border-radius:8px;">Modo Visualización</p>';
                 
-                body = `<div class="m-area"><i class="fa-solid fa-location-arrow"></i> ${m.area}</div>${ctrls}`;
+                body = `<div class="m-area"><i class="fa-solid fa-location-arrow"></i> ${safeArea}</div>${ctrls}`;
                 
             } else if (m.id === 2) {
-                // MÁQUINA 2: TERMÓMETRO LIMPIO
-                const t = m.controles.escalda_db;
+                // MÁQUINA 2: Monitor de Temperatura
+                const t = m.controles.escalda_db || 0;
                 const ctrls = isAdmin ? `
                 <div class="action-buttons" style="margin-top:24px; margin-bottom:0;">
                     <button class="btn-action btn-start ${m.controles.startremoto ? 'active' : ''}" onclick="window.plcRmt(2,true)">
@@ -401,7 +632,7 @@ const Dashboard = {
                     <div class="text-muted" style="font-size:0.9rem">Temperatura Actual</div>
                     
                     <div class="gauge-bar-bg">
-                        <div id="temp-bar-2" class="gauge-bar-fill" style="width:${Math.min(t,100)}%"></div>
+                        <div id="temp-bar-2" class="gauge-bar-fill" style="width:${Math.min(t, 100)}%"></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-top:5px;">
                         <span>0°C</span>
@@ -414,10 +645,10 @@ const Dashboard = {
             container.insertAdjacentHTML('beforeend', `
                 <div class="card machine-card" id="machine-${m.id}">
                     <div class="m-header">
-                        <h4>${m.nombre}</h4>
-                        <div class="status-pill ${m.estado==='En Ciclo'||(m.id===2&&m.controles.startremoto)?'on':'off'}">
+                        <h4>${safeName}</h4>
+                        <div class="status-pill ${m.estado === 'En Ciclo' || (m.id === 2 && m.controles.startremoto) ? 'on' : 'off'}">
                             <span class="status-pill dot"></span>
-                            ${m.id===2?(m.controles.startremoto?'OPERANDO':'DETENIDA'):m.estado}
+                            ${m.id === 2 ? (m.controles.startremoto ? 'OPERANDO' : 'DETENIDA') : m.estado}
                         </div>
                     </div>
                     <div class="m-body">${body}</div>
@@ -427,12 +658,16 @@ const Dashboard = {
 
     initAdminUsers: async (myRole) => {
         const tbody = document.getElementById('user-table-body');
-        if(!tbody) return;
+        if (!tbody) return;
+        
         let users = [];
         try {
-            const { data } = await db.rpc('get_all_user_profiles');
+            // Intenta RPC primero (si existe la función segura en DB)
+            const { data, error } = await db.rpc('get_all_user_profiles');
+            if (error) throw error;
             users = data || [];
         } catch (e) {
+            // Fallback a select directo (requiere policies permisivas para admins)
             const { data } = await db.from('perfiles').select('*');
             users = data || [];
         }
@@ -441,30 +676,48 @@ const Dashboard = {
 
         tbody.innerHTML = users.map(u => `
             <tr data-uid="${u.id}">
-                <td>${u.email}</td>
-                <td><select class="form-input role-select" style="padding:5px;">${['Sistemas','Lider','Supervisor','Operador','Cliente'].map(r => `<option ${u.rol===r?'selected':''}>${r}</option>`).join('')}</select></td>
-                <td>${u.area||'-'}</td>
+                <td>${Utils.escapeHtml(u.email)}</td>
                 <td>
-                    <button class="btn-icon btn-save"><i class="fa-solid fa-save" style="color:var(--color-primary)"></i></button>
-                    ${isSys ? `<button class="btn-icon btn-delete"><i class="fa-solid fa-trash" style="color:red"></i></button>` : ''}
+                    <select class="form-input role-select" style="padding:5px;">
+                        ${['Sistemas', 'Lider', 'Supervisor', 'Operador', 'Cliente'].map(r => 
+                            `<option ${u.rol === r ? 'selected' : ''} value="${r}">${r}</option>`
+                        ).join('')}
+                    </select>
+                </td>
+                <td>${Utils.escapeHtml(u.area || '-')}</td>
+                <td>
+                    <button class="btn-icon btn-save" title="Guardar cambios"><i class="fa-solid fa-save" style="color:var(--color-primary)"></i></button>
+                    ${isSys ? `<button class="btn-icon btn-delete" title="Eliminar usuario"><i class="fa-solid fa-trash" style="color:red"></i></button>` : ''}
                 </td>
             </tr>`).join('');
         
+        // Listeners para botones dinámicos
         tbody.querySelectorAll('.btn-save').forEach(btn => {
             btn.onclick = async (e) => {
                 const row = e.target.closest('tr');
-                await db.from('perfiles').update({ rol: row.querySelector('.role-select').value }).eq('id', row.dataset.uid);
-                notify.success('Actualizado');
+                const newRole = row.querySelector('.role-select').value;
+                const load = notify.loading('Actualizando rol...');
+                
+                const { error } = await db.from('perfiles').update({ rol: newRole }).eq('id', row.dataset.uid);
+                
+                notify.close(load);
+                if(error) notify.error(error.message);
+                else notify.success('Rol actualizado');
             };
         });
         
-        if(isSys) {
+        if (isSys) {
             tbody.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.onclick = async (e) => {
-                    if(confirm('¿Eliminar usuario?')) {
+                    if (confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
                         const row = e.target.closest('tr');
-                        await db.from('perfiles').delete().eq('id', row.dataset.uid);
-                        row.remove(); notify.success('Eliminado');
+                        // Nota: Eliminar auth.users requiere Service Role (backend), aquí solo borramos perfil
+                        const { error } = await db.from('perfiles').delete().eq('id', row.dataset.uid);
+                        if(error) notify.error(error.message);
+                        else {
+                            row.remove();
+                            notify.success('Perfil eliminado');
+                        }
                     }
                 };
             });
@@ -472,66 +725,130 @@ const Dashboard = {
     },
 
     subscribeRealtime: () => {
-        // Escucha cambios en la base de datos en tiempo real
-        db.channel('machines').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maquinas' }, p => {
-            const m = p.new;
-            const card = document.getElementById(`machine-${m.id}`);
-            if(!card) return;
+        if (State.realtimeSubscription) return; // Evitar suscripciones dobles
 
-            // 1. ACTUALIZAR VISUALIZADOR DE ESTADO
-            const pill = card.querySelector('.status-pill');
-            if(pill) {
-                const isActive = m.id === 2 ? m.controles.startremoto : (m.estado === 'En Ciclo');
-                const statusText = m.id === 2 ? (isActive ? 'OPERANDO' : 'DETENIDA') : m.estado;
-                pill.className = `status-pill ${isActive ? 'on' : 'off'}`;
-                pill.innerHTML = `<span class="status-pill dot"></span> ${statusText}`;
-            }
+        State.realtimeSubscription = db.channel('public-room')
+            // Escuchar cambios en Maquinas
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maquinas' }, payload => {
+                const m = payload.new;
+                const card = document.getElementById(`machine-${m.id}`);
+                if (!card) return;
 
-            // 2. ACTUALIZAR CONTROLES
-            if(m.id === 1) {
-                const btnStart = card.querySelector('.btn-start');
-                if(btnStart) {
-                    if(m.estado === 'En Ciclo') btnStart.classList.add('active');
-                    else btnStart.classList.remove('active');
+                // 1. ACTUALIZAR VISUALIZADOR DE ESTADO
+                const pill = card.querySelector('.status-pill');
+                if (pill) {
+                    const isActive = m.id === 2 ? m.controles.startremoto : (m.estado === 'En Ciclo');
+                    const statusText = m.id === 2 ? (isActive ? 'OPERANDO' : 'DETENIDA') : m.estado;
+                    pill.className = `status-pill ${isActive ? 'on' : 'off'}`;
+                    pill.innerHTML = `<span class="status-pill dot"></span> ${Utils.escapeHtml(statusText)}`;
                 }
-                const setChk = (id, val) => { const el = document.getElementById(id); if(el) el.checked = val; };
-                setChk('tk-in', m.controles.online_llenado);
-                setChk('tk-off', !m.controles.online_llenado && !m.controles.online_vaciado);
-                setChk('tk-out', m.controles.online_vaciado);
-                setChk('ch-up', m.controles.online_arriba);
-                setChk('ch-off', !m.controles.online_arriba && !m.controles.online_abajo);
-                setChk('ch-dn', m.controles.online_abajo);
-            } else if(m.id === 2) {
-                const readout = card.querySelector('.gauge-readout');
-                if(readout) readout.innerHTML = `${m.controles.escalda_db.toFixed(1)}<span class="gauge-unit">°C</span>`;
-                const bar = document.getElementById('temp-bar-2');
-                if(bar) bar.style.width = Math.min(m.controles.escalda_db, 100) + '%';
-                const btnStart = card.querySelector('.btn-start');
-                if(btnStart) {
-                    if(m.controles.startremoto) btnStart.classList.add('active');
-                    else btnStart.classList.remove('active');
+
+                // 2. ACTUALIZAR CONTROLES (Solo si existen en el DOM, es decir, si soy Admin)
+                if (m.id === 1) {
+                    const btnStart = card.querySelector('.btn-start');
+                    if (btnStart) {
+                        if (m.estado === 'En Ciclo') btnStart.classList.add('active');
+                        else btnStart.classList.remove('active');
+                    }
+                    
+                    const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+                    setChk('tk-in', m.controles.online_llenado);
+                    setChk('tk-off', !m.controles.online_llenado && !m.controles.online_vaciado);
+                    setChk('tk-out', m.controles.online_vaciado);
+                    setChk('ch-up', m.controles.online_arriba);
+                    setChk('ch-off', !m.controles.online_arriba && !m.controles.online_abajo);
+                    setChk('ch-dn', m.controles.online_abajo);
+
+                } else if (m.id === 2) {
+                    const readout = card.querySelector('.gauge-readout');
+                    if (readout) readout.innerHTML = `${m.controles.escalda_db.toFixed(1)}<span class="gauge-unit">°C</span>`;
+                    
+                    const bar = document.getElementById('temp-bar-2');
+                    if (bar) bar.style.width = Math.min(m.controles.escalda_db, 100) + '%';
+                    
+                    const btnStart = card.querySelector('.btn-start');
+                    if (btnStart) {
+                        if (m.controles.startremoto) btnStart.classList.add('active');
+                        else btnStart.classList.remove('active');
+                    }
                 }
-            }
-        }).subscribe();
+            })
+            // Escuchar nuevos Mensajes de Chat
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes' }, payload => {
+                if (typeof Dashboard.renderChatMessage === 'function') {
+                    Dashboard.renderChatMessage(payload.new);
+                }
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('🔌 Realtime conectado');
+                    const indicator = document.querySelector('.status-indicator');
+                    if(indicator) {
+                        indicator.classList.add('online');
+                        indicator.innerHTML = '<span class="dot"></span> Conectado a PLC';
+                    }
+                } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                    console.log('🔌 Realtime desconectado');
+                     const indicator = document.querySelector('.status-indicator');
+                    if(indicator) {
+                        indicator.classList.remove('online');
+                        indicator.innerHTML = '<span class="dot" style="background:red"></span> Desconectado';
+                    }
+                }
+            });
     }
-}; // IMPORTANTE: Este punto y coma final cierra el objeto Dashboard
+};
 
 /* ==========================================================================
- * 7. GLOBALES HTML (Para onclick)
+ * 7. INTERFAZ PÚBLICA DE CONTROL (Expuesta a window para onclick HTML)
  * ========================================================================== */
 window.plcCmd = async (id, act) => {
-    const {data} = await db.from('maquinas').select('controles').eq('id',id).single();
-    let c=data.controles; if(act==='Inicio'){c.Inicio=true;c.Paro=false;}else{c.Inicio=false;c.Paro=true;c.online_llenado=false;}
-    await db.from('maquinas').update({controles:c, estado: act==='Inicio'?'En Ciclo':'Detenida'}).eq('id',id);
+    try {
+        const { data, error } = await db.from('maquinas').select('controles').eq('id', id).single();
+        if (error) throw error;
+        
+        let c = data.controles;
+        if (act === 'Inicio') { c.Inicio = true; c.Paro = false; }
+        else { c.Inicio = false; c.Paro = true; c.online_llenado = false; }
+        
+        await db.from('maquinas').update({ controles: c, estado: act === 'Inicio' ? 'En Ciclo' : 'Detenida' }).eq('id', id);
+    } catch (e) {
+        notify.error("Error de comunicación PLC");
+    }
 };
+
 window.plcSw = async (id, k) => {
-    const {data} = await db.from('maquinas').select('controles').eq('id',id).single();
-    let c=data.controles; c.online_llenado=(k==='online_llenado'); c.online_vaciado=(k==='online_vaciado');
-    await db.from('maquinas').update({controles:c}).eq('id',id);
+    try {
+        const { data, error } = await db.from('maquinas').select('controles').eq('id', id).single();
+        if(error) throw error;
+        
+        let c = data.controles;
+        // Lógica exclusiva para switches
+        if (k.startsWith('online_')) {
+             if(k === 'online_llenado') { c.online_llenado = true; c.online_vaciado = false; }
+             else if(k === 'online_vaciado') { c.online_vaciado = true; c.online_llenado = false; }
+             else if(k === 'online_arriba') { c.online_arriba = true; c.online_abajo = false; }
+             else if(k === 'online_abajo') { c.online_abajo = true; c.online_arriba = false; }
+        } else {
+             // Off commands
+             if(k === 'fill_off') { c.online_llenado = false; c.online_vaciado = false; }
+             if(k === 'tray_off') { c.online_arriba = false; c.online_abajo = false; }
+        }
+
+        await db.from('maquinas').update({ controles: c }).eq('id', id);
+    } catch(e) {
+        notify.error("Error cambiando switch");
+    }
 };
+
 window.plcRmt = async (id, s) => {
-    const {data} = await db.from('maquinas').select('controles').eq('id',id).single();
-    await db.from('maquinas').update({controles:{...data.controles, startremoto:s}}).eq('id',id);
+    try {
+        const { data, error } = await db.from('maquinas').select('controles').eq('id', id).single();
+        if(error) throw error;
+        await db.from('maquinas').update({ controles: { ...data.controles, startremoto: s } }).eq('id', id);
+    } catch(e) {
+        notify.error("Error remoto");
+    }
 };
 
 /* ==========================================================================
@@ -539,81 +856,108 @@ window.plcRmt = async (id, s) => {
  * ========================================================================== */
 document.addEventListener('DOMContentLoaded', async () => {
     Store.updateCount();
+    
+    // Verificación de Sesión
     const { data: { session } } = await db.auth.getSession();
     const user = session?.user;
     const path = window.location.pathname;
 
-    // Header Links
+    // Header Links (Dinámicos)
     const header = document.getElementById('auth-links-container');
-    if(header) header.innerHTML = user ? `<a href="cuenta.html" class="nav-link">Mi Cuenta</a>` : `<a href="cuenta.html" class="nav-link">Acceder</a>`;
+    if (header) {
+        header.innerHTML = user 
+            ? `<a href="cuenta.html" class="nav-link"><i class="fa-solid fa-user-circle"></i> Mi Cuenta</a>` 
+            : `<a href="cuenta.html" class="nav-link"><i class="fa-solid fa-sign-in-alt"></i> Acceder</a>`;
+    }
 
-    // Router
-    if(path.includes('cuenta')) {
-        if(user) {
-            document.getElementById('auth-forms').style.display='none';
-            document.getElementById('user-info').style.display='grid';
-            Auth.loadProfile(user);
-            document.getElementById('form-perfil').onsubmit = (e) => Auth.saveProfile(e, user);
-            document.getElementById('btn-logout').onclick = Auth.logout;
+    // Router Básico
+    if (path.includes('cuenta')) {
+        if (user) {
+            const authForms = document.getElementById('auth-forms');
+            const userInfo = document.getElementById('user-info');
+            if(authForms) authForms.style.display = 'none';
+            if(userInfo) userInfo.style.display = 'grid';
             
-            const bD = document.getElementById('btn-tab-datos'), bP = document.getElementById('btn-tab-pedidos');
-            if(bD && bP) {
-                bD.onclick = () => { document.getElementById('seccion-mis-datos').style.display='block'; document.getElementById('seccion-mis-pedidos').style.display='none'; bD.classList.add('active'); bP.classList.remove('active'); };
-                bP.onclick = () => { document.getElementById('seccion-mis-datos').style.display='none'; document.getElementById('seccion-mis-pedidos').style.display='block'; bP.classList.add('active'); bD.classList.remove('active'); };
+            Auth.loadProfile(user);
+            
+            const formPerfil = document.getElementById('form-perfil');
+            if(formPerfil) formPerfil.onsubmit = (e) => Auth.saveProfile(e, user);
+            
+            const btnLogout = document.getElementById('btn-logout');
+            if(btnLogout) btnLogout.onclick = Auth.logout;
+            
+            // Tabs Lógica
+            const bD = document.getElementById('btn-tab-datos');
+            const bP = document.getElementById('btn-tab-pedidos');
+            if (bD && bP) {
+                bD.onclick = () => { 
+                    document.getElementById('seccion-mis-datos').style.display = 'block'; 
+                    document.getElementById('seccion-mis-pedidos').style.display = 'none'; 
+                    bD.classList.add('active'); bP.classList.remove('active'); 
+                };
+                bP.onclick = () => { 
+                    document.getElementById('seccion-mis-datos').style.display = 'none'; 
+                    document.getElementById('seccion-mis-pedidos').style.display = 'block'; 
+                    bP.classList.add('active'); bD.classList.remove('active'); 
+                    Auth.loadProfile(user); // Recargar pedidos al cambiar tab
+                };
             }
         } else {
-            document.getElementById('auth-forms').style.display='block';
-            document.getElementById('form-login').onsubmit = Auth.login;
-            document.getElementById('form-registro').onsubmit = Auth.register;
+            const authForms = document.getElementById('auth-forms');
+            if(authForms) authForms.style.display = 'block';
+            
+            const formLogin = document.getElementById('form-login');
+            if(formLogin) formLogin.onsubmit = Auth.login;
+            
+            const formReg = document.getElementById('form-registro');
+            if(formReg) formReg.onsubmit = Auth.register;
         }
     } 
-    else if(path.includes('panel')) {
-        if(user) {
-            document.getElementById('login-overlay').style.display='none';
-            document.getElementById('dashboard-layout').style.display='flex';
+    else if (path.includes('panel')) {
+        if (user) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('dashboard-layout').style.display = 'flex';
             Dashboard.init(user);
-            // Botón logout del panel
+            
             const btnOut = document.getElementById('btn-logout-panel');
-            if(btnOut) btnOut.onclick = Auth.logout;
+            if (btnOut) btnOut.onclick = Auth.logout;
         } else {
-            // Manejar login desde el panel
             const loginForm = document.getElementById('panel-login-form');
-            if(loginForm) loginForm.onsubmit = Auth.login;
+            if (loginForm) loginForm.onsubmit = Auth.login;
         }
     }
-    else if(path.includes('tienda') || path.includes('index') || path.endsWith('/')) {
+    else if (path.includes('tienda') || path.includes('index') || path.endsWith('/')) {
         Store.loadProduct();
         const btn = document.getElementById('btn-anadir-carrito');
-        if(btn) btn.onclick = Store.addToCart;
+        if (btn) btn.onclick = Store.addToCart;
     }
-    else if(path.includes('checkout')) {
-        if(user) {
-            if(document.getElementById('checkout-login-prompt')) document.getElementById('checkout-login-prompt').style.display='none';
-            if(document.getElementById('checkout-container')) document.getElementById('checkout-container').style.display='grid';
+    else if (path.includes('checkout')) {
+        if (user) {
+            if(document.getElementById('checkout-login-prompt')) document.getElementById('checkout-login-prompt').style.display = 'none';
+            if(document.getElementById('checkout-container')) document.getElementById('checkout-container').style.display = 'grid';
             Store.initCheckout(user);
         } else {
-            if(document.getElementById('checkout-login-prompt')) document.getElementById('checkout-login-prompt').style.display='block';
-            if(document.getElementById('checkout-container')) document.getElementById('checkout-container').style.display='none';
+            if(document.getElementById('checkout-login-prompt')) document.getElementById('checkout-login-prompt').style.display = 'block';
+            if(document.getElementById('checkout-container')) document.getElementById('checkout-container').style.display = 'none';
         }
     }
 });
 
 /* ==========================================================================
- * 9. RESPONSIVIDAD MÓVIL
+ * 9. RESPONSIVIDAD MÓVIL Y UX
  * ========================================================================== */
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('mobile-overlay');
     
+    if(!sidebar || !overlay) return;
+
     sidebar.classList.toggle('active');
     
-    if(sidebar.classList.contains('active')) {
+    if (sidebar.classList.contains('active')) {
         overlay.classList.add('show');
-        // Mostrar botón de cerrar dentro del sidebar en móvil
         const closeBtn = document.getElementById('close-sidebar-btn');
-        if(closeBtn) { 
-            closeBtn.style.display = window.innerWidth <= 968 ? 'block' : 'none'; 
-        }
+        if (closeBtn) closeBtn.style.display = window.innerWidth <= 968 ? 'block' : 'none';
     } else {
         overlay.classList.remove('show');
     }
@@ -625,12 +969,15 @@ window.toggleSidebarIfMobile = function() {
     }
 };
 
-// Listener para cerrar menú al redimensionar a escritorio (por si acaso)
+// Listener para ajustar UI al redimensionar
 window.addEventListener('resize', () => {
-    if(window.innerWidth > 968) {
-        document.getElementById('sidebar').classList.remove('active');
-        document.getElementById('mobile-overlay').classList.remove('show');
+    if (window.innerWidth > 968) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
         const closeBtn = document.getElementById('close-sidebar-btn');
+        
+        if(sidebar) sidebar.classList.remove('active');
+        if(overlay) overlay.classList.remove('show');
         if(closeBtn) closeBtn.style.display = 'none';
     }
 });
