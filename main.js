@@ -1,5 +1,5 @@
 /* ==========================================================================
- * ECOTECHSOLUTIONS - MAIN.JS v30 (CURSOR FIX + STORE FULL)
+ * ECOTECHSOLUTIONS - MAIN.JS v31 (PREMIUM MODAL + FULL FEATURES)
  * ========================================================================== */
 
 /* 1. CONFIGURACIÓN Y ESTADO GLOBAL */
@@ -67,10 +67,12 @@ const notify = {
 
 const Utils = {
     formatCurrency: (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val),
+    
     formatTime: (dateStr) => {
         if (!dateStr) return '--:--';
         return new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
     },
+
     validate: (form) => {
         let valid = true;
         form.querySelectorAll('[required]').forEach(i => {
@@ -83,23 +85,75 @@ const Utils = {
         });
         return valid;
     },
+
     escapeHtml: (text) => {
         if (!text) return '';
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return text.toString().replace(/[&<>"']/g, (m) => map[m]);
     },
-    wait: (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+    wait: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+
+    // NUEVO: Modal de Confirmación Premium (Sin alertas nativas)
+    confirmModal: (title, message, callback) => {
+        // Eliminar modal previo si existe
+        const existing = document.getElementById('custom-confirm-modal');
+        if (existing) existing.remove();
+
+        // Crear estructura HTML del modal
+        const modalHTML = `
+            <div id="custom-confirm-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;">
+                <div style="background:white; padding:2rem; border-radius:12px; width:90%; max-width:400px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:scale(0.95); animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+                    <div style="width:60px; height:60px; background:#fee2e2; color:#dc2626; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 1rem;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem; color:#111;">${title}</h3>
+                    <p style="color:#666; margin-bottom:1.5rem; font-size:0.95rem;">${message}</p>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button id="btn-modal-cancel" style="padding:10px 20px; border:1px solid #e5e7eb; background:white; color:#374151; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s;">Cancelar</button>
+                        <button id="btn-modal-confirm" style="padding:10px 20px; border:none; background:#dc2626; color:white; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 4px 6px rgba(220,38,38,0.2); transition:all 0.2s;">Sí, confirmar</button>
+                    </div>
+                </div>
+            </div>
+            <style>
+                @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+                @keyframes popIn { from { transform:scale(0.9); opacity:0; } to { transform:scale(1); opacity:1; } }
+                #btn-modal-cancel:hover { background:#f9fafb; border-color:#d1d5db; }
+                #btn-modal-confirm:hover { background:#b91c1c; transform:translateY(-1px); }
+            </style>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const modal = document.getElementById('custom-confirm-modal');
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        const btnConfirm = document.getElementById('btn-modal-confirm');
+
+        const close = () => {
+            modal.style.opacity = '0';
+            setTimeout(() => modal.remove(), 200);
+        };
+
+        btnCancel.onclick = close;
+        modal.onclick = (e) => { if(e.target === modal) close(); }; // Cerrar al clic fuera
+
+        btnConfirm.onclick = () => {
+            callback();
+            close();
+        };
+    }
 };
 
 /* ==========================================================================
- * 3. FUNCIONES DE INTERFAZ (CARRUSELES Y CURSOR FANTASMA)
+ * 3. FUNCIONES DE INTERFAZ (CARRUSELES Y CURSOR)
  * ========================================================================== */
 
-// Carrusel de Testimonios
+// Carrusel de Testimonios (Index)
 const Carousel = {
     init: () => {
         const track = document.querySelector('.carousel-track');
         if (!track) return;
+
         const slides = Array.from(track.children);
         const nextButton = document.getElementById('next-slide');
         const prevButton = document.getElementById('prev-slide');
@@ -109,13 +163,17 @@ const Carousel = {
         if(slides.length === 0) return;
 
         const slideWidth = slides[0].getBoundingClientRect().width;
-        slides.forEach((slide, index) => slide.style.left = slideWidth * index + 'px');
+
+        slides.forEach((slide, index) => {
+            slide.style.left = slideWidth * index + 'px';
+        });
 
         const moveToSlide = (currentSlide, targetSlide) => {
             track.style.transform = 'translateX(-' + targetSlide.style.left + ')';
             currentSlide.classList.remove('current-slide');
             targetSlide.classList.add('current-slide');
         }
+
         const updateDots = (currentDot, targetDot) => {
             currentDot.classList.remove('current-slide');
             targetDot.classList.add('current-slide');
@@ -152,7 +210,7 @@ const Carousel = {
     }
 };
 
-// Galería de Producto
+// Galería de Producto (Tienda)
 window.ProductGallery = {
     set: (el) => {
         const src = el.src;
@@ -174,21 +232,19 @@ window.ProductGallery = {
     }
 };
 
-// === CURSOR MÁGICO (HTML ELEMENT) ===
+// Cursor Mágico (Lemna)
 const LemnaCursor = {
     init: () => {
-        // 1. Crear el elemento del cursor si no existe
         if (!document.getElementById('magic-cursor')) {
             const img = document.createElement('img');
             img.id = 'magic-cursor';
-            img.src = 'images/cursor.png';
+            img.src = 'images/cursor.png'; 
             img.alt = 'Cursor Lemna';
             document.body.appendChild(img);
         }
 
         const cursor = document.getElementById('magic-cursor');
 
-        // 2. Mover el elemento con el mouse
         document.addEventListener('mousemove', (e) => {
             if (document.body.classList.contains('cursor-lemna-active')) {
                 cursor.style.left = e.clientX + 'px';
@@ -196,30 +252,22 @@ const LemnaCursor = {
             }
         });
 
-        // 3. Activar en Hover de elementos especiales
         const triggers = document.querySelectorAll('.hover-lemna-trigger');
         triggers.forEach(el => {
             el.addEventListener('mouseenter', () => {
                 document.body.classList.add('cursor-lemna-active');
-                // Posicionar inmediatamente para evitar saltos
-                // Nota: se necesita el evento mousemove para coordenadas exactas, 
-                // pero el listener global ya se encarga.
             });
             el.addEventListener('mouseleave', () => {
                 document.body.classList.remove('cursor-lemna-active');
             });
         });
 
-        // 4. Activar temporalmente al hacer CLICK en botones
         document.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-                // Actualizar posición inicial del click para que aparezca ahí
                 cursor.style.left = e.clientX + 'px';
                 cursor.style.top = e.clientY + 'px';
-                
                 document.body.classList.add('cursor-lemna-active');
                 setTimeout(() => {
-                    // Solo quitarlo si no estamos haciendo hover sobre un trigger
                     if (!e.target.closest('.hover-lemna-trigger')) {
                         document.body.classList.remove('cursor-lemna-active');
                     }
@@ -234,28 +282,38 @@ const LemnaCursor = {
  * ========================================================================== */
 window.toggleGlobalEmergency = async () => {
     const btn = document.getElementById('btn-global-stop');
+    
+    // Usamos el nuevo modal también aquí para consistencia
     if (!globalEmergencyActive) {
-        if (confirm("⚠️ ¿ESTÁS SEGURO? Se detendrán TODAS las máquinas.")) {
-            globalEmergencyActive = true;
-            document.body.classList.add('emergency-mode');
-            if(btn) {
-                btn.classList.add('active');
-                btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> RESTABLECER SISTEMA';
+        Utils.confirmModal(
+            'PARO DE EMERGENCIA', 
+            'Se detendrán TODAS las máquinas inmediatamente y se bloquearán los controles. ¿Continuar?',
+            async () => {
+                globalEmergencyActive = true;
+                document.body.classList.add('emergency-mode');
+                if(btn) {
+                    btn.classList.add('active');
+                    btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> RESTABLECER SISTEMA';
+                }
+                notify.error("PARO DE EMERGENCIA ACTIVADO");
+                await window.plcCmd(1, 'Paro'); 
+                await window.plcSw(2, 'heat_off');
             }
-            notify.error("PARO DE EMERGENCIA ACTIVADO");
-            await window.plcCmd(1, 'Paro'); 
-            await window.plcSw(2, 'heat_off');
-        }
+        );
     } else {
-        if (confirm("¿Restablecer el sistema?")) {
-            globalEmergencyActive = false;
-            document.body.classList.remove('emergency-mode');
-            if(btn) {
-                btn.classList.remove('active');
-                btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA';
+        Utils.confirmModal(
+            'Restablecer Sistema',
+            '¿Confirmas que es seguro reactivar las operaciones?',
+            () => {
+                globalEmergencyActive = false;
+                document.body.classList.remove('emergency-mode');
+                if(btn) {
+                    btn.classList.remove('active');
+                    btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA';
+                }
+                notify.success("Sistema restablecido.");
             }
-            notify.success("Sistema restablecido.");
-        }
+        );
     }
 };
 
@@ -366,54 +424,84 @@ const Store = {
         const el = document.getElementById('producto-nombre');
         const elIndex = document.getElementById('index-producto-nombre');
         if (!el && !elIndex) return;
+
         try {
             const { data, error } = await db.from('productos').select('*').eq('id', 1).single();
             if (error) throw error;
+
             if (data) {
                 if (el) {
                     el.textContent = data.nombre;
                     document.getElementById('producto-precio').textContent = Utils.formatCurrency(data.precio);
                     document.getElementById('producto-stock').textContent = data.stock_disponible;
                     const layout = document.querySelector('.shop-layout');
-                    if (layout) { layout.dataset.pid = data.id; layout.dataset.stock = data.stock_disponible; }
+                    if (layout) {
+                        layout.dataset.pid = data.id;
+                        layout.dataset.stock = data.stock_disponible;
+                    }
                     const btn = document.getElementById('btn-anadir-carrito');
-                    if (data.stock_disponible <= 0 && btn) { btn.disabled = true; btn.textContent = "Agotado"; }
+                    if (data.stock_disponible <= 0 && btn) {
+                        btn.disabled = true;
+                        btn.textContent = "Agotado";
+                    }
                 }
                 if (elIndex) {
                     elIndex.textContent = data.nombre;
                     document.getElementById('index-producto-precio').textContent = Utils.formatCurrency(data.precio);
                 }
             }
-        } catch (err) {}
+        } catch (err) { console.error(err); }
     },
+
     addToCart: () => {
         const layout = document.querySelector('.shop-layout');
         if (!layout) return;
         const qtyInput = document.getElementById('cantidad');
         const qty = parseInt(qtyInput.value);
         const max = parseInt(layout.dataset.stock);
+
         if (isNaN(qty) || qty <= 0) return notify.error('Cantidad inválida');
-        if (qty > max) return notify.error(`Solo hay ${max} disponibles`);
+        if (qty > max) return notify.error(`Solo hay ${max} unidades disponibles`);
+
         let cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const pid = layout.dataset.pid;
         cart[pid] = (cart[pid] || 0) + qty;
-        if (cart[pid] > max) { cart[pid] = max; notify.show('Ajustado al máximo', 'info'); } 
-        else { notify.success('Añadido al carrito'); }
+        if (cart[pid] > max) {
+            cart[pid] = max;
+            notify.show('Se ajustó al máximo disponible', 'info');
+        } else {
+            notify.success('Añadido al carrito');
+        }
         localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(cart));
         Store.updateCount();
     },
+
+    // FUNCIÓN ACTUALIZADA: Vaciar Carrito con Modal Premium
     clearCart: () => {
-        if(confirm('¿Vaciar carrito?')) {
-            localStorage.removeItem(CONFIG.CART_KEY);
-            Store.updateCount();
-            notify.show('Carrito vaciado', 'info');
-            if (window.location.pathname.includes('checkout')) window.location.reload();
-        }
+        const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY));
+        if(!cart || Object.keys(cart).length === 0) return notify.show('El carrito ya está vacío', 'info');
+
+        Utils.confirmModal(
+            '¿Vaciar el carrito?',
+            'Se eliminarán todos los productos seleccionados. Esta acción no se puede deshacer.',
+            () => {
+                localStorage.removeItem(CONFIG.CART_KEY);
+                Store.updateCount();
+                notify.show('Carrito vaciado exitosamente', 'success');
+                
+                // Si estamos en checkout, recargar
+                if (window.location.pathname.includes('checkout')) {
+                    window.location.reload();
+                }
+            }
+        );
     },
+
     updateCount: () => {
         const c = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const el = document.getElementById('carrito-contador');
         const btnVaciar = document.getElementById('btn-vaciar-carrito');
+
         if (el) {
             const count = Object.values(c).reduce((a, b) => a + b, 0);
             el.textContent = count;
@@ -421,15 +509,18 @@ const Store = {
             if(btnVaciar) btnVaciar.style.display = count > 0 ? 'inline-block' : 'none';
         }
     },
+
     initCheckout: async (user) => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const container = document.getElementById('checkout-items');
+        
         if (!Object.keys(cart).length) {
             if(container) container.innerHTML = '<p class="text-muted">Carrito vacío.</p>';
             const btn = document.getElementById('btn-confirmar-compra');
             if(btn) btn.disabled = true;
             return;
         }
+
         try {
             const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
             if (p) {
@@ -440,6 +531,7 @@ const Store = {
                 setVal('card-holder', p.nombre_completo);
             }
         } catch(e) {}
+
         let total = 0, html = '', itemsToBuy = [];
         for (const [pid, qty] of Object.entries(cart)) {
             const { data } = await db.from('productos').select('*').eq('id', pid).single();
@@ -452,6 +544,7 @@ const Store = {
                     <strong>${Utils.formatCurrency(sub)}</strong></div>`;
             }
         }
+        
         if (container) container.innerHTML = html;
         const totalEl = document.getElementById('checkout-total');
         if(totalEl) totalEl.textContent = Utils.formatCurrency(total);
@@ -462,10 +555,8 @@ const Store = {
         if (form) {
             form.onsubmit = async (e) => {
                 e.preventDefault();
-                // ... (Simplificado: Lógica de pago ya conocida) ...
                 const modal = document.getElementById('payment-modal');
                 if(modal) modal.style.display = 'flex';
-                // Simulación pasos
                 try {
                     const s1 = document.getElementById('step-1'); if(s1) { s1.className='step active'; await Utils.wait(1000); s1.innerHTML='<i class="fa-solid fa-check"></i> Seguro'; s1.style.color='var(--color-success)'; }
                     const s2 = document.getElementById('step-2'); if(s2) { s2.className='step active'; await Utils.wait(1500); s2.innerHTML='<i class="fa-solid fa-check"></i> Autorizado'; s2.style.color='var(--color-success)'; }
@@ -678,7 +769,6 @@ const Dashboard = {
                     pill.className = `status-pill ${isActive ? 'on' : 'off'}`;
                     pill.innerHTML = `<span class="status-pill dot"></span> ${Utils.escapeHtml(m.estado)}`;
                 }
-                // Actualizar controles M1 y M2 (Simplificado para brevedad, lógica completa en versión previa)
                 if (m.id === 2) {
                     const bar = document.getElementById('temp-bar-2');
                     if (bar) bar.style.width = Math.min(m.controles.escalda_db, 100) + '%';
