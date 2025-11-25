@@ -748,3 +748,131 @@ body.emergency-mode::before {
     70% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); }
     100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }
+
+/* ... (Mantén todo el CSS anterior del footer premium y estilos base) ... */
+
+/* === BOTÓN VACIAR CARRITO === */
+.nav-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #64748b;
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+.nav-icon-btn:hover {
+    color: var(--color-danger);
+}
+
+/* === CARRUSEL DE PRODUCTO (TIENDA) === */
+.product-gallery-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.main-image-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+}
+
+.main-image-frame img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    mix-blend-mode: multiply; /* Para que se fusione si el fondo es blanco */
+}
+
+.gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--color-text);
+    transition: all 0.2s;
+    z-index: 2;
+}
+.gallery-arrow:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    color: var(--color-primary);
+}
+.gallery-arrow.prev { left: 10px; }
+.gallery-arrow.next { right: 10px; }
+
+.thumbnail-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.thumb {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: 0.6;
+    transition: all 0.2s;
+    background: #f1f1f1;
+}
+.thumb:hover { opacity: 1; }
+.thumb.active {
+    border-color: var(--color-primary);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+#magic-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 75px; /* Aquí forzamos el tamaño pequeño */
+    height: auto;
+    pointer-events: none; /* Permite hacer clic a través de la imagen */
+    z-index: 9999;
+    transform: translate(-50%, -50%); /* Centrar en la punta del mouse */
+    display: none; /* Oculto por defecto */
+    transition: transform 0.1s ease-out;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+}
+
+/* Cuando el cursor personalizado está activo */
+body.cursor-lemna-active {
+    cursor: none !important; /* Oculta el cursor nativo de Windows/Mac */
+}
+
+body.cursor-lemna-active #magic-cursor {
+    display: block; /* Muestra nuestra Lemna */
+    animation: pulse-cursor 0.8s infinite alternate;
+}
+
+/* Animación de "latido" para la hojita */
+@keyframes pulse-cursor {
+    from { transform: translate(-50%, -50%) scale(1); }
+    to { transform: translate(-50%, -50%) scale(1.2); }
+}
+
+/* Elementos que activan el cursor al pasar por encima */
+.hover-lemna-trigger:hover {
+    cursor: none; /* Ocultamos el nativo al hacer hover */
+}
