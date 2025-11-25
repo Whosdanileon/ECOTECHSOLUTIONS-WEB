@@ -1,12 +1,9 @@
 /* ==========================================================================
- * ECOTECHSOLUTIONS - MAIN.JS v27 (FINAL: 2-POS SWITCH)
- * - Máquina 2: Switch de 2 posiciones (ON/OFF) para calentadores
- * - Mantiene: Sincronización PLC (0.0-0.5), Paro Global y Pagos
+ * ECOTECHSOLUTIONS - MAIN.JS v28 (FULL: CAROUSEL + 2-POS SWITCH)
  * ========================================================================== */
 
 /* 1. CONFIGURACIÓN Y ESTADO GLOBAL */
 const CONFIG = {
-    // NOTA: Asegúrate de tener Row Level Security (RLS) activado en Supabase.
     SUPABASE_URL: 'https://dtdtqedzfuxfnnipdorg.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY',
     CART_KEY: 'ecotech_cart',
@@ -17,15 +14,12 @@ const CONFIG = {
     }
 };
 
-// Estado global
 const State = {
     realtimeSubscription: null
 };
 
-// Estado de Emergencia Local
 let globalEmergencyActive = false;
 
-// Inicialización de Supabase
 const db = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 console.log('✅ EcoTech System: Online & Secure');
 
@@ -73,12 +67,10 @@ const notify = {
 
 const Utils = {
     formatCurrency: (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val),
-    
     formatTime: (dateStr) => {
         if (!dateStr) return '--:--';
         return new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
     },
-
     validate: (form) => {
         let valid = true;
         form.querySelectorAll('[required]').forEach(i => {
@@ -91,24 +83,91 @@ const Utils = {
         });
         return valid;
     },
-
     escapeHtml: (text) => {
         if (!text) return '';
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return text.toString().replace(/[&<>"']/g, (m) => map[m]);
     },
-
     wait: (ms) => new Promise(resolve => setTimeout(resolve, ms))
 };
 
 /* ==========================================================================
- * 3. LÓGICA DE PARO DE EMERGENCIA GLOBAL
+ * 3. CARRUSEL DE TESTIMONIOS (NUEVO)
+ * ========================================================================== */
+const Carousel = {
+    init: () => {
+        const track = document.querySelector('.carousel-track');
+        if (!track) return;
+
+        const slides = Array.from(track.children);
+        const nextButton = document.getElementById('next-slide');
+        const prevButton = document.getElementById('prev-slide');
+        const dotsNav = document.querySelector('.carousel-nav');
+        const dots = Array.from(dotsNav.children);
+
+        const slideWidth = slides[0].getBoundingClientRect().width;
+
+        // Colocar slides uno al lado del otro
+        slides.forEach((slide, index) => {
+            slide.style.left = slideWidth * index + 'px';
+        });
+
+        const moveToSlide = (currentSlide, targetSlide) => {
+            track.style.transform = 'translateX(-' + targetSlide.style.left + ')';
+            currentSlide.classList.remove('current-slide');
+            targetSlide.classList.add('current-slide');
+        }
+
+        const updateDots = (currentDot, targetDot) => {
+            currentDot.classList.remove('current-slide');
+            targetDot.classList.add('current-slide');
+        }
+
+        // Click derecha
+        nextButton.addEventListener('click', e => {
+            const currentSlide = track.querySelector('.current-slide');
+            const nextSlide = currentSlide.nextElementSibling || slides[0]; // Loop
+            const currentDot = dotsNav.querySelector('.current-slide');
+            const nextDot = currentDot.nextElementSibling || dots[0]; // Loop
+
+            moveToSlide(currentSlide, nextSlide);
+            updateDots(currentDot, nextDot);
+        });
+
+        // Click izquierda
+        prevButton.addEventListener('click', e => {
+            const currentSlide = track.querySelector('.current-slide');
+            const prevSlide = currentSlide.previousElementSibling || slides[slides.length - 1]; // Loop
+            const currentDot = dotsNav.querySelector('.current-slide');
+            const prevDot = currentDot.previousElementSibling || dots[dots.length - 1]; // Loop
+
+            moveToSlide(currentSlide, prevSlide);
+            updateDots(currentDot, prevDot);
+        });
+
+        // Click indicadores
+        dotsNav.addEventListener('click', e => {
+            const targetDot = e.target.closest('button');
+            if (!targetDot) return;
+
+            const currentSlide = track.querySelector('.current-slide');
+            const currentDot = dotsNav.querySelector('.current-slide');
+            const targetIndex = dots.findIndex(dot => dot === targetDot);
+            const targetSlide = slides[targetIndex];
+
+            moveToSlide(currentSlide, targetSlide);
+            updateDots(currentDot, targetDot);
+        });
+    }
+};
+
+/* ==========================================================================
+ * 4. LÓGICA DE PARO DE EMERGENCIA GLOBAL
  * ========================================================================== */
 window.toggleGlobalEmergency = async () => {
     const btn = document.getElementById('btn-global-stop');
     
     if (!globalEmergencyActive) {
-        // 1. ACTIVAR PARO
         if (confirm("⚠️ ¿ESTÁS SEGURO? Se detendrán TODAS las máquinas y se bloquearán controles.")) {
             globalEmergencyActive = true;
             document.body.classList.add('emergency-mode');
@@ -116,17 +175,11 @@ window.toggleGlobalEmergency = async () => {
                 btn.classList.add('active');
                 btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> RESTABLECER SISTEMA';
             }
-            
             notify.error("PARO DE EMERGENCIA ACTIVADO");
-
-            // A. Detener Máquina 1 (PLC 0.0 Start=False, 0.1 Stop=True)
             await window.plcCmd(1, 'Paro'); 
-            
-            // B. Detener Máquina 2 (Calentadores OFF)
             await window.plcSw(2, 'heat_off');
         }
     } else {
-        // 2. RESTABLECER
         if (confirm("¿Confirmas que es seguro restablecer el sistema?")) {
             globalEmergencyActive = false;
             document.body.classList.remove('emergency-mode');
@@ -140,7 +193,7 @@ window.toggleGlobalEmergency = async () => {
 };
 
 /* ==========================================================================
- * 4. FUNCIONES GLOBALES DE UI
+ * 5. FUNCIONES GLOBALES DE UI
  * ========================================================================== */
 window.switchTab = function(tabName) {
     document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
@@ -153,49 +206,36 @@ window.switchTab = function(tabName) {
 };
 
 /* ==========================================================================
- * 5. AUTENTICACIÓN
+ * 6. AUTENTICACIÓN
  * ========================================================================== */
 const Auth = {
     login: async (e) => {
         e.preventDefault();
         const emailInput = document.getElementById('login-email');
         const passInput = document.getElementById('login-password');
-
         if (!emailInput || !passInput) return;
-
         const load = notify.loading('Iniciando sesión...');
         const { data, error } = await db.auth.signInWithPassword({
             email: emailInput.value.trim(),
             password: passInput.value
         });
-
         notify.close(load);
-
         if (error) {
             notify.error('Error: ' + error.message);
         } else {
             window.location.reload();
         }
     },
-
     register: async (e) => {
         e.preventDefault();
         const emailInput = document.getElementById('registro-email');
         const passInput = document.getElementById('registro-password');
-        
         const email = emailInput.value.trim();
         const password = passInput.value;
-
         if (password.length < 6) return notify.error('La contraseña debe tener al menos 6 caracteres');
-
         const load = notify.loading('Creando cuenta...');
-        const { data, error } = await db.auth.signUp({
-            email: email,
-            password: password
-        });
-
+        const { data, error } = await db.auth.signUp({ email: email, password: password });
         notify.close(load);
-
         if (error) {
             notify.error(error.message);
         } else {
@@ -206,7 +246,6 @@ const Auth = {
             notify.success('Cuenta creada exitosamente. Inicia sesión.');
         }
     },
-
     logout: async () => {
         const load = notify.loading('Cerrando sesión...');
         if (State.realtimeSubscription) {
@@ -217,12 +256,10 @@ const Auth = {
         notify.close(load);
         window.location.href = 'index.html';
     },
-
     loadProfile: async (user) => {
         try {
             const { data: p, error } = await db.from('perfiles').select('*').eq('id', user.id).single();
             if (error && error.code !== 'PGRST116') throw error;
-
             if (p) {
                 const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
                 setVal('profile-name', p.nombre_completo);
@@ -230,10 +267,7 @@ const Auth = {
                 setVal('profile-address', p.direccion);
                 setVal('profile-email', user.email);
             }
-        } catch (err) {
-            console.error("Error perfil:", err);
-        }
-
+        } catch (err) { console.error("Error perfil:", err); }
         const list = document.getElementById('pedidos-lista-container');
         if (list) {
             const { data: orders } = await db.from('pedidos').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -254,7 +288,6 @@ const Auth = {
             }
         }
     },
-
     saveProfile: async (e, user) => {
         e.preventDefault();
         const load = notify.loading('Guardando...');
@@ -272,18 +305,16 @@ const Auth = {
 };
 
 /* ==========================================================================
- * 6. TIENDA Y CHECKOUT (CON SIMULACIÓN)
+ * 7. TIENDA Y CHECKOUT
  * ========================================================================== */
 const Store = {
     loadProduct: async () => {
         const el = document.getElementById('producto-nombre');
         const elIndex = document.getElementById('index-producto-nombre');
         if (!el && !elIndex) return;
-
         try {
             const { data, error } = await db.from('productos').select('*').eq('id', 1).single();
             if (error) throw error;
-
             if (data) {
                 if (el) {
                     el.textContent = data.nombre;
@@ -307,17 +338,14 @@ const Store = {
             }
         } catch (err) { console.error(err); }
     },
-
     addToCart: () => {
         const layout = document.querySelector('.shop-layout');
         if (!layout) return;
         const qtyInput = document.getElementById('cantidad');
         const qty = parseInt(qtyInput.value);
         const max = parseInt(layout.dataset.stock);
-
         if (isNaN(qty) || qty <= 0) return notify.error('Cantidad inválida');
         if (qty > max) return notify.error(`Solo hay ${max} unidades disponibles`);
-
         let cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const pid = layout.dataset.pid;
         cart[pid] = (cart[pid] || 0) + qty;
@@ -330,7 +358,6 @@ const Store = {
         localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(cart));
         Store.updateCount();
     },
-
     updateCount: () => {
         const c = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const el = document.getElementById('carrito-contador');
@@ -340,18 +367,15 @@ const Store = {
             el.style.display = count === 0 ? 'none' : 'inline-block';
         }
     },
-
     initCheckout: async (user) => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const container = document.getElementById('checkout-items');
-        
         if (!Object.keys(cart).length) {
             if(container) container.innerHTML = '<p class="text-muted">Carrito vacío.</p>';
             const btn = document.getElementById('btn-confirmar-compra');
             if(btn) btn.disabled = true;
             return;
         }
-
         try {
             const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
             if (p) {
@@ -362,7 +386,6 @@ const Store = {
                 setVal('card-holder', p.nombre_completo);
             }
         } catch(e) {}
-
         let total = 0, html = '', itemsToBuy = [];
         for (const [pid, qty] of Object.entries(cart)) {
             const { data } = await db.from('productos').select('*').eq('id', pid).single();
@@ -375,7 +398,6 @@ const Store = {
                     <strong>${Utils.formatCurrency(sub)}</strong></div>`;
             }
         }
-        
         if (container) container.innerHTML = html;
         const totalEl = document.getElementById('checkout-total');
         if(totalEl) totalEl.textContent = Utils.formatCurrency(total);
@@ -386,33 +408,25 @@ const Store = {
         if (form) {
             form.onsubmit = async (e) => {
                 e.preventDefault();
-
                 const metodoPagoInput = document.querySelector('input[name="payment-method"]:checked');
                 const metodoPago = metodoPagoInput ? metodoPagoInput.value : 'card';
-
                 if (metodoPago === 'card') {
                     const cardNum = document.getElementById('card-number').value.trim();
                     const cardExp = document.getElementById('card-expiry').value.trim();
                     const cardCvc = document.getElementById('card-cvc').value.trim();
                     const cardHolder = document.getElementById('card-holder').value.trim();
-
                     if (!cardNum || !cardExp || !cardCvc || !cardHolder) {
                         notify.error('Por favor, completa los datos de la tarjeta.');
                         if(!cardNum) document.getElementById('card-number').classList.add('input-error');
-                        if(!cardExp) document.getElementById('card-expiry').classList.add('input-error');
-                        if(!cardCvc) document.getElementById('card-cvc').classList.add('input-error');
                         return;
                     }
                     document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
                 }
-                
                 const modal = document.getElementById('payment-modal');
                 if(modal) modal.style.display = 'flex';
-                
                 try {
                     const s1 = document.getElementById('step-1');
                     if(s1) { s1.className = 'step active'; await Utils.wait(1500); s1.innerHTML = '<i class="fa-solid fa-check"></i> Encriptado seguro'; s1.style.color = 'var(--color-success)'; }
-
                     const s2 = document.getElementById('step-2');
                     if(s2) { 
                         s2.className = 'step active'; 
@@ -422,44 +436,35 @@ const Store = {
                         s2.innerHTML = '<i class="fa-solid fa-check"></i> Autorización exitosa'; 
                         s2.style.color = 'var(--color-success)'; 
                     }
-
                     const s3 = document.getElementById('step-3');
                     if(s3) {
                         s3.className = 'step active';
                         const txt = document.getElementById('payment-status-text');
                         if(txt) txt.textContent = "Generando orden de compra...";
-                        
                         const envio = {
                             nombre: document.getElementById('checkout-name').value,
                             direccion: document.getElementById('checkout-address').value,
                             telefono: document.getElementById('checkout-phone').value,
                             metodo_pago: metodoPago
                         };
-
                         const { error: orderError } = await db.from('pedidos').insert({
                             user_id: user.id, items: itemsToBuy, total: total, datos_envio: envio, estado: 'Pagado'
                         });
-
                         if (orderError) throw orderError;
-
                         for(const item of itemsToBuy) {
                             const { data: prod } = await db.from('productos').select('stock_disponible').eq('id', item.id).single();
                             if (prod) await db.from('productos').update({ stock_disponible: Math.max(0, prod.stock_disponible - item.cantidad) }).eq('id', item.id);
                         }
-
                         s3.innerHTML = '<i class="fa-solid fa-check"></i> Pedido guardado';
                         s3.style.color = 'var(--color-success)';
                     }
                     await Utils.wait(800);
-
                     const loadingState = document.getElementById('payment-loading-state');
                     const successState = document.getElementById('payment-success-state');
                     if(loadingState) loadingState.style.display = 'none';
                     if(successState) successState.style.display = 'block';
-                    
                     localStorage.removeItem(CONFIG.CART_KEY);
                     setTimeout(() => window.location.href = 'cuenta.html', 2500);
-
                 } catch (err) {
                     if(modal) modal.style.display = 'none';
                     notify.error('Error procesando pago: ' + err.message);
@@ -470,34 +475,26 @@ const Store = {
 };
 
 /* ==========================================================================
- * 7. DASHBOARD (PANEL DE CONTROL)
+ * 8. DASHBOARD (PANEL DE CONTROL)
  * ========================================================================== */
 const Dashboard = {
     init: async (user) => {
         try {
             const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
             if (!p) { notify.error('Perfil no encontrado.'); return; }
-
             document.getElementById('sidebar-username').textContent = p.nombre_completo || 'Usuario';
             document.getElementById('sidebar-role').textContent = p.rol;
-
             Dashboard.applyPermissions(p.rol);
-
             if (CONFIG.ROLES.STAFF.includes(p.rol)) {
                 await Dashboard.renderMachines(p.rol);
                 Dashboard.initChat(p);
                 Dashboard.subscribeRealtime();
-                
                 if (CONFIG.ROLES.SYS.includes(p.rol) || CONFIG.ROLES.ADMIN.includes(p.rol)) {
                     Dashboard.initAdminUsers(p.rol);
                 }
             }
-        } catch (e) {
-            console.error(e);
-            notify.error('Error inicializando panel');
-        }
+        } catch (e) { console.error(e); notify.error('Error inicializando panel'); }
     },
-
     applyPermissions: (rol) => {
         const tabPersonal = document.querySelector("li[onclick*='personal']");
         const hasAccess = CONFIG.ROLES.ADMIN.includes(rol);
@@ -507,20 +504,16 @@ const Dashboard = {
             if (viewPersonal) viewPersonal.innerHTML = '<div style="padding:50px;text-align:center;"><h3>⛔ Acceso Denegado</h3><p>No tienes permisos.</p></div>';
         }
     },
-
     initChat: async (profile) => {
         const list = document.querySelector('.message-list');
         const form = document.getElementById('chat-form');
         if (!list) return;
-
         const renderMessage = (m) => {
             const texto = Utils.escapeHtml(m.mensaje || m.content || '');
             const sender = Utils.escapeHtml(m.sender);
             const role = Utils.escapeHtml(m.role || 'Staff');
             const initial = sender.charAt(0).toUpperCase();
-
             if (document.querySelector(`[data-msg-id="${m.id}"]`)) return;
-
             const html = `
                 <div class="msg-item" data-msg-id="${m.id}" style="animation: fadeIn 0.3s ease;">
                     <div class="msg-avatar">${initial}</div>
@@ -535,10 +528,8 @@ const Dashboard = {
                 </div>`;
             list.insertAdjacentHTML('afterbegin', html);
         };
-
         const { data } = await db.from('mensajes').select('*').order('created_at', { ascending: false }).limit(20);
         if (data) { list.innerHTML = ''; [...data].reverse().forEach(renderMessage); }
-
         if (form) {
             form.onsubmit = async (e) => {
                 e.preventDefault();
@@ -556,22 +547,16 @@ const Dashboard = {
         }
         Dashboard.renderChatMessage = renderMessage;
     },
-
-    // RENDERIZADO DE MÁQUINAS (ACTUALIZADO PARA SWITCH 2 POSICIONES)
     renderMachines: async (rol) => {
         const container = document.getElementById('maquinas-container');
         if (!container) return;
         const { data } = await db.from('maquinas').select('*').order('id');
         if (!data) return;
-
         container.innerHTML = '';
-
         data.forEach(m => {
             const isAdmin = CONFIG.ROLES.ADMIN.includes(rol);
             let body = '';
             const safeName = Utils.escapeHtml(m.nombre);
-
-            // --- MÁQUINA 1: LAVADORA (Variables 0.0 - 0.5) ---
             if (m.id === 1) {
                 const isStarted = m.controles.Inicio; 
                 const ctrls = isAdmin ? `
@@ -609,15 +594,10 @@ const Dashboard = {
                         </div>
                     </div>
                 </div>` : '<p class="text-muted">Modo Visualización</p>';
-                
                 body = `<div class="m-area"><i class="fa-solid fa-microchip"></i> PLC M1</div>${ctrls}`;
-                
-            // --- MÁQUINA 2: DESHIDRATADORA (Switch 2 Posiciones) ---
             } else if (m.id === 2) {
                 const t = m.controles.escalda_db || 0;
-                // Switch booleano simple: Encendido (true) / Apagado (false)
                 const isHeating = m.controles.calentador_on;
-
                 const ctrls = isAdmin ? `
                 <div class="machine-interface" style="margin-top: 20px;">
                     <div class="control-group">
@@ -634,7 +614,6 @@ const Dashboard = {
                         </div>
                     </div>
                 </div>` : '';
-
                 body = `
                 <div class="clean-gauge">
                     <div class="gauge-readout">${t.toFixed(1)}<span class="gauge-unit">°C</span></div>
@@ -642,7 +621,6 @@ const Dashboard = {
                     <div class="gauge-bar-bg"><div id="temp-bar-2" class="gauge-bar-fill" style="width:${Math.min(t, 100)}%"></div></div>
                 </div>${ctrls}`;
             }
-
             container.insertAdjacentHTML('beforeend', `
                 <div class="card machine-card" id="machine-${m.id}">
                     <div class="m-header">
@@ -655,7 +633,6 @@ const Dashboard = {
                 </div>`);
         });
     },
-
     initAdminUsers: async (myRole) => {
         const tbody = document.getElementById('user-table-body');
         if (!tbody) return;
@@ -668,7 +645,6 @@ const Dashboard = {
             const { data } = await db.from('perfiles').select('*');
             users = data || [];
         }
-        
         const isSys = CONFIG.ROLES.SYS.includes(myRole);
         tbody.innerHTML = users.map(u => `
             <tr data-uid="${u.id}">
@@ -684,7 +660,6 @@ const Dashboard = {
                     ${isSys ? `<button class="btn-icon btn-delete" title="Eliminar"><i class="fa-solid fa-trash" style="color:red"></i></button>` : ''}
                 </td>
             </tr>`).join('');
-        
         tbody.querySelectorAll('.btn-save').forEach(btn => {
             btn.onclick = async (e) => {
                 const row = e.target.closest('tr');
@@ -695,7 +670,6 @@ const Dashboard = {
                 if(error) notify.error(error.message); else notify.success('Rol actualizado');
             };
         });
-        
         if (isSys) {
             tbody.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.onclick = async (e) => {
@@ -708,47 +682,37 @@ const Dashboard = {
             });
         }
     },
-
     subscribeRealtime: () => {
         if (State.realtimeSubscription) return;
-
         State.realtimeSubscription = db.channel('public-room')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maquinas' }, payload => {
                 const m = payload.new;
                 if (globalEmergencyActive) return; 
-
                 const card = document.getElementById(`machine-${m.id}`);
                 if (!card) return;
-
                 const pill = card.querySelector('.status-pill');
                 if (pill) {
                     const isActive = m.id === 2 ? m.controles.calentador_on : (m.estado === 'En Ciclo');
                     pill.className = `status-pill ${isActive ? 'on' : 'off'}`;
                     pill.innerHTML = `<span class="status-pill dot"></span> ${Utils.escapeHtml(m.estado)}`;
                 }
-
                 if (m.id === 1) {
                     const btnStart = card.querySelector('.btn-start');
                     if (btnStart) {
                         if (m.controles.Inicio) btnStart.classList.add('active'); else btnStart.classList.remove('active');
                     }
                     const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
-                    
                     setChk('tk-in', m.controles.online_llenado);
                     setChk('tk-off', !m.controles.online_llenado && !m.controles.online_vaciado);
                     setChk('tk-out', m.controles.online_vaciado);
-                    
                     setChk('ch-up', m.controles.online_arriba);
                     setChk('ch-off', !m.controles.online_arriba && !m.controles.online_abajo);
                     setChk('ch-dn', m.controles.online_abajo);
-
                 } else if (m.id === 2) {
                     const readout = card.querySelector('.gauge-readout');
                     if (readout) readout.innerHTML = `${m.controles.escalda_db.toFixed(1)}<span class="gauge-unit">°C</span>`;
                     const bar = document.getElementById('temp-bar-2');
                     if (bar) bar.style.width = Math.min(m.controles.escalda_db, 100) + '%';
-                    
-                    // Update switch 2-pos
                     const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
                     setChk('heat-on', m.controles.calentador_on);
                     setChk('heat-off', !m.controles.calentador_on);
@@ -773,7 +737,7 @@ const Dashboard = {
 };
 
 /* ==========================================================================
- * 8. COMANDOS PLC (ACTUALIZADO)
+ * 9. COMANDOS PLC
  * ========================================================================== */
 window.plcCmd = async (id, act) => {
     try {
@@ -781,11 +745,9 @@ window.plcCmd = async (id, act) => {
             notify.error("SISTEMA BLOQUEADO POR PARO DE EMERGENCIA");
             return;
         }
-
         const { data, error } = await db.from('maquinas').select('controles').eq('id', id).single();
         if (error) throw error;
         let c = data.controles;
-        
         if (act === 'Inicio') { 
             c.Inicio = true; 
             c.Paro = false; 
@@ -805,28 +767,21 @@ window.plcSw = async (id, k) => {
              notify.error("SISTEMA BLOQUEADO POR PARO DE EMERGENCIA");
              return;
         }
-
         const { data, error } = await db.from('maquinas').select('controles').eq('id', id).single();
         if(error) throw error;
         let c = data.controles;
-
-        // MÁQUINA 1 (PLC 0.2-0.5)
         if (id === 1) {
             if (k === 'online_llenado') { c.online_llenado = true; c.online_vaciado = false; }
             else if (k === 'online_vaciado') { c.online_vaciado = true; c.online_llenado = false; }
             else if (k === 'fill_off') { c.online_llenado = false; c.online_vaciado = false; }
-            
             else if (k === 'online_arriba') { c.online_arriba = true; c.online_abajo = false; }
             else if (k === 'online_abajo') { c.online_abajo = true; c.online_arriba = false; }
             else if (k === 'tray_off') { c.online_arriba = false; c.online_abajo = false; }
         }
-        
-        // MÁQUINA 2 (Calentadores 2-Pos)
         if (id === 2) {
             if (k === 'heat_on') c.calentador_on = true;
             if (k === 'heat_off') c.calentador_on = false;
         }
-
         await db.from('maquinas').update({ controles: c }).eq('id', id);
     } catch(e) { notify.error("Error PLC Switch"); }
 };
@@ -843,21 +798,25 @@ window.plcRmt = async (id, s) => {
 };
 
 /* ==========================================================================
- * 9. BOOTSTRAP (INICIALIZACIÓN)
+ * 10. BOOTSTRAP (INICIALIZACIÓN)
  * ========================================================================== */
 document.addEventListener('DOMContentLoaded', async () => {
+    
+    // Inicializar Carrusel si existe (index.html)
+    if(document.querySelector('.carousel-track')) {
+        Carousel.init();
+    }
+
     Store.updateCount();
     const { data: { session } } = await db.auth.getSession();
     const user = session?.user;
     const path = window.location.pathname;
-
     const header = document.getElementById('auth-links-container');
     if (header) {
         header.innerHTML = user 
             ? `<a href="cuenta.html" class="nav-link"><i class="fa-solid fa-user-circle"></i> Mi Cuenta</a>` 
             : `<a href="cuenta.html" class="nav-link"><i class="fa-solid fa-sign-in-alt"></i> Acceder</a>`;
     }
-
     if (path.includes('cuenta')) {
         if (user) {
             const authForms = document.getElementById('auth-forms');
@@ -914,7 +873,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ==========================================================================
- * 10. RESPONSIVIDAD MÓVIL
+ * 11. RESPONSIVIDAD MÓVIL
  * ========================================================================== */
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');

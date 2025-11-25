@@ -160,7 +160,22 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spac
     background-color: rgba(255, 255, 255, 0.95); border-bottom: 1px solid var(--color-border); 
     position: sticky; top: 0; z-index: var(--z-sticky); backdrop-filter: blur(8px);
 }
+/* ACTUALIZACIÓN LOGO: Flexbox para alinear texto */
+.main-nav .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--color-text);
+}
 .main-nav .logo img { max-height: 35px; }
+.main-nav .logo span {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    color: #1b2b1b; /* Color oscuro profesional */
+}
+
 .center-nav-links { display: flex; gap: var(--spacing-lg); }
 .center-nav-links .nav-link { 
     font-weight: 600; font-size: 0.9em; color: var(--color-text); padding: var(--spacing-sm) 0; 
@@ -216,12 +231,256 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spac
 .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
 .gallery-item:hover img { transform: scale(1.08); }
 
-/* Footer */
-.site-footer { padding: 3rem 0 2rem; margin-top: var(--spacing-2xl); background-color: var(--color-surface); border-top: 1px solid var(--color-border); color: var(--color-text-light); }
-.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; }
-.footer-col-1 .footer-logo-placeholder { max-width: 175px; opacity: 0.8; }
-.footer-col-3 ul { display: flex; flex-direction: column; gap: 0.5rem; }
-.footer-col-3 a:hover { color: var(--color-primary); }
+/* =========================================
+   NUEVA SECCIÓN: CARRUSEL DE TESTIMONIOS
+   ========================================= */
+.carousel-wrapper {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 40px; /* Espacio para flechas */
+}
+
+.carousel-track-container {
+    overflow: hidden;
+    height: 300px; /* Ajuste altura fija para evitar saltos */
+    position: relative;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.carousel-slide {
+    min-width: 100%;
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.testimonial-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    text-align: center;
+    max-width: 600px;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.quote-icon {
+    font-size: 2rem;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.testimonial-text {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--color-text);
+    margin-bottom: 1.5rem;
+}
+
+.testimonial-author strong {
+    display: block;
+    color: var(--color-primary-dark);
+}
+.testimonial-author span {
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-light);
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+.carousel-btn:hover { color: var(--color-primary); }
+.prev-btn { left: 0; }
+.next-btn { right: 0; }
+
+.carousel-nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+.carousel-indicator {
+    border: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    cursor: pointer;
+}
+.carousel-indicator.current-slide {
+    background: var(--color-primary);
+}
+
+
+/* =========================================
+   NUEVO FOOTER PREMIUM (ESTILO PORSCHE)
+   ========================================= */
+.site-footer-premium {
+    background-color: #121212; /* Fondo muy oscuro casi negro */
+    color: #f0f0f0;
+    padding: 4rem 0 2rem;
+    font-size: 0.9rem;
+    border-top: 1px solid #333;
+}
+
+.site-footer-premium .container {
+    max-width: 1200px;
+}
+
+.footer-top-row {
+    margin-bottom: 3rem;
+}
+
+.region-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.region-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+}
+.region-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0;
+    text-align: left;
+}
+.region-btn:hover { color: white; }
+
+/* Grid del medio */
+.footer-middle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 3rem;
+    margin-bottom: 4rem;
+}
+
+.footer-heading {
+    color: #fff;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.footer-link-text {
+    color: #999;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.social-icons-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.social-box {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-size: 1.2rem;
+    transition: background 0.2s;
+}
+.social-box:hover {
+    background: #ccc;
+}
+
+.footer-links-list li {
+    margin-bottom: 0.6rem;
+}
+.footer-links-list a {
+    color: #999;
+    text-decoration: none;
+    transition: color 0.2s;
+    font-size: 0.9rem;
+}
+.footer-links-list a:hover {
+    color: #fff;
+}
+
+.footer-divider {
+    border-color: #333;
+    margin: 2rem 0;
+    max-width: 100%;
+}
+
+/* Bloque Inferior */
+.footer-bottom-block {
+    color: #666;
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.footer-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 1.5rem;
+    color: #ccc;
+}
+.footer-legal-links a {
+    color: #ccc;
+    text-decoration: underline;
+}
+.footer-legal-links a:hover {
+    color: #fff;
+}
+
+.footer-disclaimer p {
+    margin-bottom: 10px;
+}
+
+.footer-brand-logo {
+    margin-top: 3rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.8;
+}
+.footer-final-logo {
+    height: 20px;
+    filter: brightness(0) invert(1); /* Logo blanco */
+    margin-bottom: 5px;
+}
+.brand-text {
+    font-weight: 700;
+    letter-spacing: 3px;
+    font-size: 1.2rem;
+    color: white;
+}
+
 
 /* =========================================
    4. ESTILOS TIENDA Y CHECKOUT (Agregados)
@@ -383,6 +642,12 @@ hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spac
     .mobile-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: var(--z-mobile-overlay); display: none; opacity: 0; transition: opacity 0.3s; }
     .mobile-overlay.show { display: block; opacity: 1; }
     #close-sidebar-btn { display: block !important; }
+
+    /* Ajuste Carrusel Movil */
+    .testimonial-card { padding: 1.5rem; }
+    .carousel-wrapper { padding: 0; }
+    .carousel-btn { display: none; } /* Ocultar flechas en movil, usar dots */
+    .footer-middle-grid { gap: 1.5rem; }
 }
 
 @media (max-width: 480px) {
