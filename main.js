@@ -1,6 +1,6 @@
 /* ==========================================================================
- * ECOTECHSOLUTIONS - MAIN.JS v43 (FINAL FULL VERSION)
- * Integridad: 100% Código - Sin Abreviaciones
+ * ECOTECHSOLUTIONS - MAIN.JS v45 (FULL EXPANDED)
+ * Integridad: 100% Código Formateado - Sin Minificación
  * ========================================================================== */
 
 /* 1. CONFIGURACIÓN Y ESTADO GLOBAL */
@@ -32,9 +32,14 @@ console.log('✅ EcoTech System: Online & Secure');
 
 window.switchTab = function(tabName) {
     // 1. Actualizar Sidebar
-    document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav li').forEach(li => {
+        li.classList.remove('active');
+    });
+    
     const btn = document.querySelector(`.sidebar-nav li[onclick*="${tabName}"]`);
-    if (btn) btn.classList.add('active');
+    if (btn) {
+        btn.classList.add('active');
+    }
 
     // 2. Ocultar todas las vistas
     const views = document.querySelectorAll('.dashboard-view');
@@ -47,8 +52,10 @@ window.switchTab = function(tabName) {
     const target = document.getElementById('view-' + tabName);
     if (target) {
         target.style.display = 'block';
-        // Pequeño delay para permitir animación CSS si existe
-        setTimeout(() => target.classList.add('active'), 10);
+        // Pequeño delay para permitir animación CSS
+        setTimeout(() => {
+            target.classList.add('active');
+        }, 10);
     }
     
     // 4. Cerrar sidebar en móvil si aplica
@@ -116,13 +123,21 @@ const notify = {
 };
 
 const Utils = {
-    formatCurrency: (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val),
+    formatCurrency: (val) => {
+        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+    },
     
-    formatTime: (dateStr) => dateStr ? new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '--:--',
+    formatTime: (dateStr) => {
+        return dateStr ? new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+    },
     
-    escapeHtml: (text) => text ? text.toString().replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '',
+    escapeHtml: (text) => {
+        return text ? text.toString().replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '';
+    },
     
-    wait: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+    wait: (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    },
     
     confirmModal: (title, message, callback) => {
         const existing = document.getElementById('custom-confirm-modal');
@@ -202,8 +217,9 @@ const Auth = {
         if (error) {
             notify.error(error.message);
         } else {
-            // Crear perfil base en la tabla perfiles
-            await db.from('perfiles').insert([{ 
+            // Gracias al Trigger SQL, el perfil se crea automático, pero mantenemos esto por compatibilidad
+            // Si falla por duplicado (trigger), no pasa nada.
+            const { error: profileError } = await db.from('perfiles').insert([{ 
                 id: data.user.id, 
                 email: emailInput.value.trim(), 
                 rol: 'Cliente', 
@@ -634,8 +650,12 @@ const Dashboard = {
         try {
             let users = [];
             const { data: rpcData, error: rpcError } = await db.rpc('get_all_user_profiles');
-            if (!rpcError) users = rpcData;
-            else { const { data: tableData } = await db.from('perfiles').select('*'); users = tableData || []; }
+            if (!rpcError) {
+                users = rpcData;
+            } else { 
+                const { data: tableData } = await db.from('perfiles').select('*'); 
+                users = tableData || []; 
+            }
             
             const isSys = CONFIG.ROLES.SYS.includes(myRole);
             tbody.innerHTML = users.map(u => `
@@ -646,12 +666,19 @@ const Dashboard = {
                     <td><button class="btn-icon btn-save"><i class="fa-solid fa-save"></i></button>${isSys ? `<button class="btn-icon btn-delete"><i class="fa-solid fa-trash" style="color:red"></i></button>` : ''}</td>
                 </tr>`).join('');
             
-            tbody.querySelectorAll('.btn-save').forEach(btn => { btn.onclick = async (e) => { const row = e.target.closest('tr'); await db.from('perfiles').update({ rol: row.querySelector('.role-select').value }).eq('id', row.dataset.uid); notify.success('Rol actualizado'); }; });
+            tbody.querySelectorAll('.btn-save').forEach(btn => { 
+                btn.onclick = async (e) => { 
+                    const row = e.target.closest('tr'); 
+                    await db.from('perfiles').update({ rol: row.querySelector('.role-select').value }).eq('id', row.dataset.uid); 
+                    notify.success('Rol actualizado'); 
+                }; 
+            });
         } catch (e) { console.error("Error usuarios:", e); }
     },
     
     subscribeRealtime: () => {
         if (State.realtimeSubscription) return;
+        
         State.realtimeSubscription = db.channel('public-room')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maquinas' }, payload => { 
                 if (!globalEmergencyActive) Dashboard.renderMachines('Sistemas'); 
@@ -666,17 +693,28 @@ const Dashboard = {
 // FUNCIONES GLOBALES PLC
 window.plcCmd = async (id, act) => { 
     try { 
-        if (globalEmergencyActive && act !== 'Paro') return notify.error("BLOQUEO DE EMERGENCIA"); 
+        if (globalEmergencyActive && act !== 'Paro') {
+            return notify.error("BLOQUEO DE EMERGENCIA"); 
+        }
+        
         const { data } = await db.from('maquinas').select('controles').eq('id', id).single(); 
         let c = data.controles; 
-        if (act === 'Inicio') { c.Inicio = true; c.Paro = false; } else { c.Inicio = false; c.Paro = true; c.online_llenado = false; c.online_vaciado = false; } 
+        
+        if (act === 'Inicio') { 
+            c.Inicio = true; c.Paro = false; 
+        } else { 
+            c.Inicio = false; c.Paro = true; c.online_llenado = false; c.online_vaciado = false; 
+        } 
         await db.from('maquinas').update({ controles: c, estado: act === 'Inicio' ? 'En Ciclo' : 'Detenida' }).eq('id', id); 
     } catch (e) { notify.error("Error PLC Cmd"); } 
 };
 
 window.plcSw = async (id, k) => { 
     try { 
-        if (globalEmergencyActive && !k.includes('off')) return notify.error("BLOQUEO DE EMERGENCIA"); 
+        if (globalEmergencyActive && !k.includes('off')) {
+            return notify.error("BLOQUEO DE EMERGENCIA"); 
+        }
+        
         const { data } = await db.from('maquinas').select('controles').eq('id', id).single(); 
         let c = data.controles; 
         
@@ -727,33 +765,77 @@ window.Carousel = {
         if (!track) return; 
         const slides = Array.from(track.children); 
         if(!slides.length) return; 
+        
         const nextButton = document.getElementById('next-slide'); 
         const prevButton = document.getElementById('prev-slide'); 
         const slideWidth = slides[0].getBoundingClientRect().width; 
+        
         slides.forEach((slide, index) => slide.style.left = slideWidth * index + 'px'); 
-        const moveToSlide = (currentSlide, targetSlide) => { track.style.transform = 'translateX(-' + targetSlide.style.left + ')'; currentSlide.classList.remove('current-slide'); targetSlide.classList.add('current-slide'); }; 
-        if(nextButton) nextButton.onclick = () => { const currentSlide = track.querySelector('.current-slide'); const nextSlide = currentSlide.nextElementSibling || slides[0]; moveToSlide(currentSlide, nextSlide); }; 
-        if(prevButton) prevButton.onclick = () => { const currentSlide = track.querySelector('.current-slide'); const prevSlide = currentSlide.previousElementSibling || slides[slides.length - 1]; moveToSlide(currentSlide, prevSlide); }; 
+        
+        const moveToSlide = (currentSlide, targetSlide) => { 
+            track.style.transform = 'translateX(-' + targetSlide.style.left + ')'; 
+            currentSlide.classList.remove('current-slide'); 
+            targetSlide.classList.add('current-slide'); 
+        }; 
+        
+        if(nextButton) nextButton.onclick = () => { 
+            const currentSlide = track.querySelector('.current-slide'); 
+            const nextSlide = currentSlide.nextElementSibling || slides[0]; 
+            moveToSlide(currentSlide, nextSlide); 
+        }; 
+        
+        if(prevButton) prevButton.onclick = () => { 
+            const currentSlide = track.querySelector('.current-slide'); 
+            const prevSlide = currentSlide.previousElementSibling || slides[slides.length - 1]; 
+            moveToSlide(currentSlide, prevSlide); 
+        }; 
     } 
 };
 
 window.LemnaCursor = { 
     init: () => { 
-        if(!document.getElementById('magic-cursor')) { const img = document.createElement('img'); img.id = 'magic-cursor'; img.src = 'images/cursor.png'; document.body.appendChild(img); } 
+        if(!document.getElementById('magic-cursor')) { 
+            const img = document.createElement('img'); 
+            img.id = 'magic-cursor'; 
+            img.src = 'images/cursor.png'; 
+            document.body.appendChild(img); 
+        } 
         const cursor = document.getElementById('magic-cursor'); 
-        document.addEventListener('mousemove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; }); 
+        document.addEventListener('mousemove', e => { 
+            cursor.style.left = e.clientX + 'px'; 
+            cursor.style.top = e.clientY + 'px'; 
+        }); 
         const triggers = document.querySelectorAll('.hover-lemna-trigger'); 
         triggers.forEach(el => { 
-            el.addEventListener('mouseenter', () => { document.body.classList.add('hide-native-cursor'); cursor.style.display = 'block'; }); 
-            el.addEventListener('mouseleave', () => { document.body.classList.remove('hide-native-cursor'); cursor.style.display = 'none'; }); 
+            el.addEventListener('mouseenter', () => { 
+                document.body.classList.add('hide-native-cursor'); 
+                cursor.style.display = 'block'; 
+            }); 
+            el.addEventListener('mouseleave', () => { 
+                document.body.classList.remove('hide-native-cursor'); 
+                cursor.style.display = 'none'; 
+            }); 
         }); 
     } 
 };
 
 window.ProductGallery = { 
-    set: (el) => { const main = document.getElementById('main-product-img'); if(main) main.src = el.src; document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active')); el.classList.add('active'); }, 
-    next: () => { const cur = document.querySelector('.thumb.active'); const next = cur?.nextElementSibling || document.querySelector('.thumb:first-child'); if(next) window.ProductGallery.set(next); }, 
-    prev: () => { const cur = document.querySelector('.thumb.active'); const prev = cur?.previousElementSibling || document.querySelector('.thumb:last-child'); if(prev) window.ProductGallery.set(prev); } 
+    set: (el) => { 
+        const main = document.getElementById('main-product-img'); 
+        if(main) main.src = el.src; 
+        document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active')); 
+        el.classList.add('active'); 
+    }, 
+    next: () => { 
+        const cur = document.querySelector('.thumb.active'); 
+        const next = cur?.nextElementSibling || document.querySelector('.thumb:first-child'); 
+        if(next) window.ProductGallery.set(next); 
+    }, 
+    prev: () => { 
+        const cur = document.querySelector('.thumb.active'); 
+        const prev = cur?.previousElementSibling || document.querySelector('.thumb:last-child'); 
+        if(prev) window.ProductGallery.set(prev); 
+    } 
 };
 
 const Store = {
@@ -762,12 +844,16 @@ const Store = {
             const { data } = await db.from('productos').select('*').eq('id', 1).single();
             if(data) {
                 const els = { name: 'producto-nombre', price: 'producto-precio', stock: 'producto-stock', idxName: 'index-producto-nombre', idxPrice: 'index-producto-precio' };
+                
                 if(document.getElementById(els.name)) {
                     document.getElementById(els.name).textContent = data.nombre;
                     document.getElementById(els.price).textContent = Utils.formatCurrency(data.precio);
                     document.getElementById(els.stock).textContent = data.stock_disponible;
                     const layout = document.querySelector('.shop-layout');
-                    if(layout) { layout.dataset.pid = data.id; layout.dataset.stock = data.stock_disponible; }
+                    if(layout) {
+                        layout.dataset.pid = data.id;
+                        layout.dataset.stock = data.stock_disponible;
+                    }
                 }
                 if(document.getElementById(els.idxName)) {
                     document.getElementById(els.idxName).textContent = data.nombre;
@@ -776,46 +862,71 @@ const Store = {
             }
         } catch(e){}
     },
+    
     addToCart: () => {
         const layout = document.querySelector('.shop-layout');
         const pid = layout ? layout.dataset.pid : '1'; 
         const max = layout ? parseInt(layout.dataset.stock) : 999;
         const qty = parseInt(document.getElementById('cantidad')?.value || 1);
+        
         let cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         cart[pid] = (cart[pid] || 0) + qty;
-        if(cart[pid] > max) { cart[pid] = max; notify.show('Stock máximo alcanzado', 'info'); }
-        else notify.success('Añadido al carrito');
+        
+        if(cart[pid] > max) {
+            cart[pid] = max;
+            notify.show('Stock máximo alcanzado', 'info');
+        } else {
+            notify.success('Añadido al carrito');
+        }
+        
         localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(cart));
         Store.updateCount();
     },
+    
     clearCart: () => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY));
         if(!cart || !Object.keys(cart).length) return notify.show('Carrito vacío', 'info');
+        
         Utils.confirmModal('¿Vaciar?', 'Se eliminarán los productos', () => {
             localStorage.removeItem(CONFIG.CART_KEY);
             Store.updateCount();
             if(window.location.pathname.includes('checkout')) window.location.reload();
         });
     },
+    
     updateCount: () => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const count = Object.values(cart).reduce((a,b)=>a+b,0);
         const badge = document.getElementById('carrito-contador');
         const btn = document.getElementById('btn-vaciar-carrito');
-        if(badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline-block':'none'; }
+        
+        if(badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block':'none';
+        }
         if(btn) btn.style.display = count > 0 ? 'inline-block':'none';
     },
+    
     initCheckout: async (user) => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
         const container = document.getElementById('checkout-items');
+        
         if(!container) return;
-        if(!Object.keys(cart).length) { container.innerHTML = '<p>Carrito vacío</p>'; document.getElementById('btn-confirmar-compra').disabled = true; return; }
+        
+        if(!Object.keys(cart).length) {
+            container.innerHTML = '<p>Carrito vacío</p>';
+            document.getElementById('btn-confirmar-compra').disabled = true;
+            return;
+        }
 
         const { data: p } = await db.from('perfiles').select('*').eq('id', user.id).single();
         if(p) {
             // Llenar datos envío
             const ids = {'checkout-name':'nombre_completo', 'checkout-phone':'telefono', 'checkout-address':'direccion'};
-            for(const [k,v] of Object.entries(ids)) { const el = document.getElementById(k); if(el && !el.value) el.value = p[v]||''; }
+            for(const [k,v] of Object.entries(ids)) {
+                const el = document.getElementById(k);
+                if(el && !el.value) el.value = p[v]||'';
+            }
             
             // Autocompletar Billetera (Si existe y está en DB)
             if (p.datos_pago && p.datos_pago.number) {
@@ -836,6 +947,7 @@ const Store = {
                 html += `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee"><span>${prod.nombre} x${qty}</span><strong>${Utils.formatCurrency(sub)}</strong></div>`;
             }
         }
+        
         container.innerHTML = html;
         const totalEl = document.getElementById('checkout-total');
         if(totalEl) totalEl.textContent = Utils.formatCurrency(total);
@@ -854,14 +966,19 @@ const Store = {
                         telefono: document.getElementById('checkout-phone').value,
                         metodo: document.querySelector('input[name="payment-method"]:checked')?.value || 'card'
                     };
+                    
                     await db.from('pedidos').insert({ user_id: user.id, items, total, datos_envio: envio, estado: 'Pagado' });
+                    
                     for(const i of items) {
                         const {data:pr} = await db.from('productos').select('stock_disponible').eq('id',i.id).single();
                         if(pr) await db.from('productos').update({stock_disponible: Math.max(0, pr.stock_disponible - i.cantidad)}).eq('id',i.id);
                     }
+                    
                     await Utils.wait(2000);
+                    
                     if(document.getElementById('payment-loading-state')) document.getElementById('payment-loading-state').style.display = 'none';
                     if(document.getElementById('payment-success-state')) document.getElementById('payment-success-state').style.display = 'block';
+                    
                     localStorage.removeItem(CONFIG.CART_KEY);
                     setTimeout(() => window.location.href='cuenta.html', 2500);
                 } catch(err) {
@@ -897,6 +1014,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if(path.includes('panel')) {
         if(user) {
+            // --- PATCH DE SEGURIDAD V44: VERIFICACIÓN ESTRICTA DE ROL ---
+            const { data: profile } = await db.from('perfiles').select('rol').eq('id', user.id).single();
+            
+            if (!profile || !CONFIG.ROLES.STAFF.includes(profile.rol)) {
+                notify.error('⛔ Acceso Denegado: Área restringida a personal autorizado.');
+                setTimeout(() => {
+                    window.location.href = 'cuenta.html';
+                }, 1500);
+                return; // DETENER EJECUCIÓN
+            }
+
             document.getElementById('login-overlay').style.display='none';
             document.getElementById('dashboard-layout').style.display='flex';
             await Dashboard.init(user);
@@ -912,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             Auth.loadProfile(user);
             
             document.getElementById('form-perfil').onsubmit = (e) => Auth.saveProfile(e, user);
-            // NUEVO: Listener Seguridad Billetera
+            
             const formWallet = document.getElementById('form-pago-seguro');
             if(formWallet) formWallet.onsubmit = (e) => Auth.saveWallet(e, user);
             
@@ -925,6 +1053,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btnD = document.getElementById('btn-tab-datos');
             const btnP = document.getElementById('btn-tab-pedidos');
             const btnW = document.getElementById('btn-tab-pagos');
+            
             const resetTabs = () => {
                 document.getElementById('seccion-mis-datos').style.display='none';
                 document.getElementById('seccion-mis-pedidos').style.display='none';
@@ -933,6 +1062,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnP.classList.remove('active');
                 if(btnW) btnW.classList.remove('active');
             };
+
             if(btnD) btnD.onclick=()=>{ resetTabs(); document.getElementById('seccion-mis-datos').style.display='block'; btnD.classList.add('active'); };
             if(btnP) btnP.onclick=()=>{ resetTabs(); document.getElementById('seccion-mis-pedidos').style.display='block'; btnP.classList.add('active'); Auth.loadProfile(user); };
             if(btnW) btnW.onclick=()=>{ resetTabs(); document.getElementById('seccion-pagos').style.display='block'; btnW.classList.add('active'); };
