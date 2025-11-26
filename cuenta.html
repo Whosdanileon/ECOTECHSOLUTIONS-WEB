@@ -12,115 +12,177 @@
 </head>
 <body>
 
-    <!-- HEADER -->
     <nav class="main-nav">
         <a href="index.html" class="logo">
             <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo">
+            <span>ECOTECHSOLUTIONS</span>
         </a>
         <div class="center-nav-links">
-             <a href="index.html#nosotros" class="nav-link">NOSOTROS</a>
-             <a href="tienda.html" class="nav-link">PRODUCTO</a>
-             <a href="index.html#galeria" class="nav-link">GALERÍA</a>
+             <a href="index.html#nosotros" class="nav-link hover-lemna-trigger">NOSOTROS</a>
+             <a href="tienda.html" class="nav-link hover-lemna-trigger">PRODUCTO</a>
+             <a href="index.html#galeria" class="nav-link hover-lemna-trigger">GALERÍA</a>
         </div>
         <div class="right-nav">
-             <a href="checkout.html" class="nav-icon" id="carrito-link" title="Ver carrito">
-                <!-- ICONO DE CARRITO -->
+             <a href="checkout.html" class="nav-icon hover-lemna-trigger" id="carrito-link" title="Ver carrito">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
-            <div class="auth-links" id="auth-links-container"><!-- JS añadirá login/logout --></div>
+            <div class="auth-links hover-lemna-trigger" id="auth-links-container"></div>
         </div>
     </nav>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <main class="page-section">
         <div class="container">
 
-            <!-- FORMULARIOS DE LOGIN Y REGISTRO (SI NO LOGUEADO) -->
             <div id="auth-forms" style="display: none;">
-                <div class="modal-content">
-                    <!-- Login -->
+                <div class="modal-content" style="max-width: 450px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     <form id="form-login">
-                        <h3 class="login-title">Iniciar Sesión</h3>
+                        <h3 class="login-title" style="text-align: center; margin-bottom: 1.5rem;">Iniciar Sesión</h3>
                         <div class="input-group">
                             <label for="login-email">Correo Electrónico</label>
-                            <input type="email" id="login-email" name="login-email" required>
+                            <input type="email" id="login-email" name="login-email" class="form-input" required>
                         </div>
                         <div class="input-group">
                             <label for="login-password">Contraseña</label>
-                            <input type="password" id="login-password" name="login-password" required>
+                            <input type="password" id="login-password" name="login-password" class="form-input" required>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-login">
+                        <button type="submit" class="btn btn-primary btn-login hover-lemna-trigger">
                             <i class="fa-solid fa-sign-in-alt"></i> Entrar
                         </button>
                     </form>
-                    <hr class="product-divider">
-                    <!-- Registro -->
+                    <hr class="product-divider" style="margin: 2rem 0;">
                     <form id="form-registro">
-                        <h3 class="login-title">Crear Cuenta Nueva</h3>
+                        <h3 class="login-title" style="text-align: center; margin-bottom: 1.5rem;">Crear Cuenta Nueva</h3>
                         <div class="input-group">
                             <label for="registro-email">Correo Electrónico</label>
-                            <input type="email" id="registro-email" name="registro-email" required>
+                            <input type="email" id="registro-email" name="registro-email" class="form-input" required>
                         </div>
                         <div class="input-group">
                             <label for="registro-password">Contraseña (mín. 6 caracteres)</label>
-                            <input type="password" id="registro-password" name="registro-password" required minlength="6">
+                            <input type="password" id="registro-password" name="registro-password" class="form-input" required minlength="6">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-login">
+                        <button type="submit" class="btn btn-secondary btn-login hover-lemna-trigger">
                             <i class="fa-solid fa-user-plus"></i> Registrarme
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- PANEL DE CUENTA (SI LOGUEADO) -->
             <div id="user-info" class="account-container" style="display: none;">
-                <!-- Sidebar con tabs -->
+                
                 <aside class="account-sidebar">
+                    <div style="text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+                        <div style="width: 60px; height: 60px; background: var(--color-primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 10px;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <h4 style="margin: 0;">Mi Perfil</h4>
+                    </div>
                     <nav>
-                        <button id="btn-tab-datos" class="account-nav-link active">
-                            <i class="fa-solid fa-user"></i> Mis Datos
+                        <button id="btn-tab-datos" class="account-nav-link active hover-lemna-trigger">
+                            <i class="fa-solid fa-address-card"></i> Mis Datos
                         </button>
-                        <button id="btn-tab-pedidos" class="account-nav-link">
-                            <i class="fa-solid fa-box"></i> Mis Pedidos
+                        <button id="btn-tab-pagos" class="account-nav-link hover-lemna-trigger">
+                            <i class="fa-solid fa-wallet"></i> Billetera
                         </button>
-                        <button id="btn-logout" class="account-nav-link btn-logout" style="color: var(--color-danger);">
-                            <i class="fa-solid fa-sign-out-alt"></i> Cerrar Sesión
+                        <button id="btn-tab-pedidos" class="account-nav-link hover-lemna-trigger">
+                            <i class="fa-solid fa-box-open"></i> Mis Pedidos
+                        </button>
+                        <button id="btn-logout" class="account-nav-link btn-logout hover-lemna-trigger" style="color: var(--color-danger); margin-top: 1rem;">
+                            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
                         </button>
                     </nav>
                 </aside>
-                <!-- Contenido de tabs -->
+                
                 <section class="account-content">
-                    <!-- TAB: Mis Datos -->
+                    
                     <div id="seccion-mis-datos" class="content-section active" style="display: block;">
-                        <h2>Mis Datos</h2>
+                        <h2 style="margin-bottom: 1.5rem;">Información Personal</h2>
                         <form id="form-perfil">
                             <div class="input-group">
-                                <label>Correo Electrónico</label>
-                                <input type="email" id="profile-email" name="profile-email" disabled>
+                                <label>Correo Electrónico (No editable)</label>
+                                <input type="email" id="profile-email" name="profile-email" class="form-input" disabled style="background: #f3f4f6;">
                             </div>
                             <div class="input-group">
                                 <label for="profile-name">Nombre Completo</label>
-                                <input type="text" id="profile-name" name="profile-name" placeholder="Tu nombre y apellidos">
+                                <input type="text" id="profile-name" name="profile-name" class="form-input" placeholder="Tu nombre y apellidos">
                             </div>
                             <div class="input-group">
                                 <label for="profile-phone">Teléfono (Opcional)</label>
-                                <input type="tel" id="profile-phone" name="profile-phone" placeholder="10 dígitos sin espacios">
+                                <input type="tel" id="profile-phone" name="profile-phone" class="form-input" placeholder="10 dígitos">
                             </div>
                             <div class="input-group">
                                 <label for="profile-address">Dirección de Envío Principal</label>
-                                <textarea id="profile-address" name="profile-address" placeholder="Incluye: calle, número, colonia, ciudad y código postal"></textarea>
+                                <textarea id="profile-address" name="profile-address" class="form-input" rows="3" placeholder="Incluye: calle, número, colonia, ciudad y código postal"></textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary hover-lemna-trigger">
                                 <i class="fa-solid fa-save"></i> Guardar Cambios
                             </button>
                         </form>
                     </div>
-                    <!-- TAB: Mis Pedidos -->
+
+                    <div id="seccion-pagos" class="content-section" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-shield-halved" style="color: var(--color-success);"></i> Billetera Segura
+                            </h2>
+                            <button id="btn-unlock-wallet" onclick="window.AuthModal.openSecurityCheck()" class="btn btn-sm btn-light hover-lemna-trigger" style="border: 1px solid #ccc;">
+                                <i class="fa-solid fa-eye"></i> Mostrar Datos
+                            </button>
+                        </div>
+                        
+                        <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                            Tus tarjetas están protegidas. Haz clic en "Mostrar Datos" e ingresa tu contraseña para ver o editar.
+                        </p>
+
+                        <div style="background: linear-gradient(135deg, #1b2b1b 0%, #2d3748 100%); padding: 2rem; border-radius: 16px; color: white; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;">
+                            
+                            <div id="wallet-overlay" style="display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 16px; align-items: center; justify-content: center; z-index: 10;">
+                                <div style="text-align: center;">
+                                    <i class="fa-solid fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                    <p>Información Oculta</p>
+                                </div>
+                            </div>
+
+                            <form id="form-pago-seguro">
+                                <div class="input-group">
+                                    <label style="color: #cbd5e1;">Titular de la Tarjeta</label>
+                                    <input type="text" id="wallet-holder" class="form-input" placeholder="PROTEGIDO" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                </div>
+                                <div class="input-group">
+                                    <label style="color: #cbd5e1;">Número de Tarjeta</label>
+                                    <div class="input-with-icon">
+                                        <i class="fa-regular fa-credit-card icon-left" style="color: #cbd5e1;"></i>
+                                        <input type="password" id="wallet-number" class="form-input" placeholder="**** **** **** ****" maxlength="19" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="input-group">
+                                        <label style="color: #cbd5e1;">Vencimiento</label>
+                                        <input type="text" id="wallet-expiry" class="form-input" placeholder="**/**" maxlength="5" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label style="color: #cbd5e1;">CVV</label>
+                                        <div class="input-with-icon">
+                                            <i class="fa-solid fa-lock icon-left" style="color: #cbd5e1;"></i>
+                                            <input type="password" id="wallet-cvc" class="form-input" placeholder="***" maxlength="4" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                                    <button type="submit" id="btn-save-wallet" class="btn btn-primary hover-lemna-trigger" style="background: var(--color-success); border: none;" disabled>
+                                        <i class="fa-solid fa-lock"></i> Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
                     <div id="seccion-mis-pedidos" class="content-section" style="display: none;">
-                        <h2>Mis Pedidos</h2>
+                        <h2 style="margin-bottom: 1.5rem;">Historial de Pedidos</h2>
                         <div id="pedidos-lista-container" class="orders-grid">
-                            <p>Cargando tus pedidos...</p>
+                            <div style="text-align: center; padding: 3rem; color: #999;">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -128,37 +190,64 @@
         </div>
     </main>
 
-    <!-- FOOTER -->
-    <footer class="site-footer">
+    <footer class="site-footer-premium">
         <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col-1">
-                    <img src="images/logo.png" alt="Logo" class="footer-logo-placeholder">
+            <div class="footer-top-row">
+                <div class="region-selector">
+                    <span class="region-label">Región / Idioma Actual</span>
+                    <button class="region-btn hover-lemna-trigger">
+                        <img src="https://flagcdn.com/24x18/mx.png" alt="México" style="display:inline; width:18px; vertical-align:middle; margin-right:5px;"> 
+                        México / Español 
+                    </button>
                 </div>
-                <div class="footer-col-2">
-                    <h4>Datos</h4>
-                    <p>
-                        Av. Blv, Place, #123<br>
-                        Tlaxcala, México<br>
-                        +52 247 123 4567<br>
-                        info@ecotech.com
-                    </p>
+            </div>
+            <div class="footer-middle-grid">
+                <div class="footer-col">
+                    <h4 class="footer-heading">Contacto</h4>
+                    <p class="footer-link-text">¿Necesitas ayuda?</p>
+                    <a href="panel.html" class="btn btn-light btn-sm hover-lemna-trigger" style="margin-top: 10px; width: fit-content; border-radius: 4px;">Soporte Técnico</a>
                 </div>
-                <div class="footer-col-3">
-                    <h4>Política de la Tienda</h4>
-                    <ul>
-                        <li><a href="#">Envío y entrega</a></li>
-                        <li><a href="#">Términos y condiciones</a></li>
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="panel.html">Acceso Personal</a></li>
+                <div class="footer-col">
+                    <h4 class="footer-heading">Empresa</h4>
+                    <ul class="footer-links-list">
+                        <li><a href="#" class="hover-lemna-trigger">Sostenibilidad</a></li>
+                        <li><a href="panel.html" class="hover-lemna-trigger">Intranet</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="copyright">
-                © 2025 ECOTECHSOLUTIONS. Todos los derechos reservados.
+            <hr class="footer-divider">
+            <div class="footer-bottom-block">
+                <div class="footer-legal-links">
+                    <span>© 2025 ECOTECHSOLUTIONS México.</span>
+                    <a href="#" class="hover-lemna-trigger">Aviso de Privacidad.</a>
+                </div>
+                <div class="footer-brand-logo">
+                    <img src="images/logo.png" alt="ECOTECH BRAND" class="footer-final-logo">
+                    <span class="brand-text">ECOTECHSOLUTIONS</span>
+                </div>
             </div>
         </div>
     </footer>
+
+    <div id="security-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+            <div style="width: 50px; height: 50px; background: #fef3c7; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h3 style="margin-bottom: 0.5rem;">Confirmar Identidad</h3>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Por seguridad, ingresa tu contraseña para ver o editar tus métodos de pago.</p>
+            
+            <form id="form-security-check">
+                <div class="input-group">
+                    <input type="password" id="sec-password" class="form-input" placeholder="Contraseña actual" required style="text-align: center;">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                    <button type="button" onclick="window.AuthModal.closeSecurityCheck()" class="btn btn-light hover-lemna-trigger" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary hover-lemna-trigger" style="flex: 1;">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
