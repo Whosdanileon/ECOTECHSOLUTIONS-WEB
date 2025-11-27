@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link rel="stylesheet" href="style.css">
 </head>
@@ -82,6 +83,9 @@
                     <li class="active hover-lemna-trigger" onclick="switchTab('planta'); toggleSidebarIfMobile()">
                         <a href="#"><i class="fa-solid fa-industry"></i> Control Planta</a>
                     </li>
+                    <li class="hover-lemna-trigger" onclick="switchTab('ventas'); toggleSidebarIfMobile()" id="nav-tab-ventas">
+                        <a href="#"><i class="fa-solid fa-cash-register"></i> Gestión Ventas</a>
+                    </li>
                     <li class="hover-lemna-trigger" onclick="switchTab('personal'); toggleSidebarIfMobile()">
                         <a href="#"><i class="fa-solid fa-users-gear"></i> Gestión Personal</a>
                     </li>
@@ -124,6 +128,35 @@
                     </div>
                 </div>
             </section>
+            
+            <section id="view-ventas" class="dashboard-view">
+                <header class="view-header">
+                    <h1>Gestión de Pedidos y Tesorería</h1>
+                    <div class="date-filter">
+                        <button class="btn btn-sm btn-light hover-lemna-trigger" onclick="Dashboard.renderSales('todos')"><i class="fa-solid fa-list"></i> Todos</button>
+                        <button class="btn btn-sm btn-primary hover-lemna-trigger" onclick="Dashboard.renderSales('pendiente')"><i class="fa-solid fa-clock"></i> Pendientes Pago</button>
+                    </div>
+                </header>
+                
+                <div class="card">
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID / Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Total / Método</th>
+                                    <th>Estado Actual</th>
+                                    <th>Acciones Staff</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ventas-table-body">
+                                <tr><td colspan="5" class="text-center" style="padding: 2rem;">Cargando pedidos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
             <section id="view-personal" class="dashboard-view">
                 <header class="view-header">
@@ -152,48 +185,64 @@
 
             <section id="view-reportes" class="dashboard-view">
                 <header class="view-header">
-                    <h1>Métricas de Producción</h1>
+                    <h1>Métricas y Bitácora</h1>
                     <div class="date-filter">
-                        <button class="btn btn-secondary btn-sm hover-lemna-trigger"><i class="fa-solid fa-calendar"></i> Turno Actual</button>
+                        <button class="btn btn-danger btn-sm hover-lemna-trigger" onclick="Dashboard.reportIncident()"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Falla</button>
+                        <button class="btn btn-secondary btn-sm hover-lemna-trigger" onclick="Dashboard.renderReports()"><i class="fa-solid fa-rotate"></i> Actualizar</button>
                     </div>
                 </header>
 
                 <div class="reports-grid">
                     <div class="report-card">
-                        <h3>Eficiencia (OEE)</h3>
-                        <div class="big-number" style="color: var(--color-success);">92%</div>
-                        <p class="trend up" style="color: var(--color-success); font-size: 0.9rem;"><i class="fa-solid fa-arrow-trend-up"></i> +4.5% vs ayer</p>
+                        <h3>Ciclos Máquina 1</h3>
+                        <div id="kpi-cycles" class="big-number" style="color: var(--color-primary);">--</div>
+                        <p style="color: #64748b; font-size: 0.9rem;">Lavados completados hoy</p>
                     </div>
                     <div class="report-card">
-                        <h3>Producción Neta</h3>
-                        <div class="big-number">1,450 kg</div>
-                        <p style="color: #64748b; font-size: 0.9rem;">Meta turno: 1,500 kg</p>
+                        <h3>Alertas Críticas</h3>
+                        <div id="kpi-alerts" class="big-number" style="color: #ef4444;">--</div>
+                        <p style="color: #64748b; font-size: 0.9rem;">Eventos fuera de rango</p>
                     </div>
                     <div class="report-card">
-                        <h3>Incidencias</h3>
-                        <div class="big-number" style="color: #f59e0b;">1</div>
-                        <p style="color: #64748b; font-size: 0.9rem;">Mantenimiento preventivo M2</p>
+                        <h3>Temp. Actual (M2)</h3>
+                        <div id="kpi-temp" class="big-number" style="color: #f59e0b;">--°C</div>
+                        <p style="color: #64748b; font-size: 0.9rem;">Deshidratadora en tiempo real</p>
                     </div>
                 </div>
                 
-                <div class="card" style="padding: 1.5rem;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; color:#64748b;">
-                        <i class="fa-solid fa-temperature-half"></i>
-                        <strong>Estabilidad Térmica - Deshidratadora (Últimas 8h)</strong>
+                <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <div style="color:#64748b; display:flex; gap:10px; align-items:center;">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <strong>Telemetría Térmica - Deshidratadora (Últimos 20s)</strong>
+                        </div>
+                        <span class="badge" id="telemetry-status" style="background:#f1f5f9; color:#64748b;">Standby</span>
                     </div>
                     
-                    <div class="fake-graph" style="height: 250px; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
-                        <div style="width:12%; height:45%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="08:00"></div>
-                        <div style="width:12%; height:60%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="09:00"></div>
-                        <div style="width:12%; height:55%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="10:00"></div>
-                        <div style="width:12%; height:85%; background:#10b981; border-radius:4px 4px 0 0; opacity:0.9; position:relative;" title="11:00 (Pico)"></div>
-                        <div style="width:12%; height:65%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="12:00"></div>
-                        <div style="width:12%; height:75%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="13:00"></div>
-                        <div style="width:12%; height:60%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="14:00"></div>
-                        <div style="width:12%; height:70%; background:#3b82f6; border-radius:4px 4px 0 0; opacity:0.7; position:relative;" title="15:00"></div>
+                    <div style="height: 300px; width: 100%;">
+                        <canvas id="tempChart"></canvas>
                     </div>
-                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-top:10px;">
-                        <span>08:00</span><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span><span>14:00</span><span>15:00</span>
+                </div>
+
+                <div class="card">
+                    <div class="m-header">
+                        <h4><i class="fa-solid fa-clipboard-list"></i> Bitácora de Operaciones (Últimos 50 eventos)</h4>
+                    </div>
+                    <div style="overflow-x: auto; max-height: 400px;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Máquina</th>
+                                    <th>Evento / Acción</th>
+                                    <th>Operador</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportes-table-body">
+                                <tr><td colspan="5" class="text-center" style="padding: 2rem;">Cargando bitácora...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
