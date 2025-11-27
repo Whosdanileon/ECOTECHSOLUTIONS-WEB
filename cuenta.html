@@ -249,7 +249,26 @@
         </div>
     </div>
 
+    <div id="tracking-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="background: white; padding: 0; border-radius: 16px; width: 90%; max-width: 500px; overflow: hidden;">
+        <div style="background: var(--color-primary); padding: 1.5rem; color: white; text-align: center;">
+            <i class="fa-solid fa-truck-fast fa-2x" style="margin-bottom: 10px;"></i>
+            <h3 style="margin: 0; color: white;">Seguimiento de Envío</h3>
+            <p id="track-id-display" style="opacity: 0.9; font-family: monospace; margin-top: 5px;">#TRACK123456</p>
+        </div>
+        <div style="padding: 2rem;">
+            <div id="tracking-timeline" class="tracking-timeline">
+                </div>
+            <div style="margin-top: 2rem; text-align: center;">
+                <button onclick="document.getElementById('tracking-modal').style.display='none'" class="btn btn-light hover-lemna-trigger" style="width: 100%;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
+
+    
 </body>
 </html>
