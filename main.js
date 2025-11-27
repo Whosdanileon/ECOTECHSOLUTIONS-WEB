@@ -1,9 +1,11 @@
 /* ==========================================================================
- * ECOTECHSOLUTIONS - MAIN.JS v67 (UPSERT FIX)
- * Integridad: 100% - Soluciona error de "Llave Duplicada" en perfiles.
+ * ECOTECHSOLUTIONS - MAIN.JS v68 (SAFE BOOT EDITION)
+ * Integridad: 100% - Sistema Robusto a Fallos + Login + HMI + Ventas
  * ========================================================================== */
 
-/* 1. CONFIGURACIÓN Y ESTADO GLOBAL */
+/* --------------------------------------------------------------------------
+   1. CONFIGURACIÓN Y ESTADO (Global State)
+   -------------------------------------------------------------------------- */
 const CONFIG = {
     SUPABASE_URL: 'https://dtdtqedzfuxfnnipdorg.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY',
@@ -21,17 +23,18 @@ const State = {
     userProfile: null,
     chartInstance: null,
     machinePhysics: { m2_temp: 0, m2_heating: false },
-    lastAlertTime: 0
+    lastAlertTime: 0,
+    currentChannel: 'General'
 };
 
 let globalEmergencyActive = false;
 
 // Inicialización Supabase
 const db = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-console.log('✅ EcoTech System v67: Database Conflict Resolved');
+console.log('✅ EcoTech System v68: Online');
 
 /* --------------------------------------------------------------------------
-   2. FUNCIONES GLOBALES (Window Binding Inmediato)
+   2. FUNCIONES GLOBALES (DEFINICIÓN TEMPRANA Y SEGURA)
    -------------------------------------------------------------------------- */
 
 // Utilidades
@@ -118,6 +121,7 @@ window.switchTab = function(tabName) {
         
         if (tabName === 'reportes' && window.Dashboard) window.Dashboard.renderReports();
         if (tabName === 'ventas' && window.Dashboard) window.Dashboard.renderSales();
+        if (tabName === 'mensajes' && window.Dashboard) window.Dashboard.loadChatMessages(State.currentChannel);
     }
     
     if (window.innerWidth <= 968) window.toggleSidebar();
@@ -141,7 +145,127 @@ window.toggleSidebarIfMobile = function() {
 };
 
 /* --------------------------------------------------------------------------
-   3. MÓDULO DE AUTENTICACIÓN (Window Bound)
+   3. OBJETOS DE INTERFAZ (DEFINIDOS ANTES DEL BOOTSTRAP)
+   -------------------------------------------------------------------------- */
+
+// Cursor Mágico (Definición explícita)
+window.LemnaCursor = { 
+    init: () => { 
+        if(!document.getElementById('magic-cursor')) { 
+            const img = document.createElement('img'); 
+            img.id = 'magic-cursor'; 
+            img.src = 'images/cursor.png'; 
+            document.body.appendChild(img); 
+        } 
+        const cursor = document.getElementById('magic-cursor'); 
+        document.addEventListener('mousemove', e => { 
+            cursor.style.left = e.clientX + 'px'; 
+            cursor.style.top = e.clientY + 'px'; 
+        }); 
+        document.querySelectorAll('.hover-lemna-trigger').forEach(el => { 
+            el.addEventListener('mouseenter', () => { document.body.classList.add('hide-native-cursor'); cursor.style.display = 'block'; }); 
+            el.addEventListener('mouseleave', () => { document.body.classList.remove('hide-native-cursor'); cursor.style.display = 'none'; }); 
+        }); 
+    } 
+};
+
+// Carrusel (Definición explícita)
+window.Carousel = { 
+    init: () => { 
+        const track = document.querySelector('.carousel-track'); if (!track) return; 
+        const slides = Array.from(track.children); if(!slides.length) return; 
+        const nextButton = document.getElementById('next-slide'); 
+        const prevButton = document.getElementById('prev-slide'); 
+        const slideWidth = slides[0].getBoundingClientRect().width; 
+        slides.forEach((slide, index) => slide.style.left = slideWidth * index + 'px'); 
+        const moveToSlide = (current, target) => { 
+            if(!target) return;
+            track.style.transform = 'translateX(-' + target.style.left + ')'; 
+            current.classList.remove('current-slide'); target.classList.add('current-slide'); 
+        }; 
+        if(nextButton) nextButton.onclick = () => { const cur = track.querySelector('.current-slide'); const next = cur.nextElementSibling || slides[0]; moveToSlide(cur, next); }; 
+        if(prevButton) prevButton.onclick = () => { const cur = track.querySelector('.current-slide'); const prev = cur.previousElementSibling || slides[slides.length - 1]; moveToSlide(cur, prev); }; 
+    } 
+};
+
+// Galería de Productos
+window.ProductGallery = { 
+    set: (el) => { const main = document.getElementById('main-product-img'); if(main) main.src = el.src; document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active')); el.classList.add('active'); }, 
+    next: () => { const cur = document.querySelector('.thumb.active'); const next = cur?.nextElementSibling || document.querySelector('.thumb:first-child'); if(next) window.ProductGallery.set(next); }, 
+    prev: () => { const cur = document.querySelector('.thumb.active'); const prev = cur?.previousElementSibling || document.querySelector('.thumb:last-child'); if(prev) window.ProductGallery.set(prev); } 
+};
+
+// Modal de Autenticación
+window.AuthModal = {
+    init: () => {
+        if (document.getElementById('auth-modal')) return;
+
+        const html = `
+        <div id="auth-modal" class="auth-modal-overlay" style="display:none;">
+            <div class="auth-box">
+                <button class="auth-close-btn" onclick="window.AuthModal.close()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="window.AuthModal.switchTab('login')">Iniciar Sesión</button>
+                    <button class="auth-tab" onclick="window.AuthModal.switchTab('register')">Registrarse</button>
+                </div>
+                <div id="modal-login-view" class="auth-view active">
+                    <div class="auth-header"><img src="images/logo.png"><h4>Bienvenido</h4><p>Accede a tu cuenta</p></div>
+                    <form id="form-modal-login">
+                        <div class="input-group"><input type="email" id="m-login-email" class="form-input" placeholder="Email" required></div>
+                        <div class="input-group"><input type="password" id="m-login-pass" class="form-input" placeholder="Contraseña" required></div>
+                        <button type="submit" class="btn btn-primary" style="width:100%">ENTRAR</button>
+                    </form>
+                </div>
+                <div id="modal-register-view" class="auth-view">
+                    <div class="auth-header"><img src="images/logo.png"><h4>Crear Cuenta</h4><p>Regístrate</p></div>
+                    <form id="form-modal-register">
+                        <div class="input-group"><input type="email" id="m-reg-email" class="form-input" placeholder="Email" required></div>
+                        <div class="input-group"><input type="password" id="m-reg-pass" class="form-input" placeholder="Contraseña (min 6)" required minlength="6"></div>
+                        <button type="submit" class="btn btn-primary" style="width:100%">REGISTRARSE</button>
+                    </form>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        const loginForm = document.getElementById('form-modal-login');
+        if(loginForm) loginForm.onsubmit = window.Auth.login;
+        const regForm = document.getElementById('form-modal-register');
+        if(regForm) regForm.onsubmit = window.Auth.register;
+    },
+    open: (tab = 'login') => { 
+        window.AuthModal.init(); 
+        const m = document.getElementById('auth-modal'); 
+        if(m) {
+            m.style.display = 'flex'; 
+            setTimeout(()=>m.classList.add('show'),10); 
+            window.AuthModal.switchTab(tab); 
+        }
+    },
+    close: () => { 
+        const m = document.getElementById('auth-modal'); 
+        if(m) { 
+            m.classList.remove('show'); 
+            setTimeout(()=>m.style.display='none',300); 
+        } 
+    },
+    switchTab: (tab) => {
+        document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.auth-view').forEach(v=>v.classList.remove('active'));
+        if(tab==='login') { 
+            document.querySelector('button[onclick*="login"]')?.classList.add('active'); 
+            document.getElementById('modal-login-view')?.classList.add('active'); 
+        } else { 
+            document.querySelector('button[onclick*="register"]')?.classList.add('active'); 
+            document.getElementById('modal-register-view')?.classList.add('active'); 
+        }
+    },
+    openSecurityCheck: () => { const m = document.getElementById('security-modal'); if(m) { m.style.display='flex'; setTimeout(()=>m.style.opacity='1',10); } },
+    closeSecurityCheck: () => { const m = document.getElementById('security-modal'); if(m) { m.style.opacity='0'; setTimeout(()=>{m.style.display='none'; document.getElementById('sec-password').value='';},300); } }
+};
+
+/* --------------------------------------------------------------------------
+   4. MÓDULO DE AUTENTICACIÓN
    -------------------------------------------------------------------------- */
 window.Auth = {
     login: async (e) => {
@@ -172,7 +296,7 @@ window.Auth = {
         if (error) {
             notify.error(error.message);
         } else {
-            notify.success('Acceso Correcto');
+            notify.success('Bienvenido');
             if(window.AuthModal && typeof window.AuthModal.close === 'function') window.AuthModal.close();
             setTimeout(() => window.location.reload(), 800);
         }
@@ -196,7 +320,6 @@ window.Auth = {
         if (error) {
             notify.error(error.message);
         } else {
-            // [CORRECCIÓN v67] Usar UPSERT para evitar conflicto con triggers
             await db.from('perfiles').upsert([{ 
                 id: data.user.id, 
                 email: emailInput.value.trim(), 
@@ -264,6 +387,23 @@ window.Auth = {
         notify.success('Guardado');
     },
 
+    saveWallet: async (e, user) => {
+        e.preventDefault();
+        const load = notify.loading('Guardando...');
+        const walletData = {
+            holder: document.getElementById('wallet-holder').value,
+            number: document.getElementById('wallet-number').value,
+            expiry: document.getElementById('wallet-expiry').value
+        };
+        const { error } = await db.from('perfiles').update({ datos_pago: walletData }).eq('id', user.id);
+        notify.close(load);
+        if(!error) {
+            notify.success('Tarjeta guardada');
+            State.tempWalletData = walletData;
+            setTimeout(() => location.reload(), 1500); 
+        } else notify.error(error.message);
+    },
+
     verifyPasswordAndReveal: async (e, user) => {
         e.preventDefault();
         const pass = document.getElementById('sec-password').value;
@@ -271,23 +411,17 @@ window.Auth = {
         const { error } = await db.auth.signInWithPassword({ email: user.email, password: pass });
         notify.close(load);
         
-        if(error) notify.error('Contraseña incorrecta');
+        if(error) notify.error('Incorrecto');
         else {
-            notify.success('Identidad confirmada');
+            notify.success('Confirmado');
             window.AuthModal.closeSecurityCheck();
             ['wallet-holder', 'wallet-number', 'wallet-expiry', 'wallet-cvc'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) { el.disabled = false; el.type = "text"; el.style.background = "rgba(255,255,255,0.15)"; }
             });
-            const btnSave = document.getElementById('btn-save-wallet');
-            if(btnSave) btnSave.disabled = false;
-            
-            const btnUnlock = document.getElementById('btn-unlock-wallet');
-            if(btnUnlock) btnUnlock.style.display = 'none';
-            
-            const overlay = document.getElementById('wallet-overlay');
-            if(overlay) overlay.style.display = 'none';
-            
+            document.getElementById('btn-save-wallet').disabled = false;
+            document.getElementById('btn-unlock-wallet').style.display = 'none';
+            document.getElementById('wallet-overlay').style.display = 'none';
             if (State.tempWalletData) {
                 document.getElementById('wallet-holder').value = State.tempWalletData.holder || '';
                 document.getElementById('wallet-number').value = State.tempWalletData.number || '';
@@ -298,88 +432,16 @@ window.Auth = {
 };
 
 /* --------------------------------------------------------------------------
-   4. MODULO AUTH MODAL (Window Bound)
-   -------------------------------------------------------------------------- */
-window.AuthModal = {
-    init: () => {
-        if (document.getElementById('auth-modal')) return;
-
-        const html = `
-        <div id="auth-modal" class="auth-modal-overlay" style="display:none;">
-            <div class="auth-box">
-                <button class="auth-close-btn" onclick="window.AuthModal.close()"><i class="fa-solid fa-xmark"></i></button>
-                <div class="auth-tabs">
-                    <button class="auth-tab active" onclick="window.AuthModal.switchTab('login')">Iniciar Sesión</button>
-                    <button class="auth-tab" onclick="window.AuthModal.switchTab('register')">Registrarse</button>
-                </div>
-                <div id="modal-login-view" class="auth-view active">
-                    <div class="auth-header"><img src="images/logo.png"><h4>Bienvenido</h4><p>Accede a tu cuenta</p></div>
-                    <form id="form-modal-login">
-                        <div class="input-group"><input type="email" id="m-login-email" class="form-input" placeholder="Email" required></div>
-                        <div class="input-group"><input type="password" id="m-login-pass" class="form-input" placeholder="Contraseña" required></div>
-                        <button type="submit" class="btn btn-primary" style="width:100%">ENTRAR</button>
-                    </form>
-                </div>
-                <div id="modal-register-view" class="auth-view">
-                    <div class="auth-header"><img src="images/logo.png"><h4>Crear Cuenta</h4><p>Regístrate</p></div>
-                    <form id="form-modal-register">
-                        <div class="input-group"><input type="email" id="m-reg-email" class="form-input" placeholder="Email" required></div>
-                        <div class="input-group"><input type="password" id="m-reg-pass" class="form-input" placeholder="Contraseña (min 6)" required minlength="6"></div>
-                        <button type="submit" class="btn btn-primary" style="width:100%">REGISTRARSE</button>
-                    </form>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
-        
-        // Vincular eventos
-        const loginForm = document.getElementById('form-modal-login');
-        if(loginForm) loginForm.onsubmit = window.Auth.login;
-        
-        const regForm = document.getElementById('form-modal-register');
-        if(regForm) regForm.onsubmit = window.Auth.register;
-    },
-    open: (tab = 'login') => { 
-        window.AuthModal.init(); 
-        const m = document.getElementById('auth-modal'); 
-        if(m) {
-            m.style.display = 'flex'; 
-            setTimeout(()=>m.classList.add('show'),10); 
-            window.AuthModal.switchTab(tab); 
-        }
-    },
-    close: () => { 
-        const m = document.getElementById('auth-modal'); 
-        if(m) { 
-            m.classList.remove('show'); 
-            setTimeout(()=>m.style.display='none',300); 
-        } 
-    },
-    switchTab: (tab) => {
-        document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
-        document.querySelectorAll('.auth-view').forEach(v=>v.classList.remove('active'));
-        if(tab==='login') { 
-            document.querySelector('button[onclick*="login"]')?.classList.add('active'); 
-            document.getElementById('modal-login-view')?.classList.add('active'); 
-        } else { 
-            document.querySelector('button[onclick*="register"]')?.classList.add('active'); 
-            document.getElementById('modal-register-view')?.classList.add('active'); 
-        }
-    },
-    openSecurityCheck: () => { const m = document.getElementById('security-modal'); if(m) { m.style.display='flex'; setTimeout(()=>m.style.opacity='1',10); } },
-    closeSecurityCheck: () => { const m = document.getElementById('security-modal'); if(m) { m.style.opacity='0'; setTimeout(()=>{m.style.display='none'; document.getElementById('sec-password').value='';},300); } }
-};
-
-/* --------------------------------------------------------------------------
-   5. TELEMETRÍA (Window Bound)
+   5. TELEMETRÍA
    -------------------------------------------------------------------------- */
 window.Telemetry = {
     init: () => {
         const ctx = document.getElementById('tempChart');
         if(!ctx) return;
         
+        // Protección: Si Chart.js no cargó, evitar crash
         if (typeof Chart === 'undefined') {
-            console.warn("Chart.js missing");
+            console.warn("Chart.js no cargado");
             return;
         }
 
@@ -471,7 +533,7 @@ window.Dashboard = {
             if (CONFIG.ROLES.STAFF.includes(p.rol)) {
                 window.switchTab('planta'); 
                 await window.Dashboard.renderMachines(p.rol);
-                window.Dashboard.initChat(p);
+                window.Dashboard.initChat();
                 window.Dashboard.subscribeRealtime();
                 window.Telemetry.init(); 
                 
@@ -499,6 +561,7 @@ window.Dashboard = {
         }
     },
     
+    // --- GESTIÓN DE PERSONAL ---
     openCreateUserModal: () => {
         const modal = document.getElementById('modal-create-user');
         if(modal) {
@@ -528,14 +591,13 @@ window.Dashboard = {
             if (error) throw error;
             if (!data.user) throw new Error("No se pudo crear el usuario");
 
-            // [CORRECCIÓN v67] UPSERT: Si el usuario ya existe (por trigger), se actualiza. Si no, se crea.
-            const { error: profileError } = await db.from('perfiles').upsert({
+            const { error: profileError } = await db.from('perfiles').upsert([{
                 id: data.user.id,
                 email: email,
                 nombre_completo: name,
                 rol: role,
                 area: dept
-            });
+            }]);
 
             if (profileError) throw profileError;
 
@@ -567,39 +629,46 @@ window.Dashboard = {
     initAdminUsers: async (myRole) => {
         const tbody = document.getElementById('user-table-body');
         if (!tbody) return;
-        
-        const { data } = await db.from('perfiles').select('*').order('created_at', { ascending: false });
-        if (!data) return;
-        
-        const isSys = CONFIG.ROLES.SYS.includes(myRole);
-        
-        tbody.innerHTML = data.map(u => {
-            const isMe = u.id === State.userProfile.id;
-            return `
-            <tr data-uid="${u.id}">
-                <td>
-                    <div style="font-weight:600;">${Utils.escapeHtml(u.nombre_completo || 'Sin Nombre')}</div>
-                    <div style="font-size:0.85rem; color:#666;">${Utils.escapeHtml(u.email)}</div>
-                </td>
-                <td>
-                    <select class="form-input role-select" style="padding:5px; width:100%;" ${isMe ? 'disabled' : ''}>
-                        ${['Sistemas', 'Lider', 'Supervisor', 'Mecanico', 'Operador', 'Cliente'].map(r => 
-                            `<option ${u.rol === r ? 'selected' : ''} value="${r}">${r}</option>`
-                        ).join('')}
-                    </select>
-                </td>
-                <td>${Utils.escapeHtml(u.area || '-')}</td>
-                <td>
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn-icon btn-save" onclick="Dashboard.updateUserRole('${u.id}', this)" title="Guardar Rol" ${isMe ? 'disabled' : ''}><i class="fa-solid fa-save"></i></button>
-                        ${isSys && !isMe ? `<button class="btn-icon btn-delete" onclick="Dashboard.deleteUser('${u.id}')" title="Eliminar"><i class="fa-solid fa-trash" style="color:red"></i></button>` : ''}
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-        
-        const formCreate = document.getElementById('form-create-employee');
-        if(formCreate) formCreate.onsubmit = window.Dashboard.createEmployee;
+        try {
+            const { data, error } = await db.from('perfiles').select('*').order('created_at', { ascending: false });
+            if (error || !data) return;
+            
+            const isSys = CONFIG.ROLES.SYS.includes(myRole);
+            
+            tbody.innerHTML = data.map(u => {
+                const isMe = u.id === State.userProfile.id;
+                return `
+                <tr data-uid="${u.id}">
+                    <td>
+                        <div style="font-weight:600;">${Utils.escapeHtml(u.nombre_completo || 'Sin Nombre')}</div>
+                        <div style="font-size:0.85rem; color:#666;">${Utils.escapeHtml(u.email)}</div>
+                    </td>
+                    <td>
+                        <select class="form-input role-select" style="padding:5px; width:100%;" ${isMe ? 'disabled' : ''}>
+                            ${['Sistemas', 'Lider', 'Supervisor', 'Mecanico', 'Operador', 'Cliente'].map(r => 
+                                `<option ${u.rol === r ? 'selected' : ''} value="${r}">${r}</option>`
+                            ).join('')}
+                        </select>
+                    </td>
+                    <td>${Utils.escapeHtml(u.area || '-')}</td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn-icon btn-save" onclick="window.Dashboard.updateUserRole('${u.id}', this)" title="Guardar Rol" ${isMe ? 'disabled' : ''}>
+                                <i class="fa-solid fa-save"></i>
+                            </button>
+                            ${isSys && !isMe ? `
+                            <button class="btn-icon btn-delete" onclick="window.Dashboard.deleteUser('${u.id}')" title="Eliminar">
+                                <i class="fa-solid fa-trash" style="color:red"></i>
+                            </button>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+            
+            const formCreate = document.getElementById('form-create-employee');
+            if(formCreate) formCreate.onsubmit = window.Dashboard.createEmployee;
+
+        } catch (e) { console.error("Error usuarios:", e); }
     },
 
     updateUserRole: async (uid, btn) => {
@@ -609,7 +678,7 @@ window.Dashboard = {
         const { error } = await db.from('perfiles').update({ rol }).eq('id', uid);
         notify.close(load);
         if(error) notify.error(error.message);
-        else notify.success('Rol actualizado');
+        else notify.success('Actualizado');
     },
 
     renderMachines: async (rol) => {
@@ -694,7 +763,6 @@ window.Dashboard = {
         if(!tbody) return;
         
         const { data: logs } = await db.from('bitacora_industrial').select('*').order('created_at', { ascending: false }).limit(50);
-        
         const { count: ciclosCount } = await db.from('bitacora_industrial').select('*', { count: 'exact', head: true }).eq('evento', 'Inicio Ciclo').gte('created_at', new Date().toISOString().split('T')[0]);
         const { count: alertasCount } = await db.from('bitacora_industrial').select('*', { count: 'exact', head: true }).in('tipo', ['WARNING', 'ERROR']).gte('created_at', new Date().toISOString().split('T')[0]);
 
@@ -761,33 +829,67 @@ window.Dashboard = {
         }, newStatus === 'Cancelado' ? 'btn-primary-modal-danger' : 'btn-secondary-modal', 'Confirmar');
     },
 
-    initChat: async (profile) => {
-        const list = document.querySelector('.message-list');
-        const form = document.getElementById('chat-form');
-        if (!list) return;
-        const renderMessage = (m) => {
-            if (document.querySelector(`[data-msg-id="${m.id}"]`)) return;
-            const html = `<div class="msg-item" data-msg-id="${m.id}" style="animation: fadeIn 0.3s ease;"><div class="msg-avatar">${m.sender.charAt(0).toUpperCase()}</div><div style="flex:1;"><div style="display:flex; justify-content:space-between;"><strong>${Utils.escapeHtml(m.sender)}</strong><small style="color:#888;">${Utils.formatTime(m.created_at)}</small></div><small style="color:#666;">${Utils.escapeHtml(m.role)}</small><p style="margin:5px 0 0; color:#333;">${Utils.escapeHtml(m.mensaje)}</p></div></div>`;
-            list.insertAdjacentHTML('afterbegin', html);
-        };
-        const { data } = await db.from('mensajes').select('*').order('created_at', { ascending: false }).limit(20);
-        if (data) { list.innerHTML = ''; [...data].reverse().forEach(renderMessage); }
-        if (form) {
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-                const txt = form.querySelector('textarea').value.trim();
-                if (txt) {
-                    await db.from('mensajes').insert({ mensaje: txt, sender: profile.nombre_completo || 'Usuario', role: profile.rol });
-                    form.querySelector('textarea').value = '';
-                }
-            };
+    // --- CHAT POR ÁREAS (RESTAURADO) ---
+    initChat: () => {
+        const input = document.getElementById('chat-input-text');
+        if(input) {
+            input.onkeypress = (e) => { if(e.key === 'Enter') window.Dashboard.sendMessage(); };
         }
-        window.Dashboard.renderChatMessage = renderMessage;
+    },
+
+    switchChatChannel: (channelName) => {
+        State.currentChannel = channelName;
+        document.querySelectorAll('.btn-channel').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById(`btn-ch-${channelName}`);
+        if(activeBtn) activeBtn.classList.add('active');
+        const badge = document.getElementById('current-channel-badge');
+        if(badge) badge.textContent = `# ${channelName}`;
+        const inp = document.getElementById('chat-input-text');
+        if(inp) inp.placeholder = `Mensaje para #${channelName}...`;
+        window.Dashboard.loadChatMessages(channelName);
+    },
+
+    loadChatMessages: async (channel) => {
+        const list = document.getElementById('chat-messages-area');
+        if (!list) return;
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        const { data } = await db.from('mensajes').select('*').eq('canal', channel).order('created_at', { ascending: false }).limit(50);
+        list.innerHTML = '';
+        if (data && data.length > 0) {
+            [...data].reverse().forEach(m => window.Dashboard.renderChatMessage(m, false)); 
+            list.scrollTop = list.scrollHeight;
+        } else {
+            list.innerHTML = `<div style="text-align:center; padding:40px; color:#cbd5e1;"><i class="fa-regular fa-comments fa-2x"></i><p>Canal #${channel} vacío.</p></div>`;
+        }
+    },
+
+    sendMessage: async () => {
+        const input = document.getElementById('chat-input-text');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        const { error } = await db.from('mensajes').insert({ 
+            mensaje: text, 
+            sender: State.userProfile.nombre_completo, 
+            role: State.userProfile.rol,
+            canal: State.currentChannel
+        });
+        if (error) notify.error('Error enviando mensaje');
+    },
+
+    renderChatMessage: (m, animate = true) => {
+        if (m.canal !== State.currentChannel) return;
+        const list = document.getElementById('chat-messages-area');
+        if (!list) return;
+        if (list.innerHTML.includes('Canal #')) list.innerHTML = '';
+        const isMe = m.sender === State.userProfile.nombre_completo;
+        const html = `<div class="msg-item" style="${animate ? 'animation: fadeIn 0.3s ease;' : ''} ${isMe ? 'background:#eff6ff; border-color:#bfdbfe;' : ''}"><div class="msg-avatar" style="${isMe ? 'background:#3b82f6; color:white;' : ''}">${m.sender.charAt(0).toUpperCase()}</div><div style="flex:1;"><div style="display:flex; justify-content:space-between;"><strong>${Utils.escapeHtml(m.sender)}</strong><small style="color:#888;">${Utils.formatTime(m.created_at)}</small></div><small style="color:#666;">${Utils.escapeHtml(m.role)}</small><p style="margin:5px 0 0; color:#333;">${Utils.escapeHtml(m.mensaje)}</p></div></div>`;
+        list.insertAdjacentHTML('beforeend', html);
+        list.scrollTop = list.scrollHeight;
     },
 
     subscribeRealtime: () => {
         if (State.realtimeSubscription) return;
-        console.log("🔌 Iniciando suscripción Realtime Completa...");
         State.realtimeSubscription = db.channel('public-room')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'maquinas' }, payload => { 
                 if (payload.new && payload.new.controles) {
@@ -811,7 +913,7 @@ window.Dashboard = {
 };
 
 /* --------------------------------------------------------------------------
-   7. FUNCIONES DE CONTROL GLOBAL (Window Bound)
+   7. CONTROL GLOBAL (PLC)
    -------------------------------------------------------------------------- */
 window.plcCmd = async (id, act) => { 
     if (globalEmergencyActive && act !== 'Paro') return notify.error("BLOQUEO DE EMERGENCIA"); 
@@ -820,7 +922,7 @@ window.plcCmd = async (id, act) => {
     if (act === 'Inicio') { c.Inicio = true; c.Paro = false; } 
     else { c.Inicio = false; c.Paro = true; c.online_llenado = false; c.online_vaciado = false; } 
     await db.from('maquinas').update({ controles: c, estado: act === 'Inicio' ? 'En Ciclo' : 'Detenida' }).eq('id', id); 
-    if(window.Dashboard) await window.Dashboard.logEvent(id, act === 'Inicio' ? 'Inicio Ciclo' : 'Paro Manual', 'INFO');
+    await window.Dashboard.logEvent(id, act, 'INFO');
 };
 
 window.plcSw = async (id, k) => { 
@@ -840,7 +942,7 @@ window.plcSw = async (id, k) => {
         else if (k === 'heat_off') { c.calentador_on = false; eventDesc = "Calentador OFF"; }
     } 
     await db.from('maquinas').update({ controles: c }).eq('id', id); 
-    if(window.Dashboard) await window.Dashboard.logEvent(id, eventDesc, 'INFO');
+    await window.Dashboard.logEvent(id, eventDesc, 'INFO');
 };
 
 window.toggleGlobalEmergency = async () => { 
@@ -849,19 +951,19 @@ window.toggleGlobalEmergency = async () => {
             globalEmergencyActive = true; document.body.classList.add('emergency-mode'); 
             const btn = document.getElementById('btn-global-stop'); if(btn) { btn.classList.add('active'); btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> RESTABLECER'; } 
             await window.plcCmd(1, 'Paro'); await window.plcSw(2, 'heat_off'); 
-            if(window.Dashboard) await window.Dashboard.logEvent(0, 'PARO DE EMERGENCIA GLOBAL', 'ERROR');
+            await window.Dashboard.logEvent(0, 'PARO DE EMERGENCIA GLOBAL', 'ERROR');
         }); 
     } else { 
         Utils.confirmModal('Restablecer', '¿Reactivar operaciones?', async () => { 
             globalEmergencyActive = false; document.body.classList.remove('emergency-mode'); 
             const btn = document.getElementById('btn-global-stop'); if(btn) { btn.classList.remove('active'); btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA'; } 
-            if(window.Dashboard) await window.Dashboard.logEvent(0, 'Reinicio de Planta', 'INFO');
+            await window.Dashboard.logEvent(0, 'Reinicio de Planta', 'INFO');
         }); 
     } 
 };
 
 /* --------------------------------------------------------------------------
-   8. STORE (LÓGICA DE TIENDA)
+   8. STORE (TIENDA)
    -------------------------------------------------------------------------- */
 window.Store = {
     loadProduct: async () => {
@@ -903,36 +1005,6 @@ window.Store = {
         const btn = document.getElementById('btn-vaciar-carrito');
         if(badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline-block':'none'; }
         if(btn) btn.style.display = count > 0 ? 'inline-block':'none';
-    },
-    renderOrders: async (userId) => {
-        const list = document.getElementById('pedidos-lista-container');
-        if (list) {
-            const { data: orders } = await db.from('pedidos').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-            if (orders && orders.length > 0) {
-                list.innerHTML = orders.map(o => {
-                    let statusColor = 'primary';
-                    let statusIcon = 'fa-clock';
-                    if (o.estado === 'Cancelado') { statusColor = 'danger'; statusIcon = 'fa-circle-xmark'; }
-                    else if (o.estado === 'Enviado') { statusColor = 'success'; statusIcon = 'fa-truck'; }
-                    else if (o.estado === 'Pendiente') { statusColor = 'warning'; statusIcon = 'fa-hourglass-half'; }
-                    else if (o.estado === 'Pagado') { statusColor = 'info'; statusIcon = 'fa-check-circle'; }
-
-                    const isCancelable = ['Pagado', 'Procesando', 'Pendiente'].includes(o.estado);
-                    const isTrackable = ['Enviado', 'Entregado'].includes(o.estado) && o.tracking_info;
-                    let actionsHtml = '';
-                    if (isCancelable) actionsHtml += `<button onclick="window.Auth.cancelOrder(${o.id})" class="btn-text-danger hover-lemna-trigger"><i class="fa-solid fa-ban"></i> Cancelar</button>`;
-                    if (isTrackable) {
-                        const trackDataSafe = encodeURIComponent(JSON.stringify(o.tracking_info));
-                        actionsHtml += `<button onclick="window.Auth.trackOrder('${trackDataSafe}', '${o.id}')" class="btn-sm btn-primary hover-lemna-trigger" style="border-radius:20px; font-size:0.8rem;"><i class="fa-solid fa-location-dot"></i> Rastrear</button>`;
-                    }
-                    if (o.estado === 'Cancelado') actionsHtml += `<span style="font-size:0.85rem; color:#ef4444;"><i class="fa-solid fa-circle-xmark"></i> Cancelado</span>`;
-                    let extraInfo = '';
-                    if (o.estado === 'Pendiente') extraInfo = `<div style="background:#fff7ed; color:#c2410c; padding:8px; margin-top:10px; border-radius:6px; font-size:0.85rem; border:1px solid #ffedd5;"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Pago en validación:</strong> El Staff verificará tu transferencia pronto.</div>`;
-
-                    return `<div class="pedido-card" style="border-left-color: var(--color-${statusColor});"><div class="pedido-header"><div><strong>Pedido #${String(o.id).slice(0, 8)}</strong><span style="display:block; font-size:0.8rem; color:#888;">${new Date(o.created_at).toLocaleDateString()}</span></div><span class="badge" style="background:var(--color-${statusColor}-light); color:var(--color-${statusColor}); border:1px solid var(--color-${statusColor}); display:flex; align-items:center; gap:5px;"><i class="fa-solid ${statusIcon}"></i> ${Utils.escapeHtml(o.estado) || 'Procesando'}</span></div><div class="order-info" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;"><div style="font-weight:700; font-size:1.1rem;">${Utils.formatCurrency(o.total)}</div><div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">${actionsHtml}</div></div>${extraInfo}</div>`;
-                }).join('');
-            } else { list.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;"><i class="fa-solid fa-box-open fa-3x" style="margin-bottom:15px; opacity:0.5;"></i><p>Aún no has realizado pedidos.</p><a href="tienda.html" class="btn btn-primary btn-sm">Ir a la tienda</a></div>'; }
-        }
     },
     initCheckout: async (user) => {
         const cart = JSON.parse(localStorage.getItem(CONFIG.CART_KEY)) || {};
@@ -1007,8 +1079,8 @@ window.ProductGallery = {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         window.AuthModal.init();
-        if(window.LemnaCursor && window.LemnaCursor.init) window.LemnaCursor.init(); // Assuming LemnaCursor is elsewhere or simple
-        if(window.Carousel && window.Carousel.init) window.Carousel.init(); // Assuming Carousel logic is elsewhere or simple
+        if(window.LemnaCursor.init) window.LemnaCursor.init();
+        if(window.Carousel.init) window.Carousel.init();
         window.Store.updateCount();
 
         const { data: { session } } = await db.auth.getSession();
@@ -1042,9 +1114,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const form = document.getElementById('panel-login-form'); if(form) form.onsubmit = window.Auth.login;
             }
         } else if(path.includes('cuenta')) {
+            const forms = document.getElementById('auth-forms'); 
+            const info = document.getElementById('user-info');
+            
             if(user) {
-                const forms = document.getElementById('auth-forms'); if(forms) forms.style.display='none';
-                const info = document.getElementById('user-info'); if(info) info.style.display='grid';
+                if(forms) forms.style.display='none';
+                if(info) info.style.display='grid';
                 window.Auth.loadProfile(user);
                 
                 const pf = document.getElementById('form-perfil'); if(pf) pf.onsubmit = (e) => window.Auth.saveProfile(e, user);
@@ -1052,7 +1127,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const sf = document.getElementById('form-security-check'); if(sf) sf.onsubmit = (e) => window.Auth.verifyPasswordAndReveal(e, user);
                 const lo = document.getElementById('btn-logout'); if(lo) lo.onclick = window.Auth.logout;
                 
-                // Tabs
                 const d = document.getElementById('btn-tab-datos');
                 const p = document.getElementById('btn-tab-pedidos');
                 const w = document.getElementById('btn-tab-pagos');
@@ -1067,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(w) w.onclick = () => { hideAll(); document.getElementById('seccion-pagos').style.display='block'; w.classList.add('active'); };
 
             } else {
-                const forms = document.getElementById('auth-forms'); if(forms) forms.style.display='block';
+                if(forms) forms.style.display='block';
                 const lf = document.getElementById('form-login'); if(lf) lf.onsubmit = window.Auth.login;
                 const rf = document.getElementById('form-registro'); if(rf) rf.onsubmit = window.Auth.register;
             }
@@ -1087,7 +1161,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btn = document.getElementById('btn-anadir-carrito');
             if(btn) btn.onclick = window.Store.addToCart;
         }
-
     } catch(err) {
         console.error("Critical System Error:", err);
     }

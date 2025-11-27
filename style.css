@@ -623,3 +623,12 @@ body.hide-native-cursor { cursor: none !important; }
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
+
+/* Estilos para Canales de Chat */
+.btn-channel {
+    background: transparent; border: none; text-align: left; padding: 10px;
+    border-radius: 6px; cursor: pointer; color: #64748b; font-weight: 500;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.btn-channel:hover { background: #f1f5f9; color: var(--color-text); }
+.btn-channel.active { background: #e0f2fe; color: #0284c7; font-weight: 700; }

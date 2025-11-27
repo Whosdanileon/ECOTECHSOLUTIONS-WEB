@@ -200,20 +200,34 @@
             </section>
 
             <section id="view-mensajes" class="dashboard-view">
-                <header class="view-header"><h1>Bitácora de Comunicación</h1></header>
-                <div class="messages-layout">
-                    <div class="card" style="display: flex; flex-direction: column; height: 600px;">
-                        <div class="message-list" style="flex: 1; overflow-y: auto; padding: 20px;">
-                            <div style="text-align: center; padding: 40px; color: #94a3b8;"><i class="fa-regular fa-comments fa-3x" style="margin-bottom: 1rem;"></i><p>Cargando historial de chat...</p></div>
-                        </div>
+                <header class="view-header">
+                    <h1>Comunicación Interna</h1>
+                    <span class="badge badge-primary" id="current-channel-badge"># General</span>
+                </header>
+                
+                <div class="messages-layout" style="grid-template-columns: 200px 1fr; gap: 20px; height: 600px;">
+                    <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 5px;">
+                        <small style="color:#94a3b8; font-weight:700; margin-bottom:10px; text-transform:uppercase;">Canales</small>
+                        <button onclick="Dashboard.switchChatChannel('General')" class="btn-channel active" id="btn-ch-General">📢 General</button>
+                        <button onclick="Dashboard.switchChatChannel('Mantenimiento')" class="btn-channel" id="btn-ch-Mantenimiento">🔧 Mantenimiento</button>
+                        <button onclick="Dashboard.switchChatChannel('Supervisores')" class="btn-channel" id="btn-ch-Supervisores">👷 Supervisores</button>
+                        <button onclick="Dashboard.switchChatChannel('Seguridad')" class="btn-channel" id="btn-ch-Seguridad" style="color:#ef4444;">🚨 Seguridad</button>
                     </div>
-                    <div class="message-compose card" style="padding: 24px; height: fit-content; position: sticky; top: 20px;">
-                        <h3 style="margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-pen-to-square"></i> Nueva Entrada</h3>
-                        <form id="chat-form">
-                            <div class="input-group"><label>Canal de Destino</label><select class="form-input hover-lemna-trigger"><option>📢 General (Planta)</option><option>🔧 Mantenimiento</option><option>👷 Supervisores</option><option>🚨 Alertas de Seguridad</option></select></div>
-                            <div class="input-group"><label>Mensaje / Reporte</label><textarea class="form-input" rows="6" placeholder="Escribe el reporte de turno o incidencia..." required></textarea></div>
-                            <button type="submit" class="btn btn-primary hover-lemna-trigger" style="width:100%"><i class="fa-solid fa-paper-plane"></i> Publicar en Bitácora</button>
-                        </form>
+
+                    <div class="card" style="display: flex; flex-direction: column; overflow: hidden;">
+                        <div id="chat-messages-area" class="message-list" style="flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc;">
+                            <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                                <p>Cargando canal...</p>
+                            </div>
+                        </div>
+
+                        <div style="padding: 15px; background: white; border-top: 1px solid #e2e8f0; display:flex; gap:10px;">
+                            <input type="text" id="chat-input-text" class="form-input" placeholder="Escribe un mensaje en #General..." style="margin:0; border-radius:20px;">
+                            <button onclick="Dashboard.sendMessage()" class="btn btn-primary hover-lemna-trigger" style="border-radius:50%; width:45px; height:45px; padding:0; display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
