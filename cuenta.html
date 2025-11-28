@@ -4,11 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Cuenta - ECOTECHSOLUTIONS</title>
+    
     <link rel="stylesheet" href="style.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        /* Ajuste para el mapa */
+        #map-profile { 
+            height: 300px; 
+            width: 100%; 
+            border-radius: 8px; 
+            border: 2px solid #e2e8f0; 
+            margin-top: 10px;
+            z-index: 1;
+        }
+    </style>
 </head>
 <body>
 
@@ -40,11 +57,11 @@
                         <h3 class="login-title" style="text-align: center; margin-bottom: 1.5rem;">Iniciar Sesión</h3>
                         <div class="input-group">
                             <label for="login-email">Correo Electrónico</label>
-                            <input type="email" id="login-email" name="login-email" class="form-input" required>
+                            <input type="email" id="login-email" class="form-input" required>
                         </div>
                         <div class="input-group">
                             <label for="login-password">Contraseña</label>
-                            <input type="password" id="login-password" name="login-password" class="form-input" required>
+                            <input type="password" id="login-password" class="form-input" required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-login hover-lemna-trigger">
                             <i class="fa-solid fa-sign-in-alt"></i> Entrar
@@ -55,11 +72,11 @@
                         <h3 class="login-title" style="text-align: center; margin-bottom: 1.5rem;">Crear Cuenta Nueva</h3>
                         <div class="input-group">
                             <label for="registro-email">Correo Electrónico</label>
-                            <input type="email" id="registro-email" name="registro-email" class="form-input" required>
+                            <input type="email" id="registro-email" class="form-input" required>
                         </div>
                         <div class="input-group">
                             <label for="registro-password">Contraseña (mín. 6 caracteres)</label>
-                            <input type="password" id="registro-password" name="registro-password" class="form-input" required minlength="6">
+                            <input type="password" id="registro-password" class="form-input" required minlength="6">
                         </div>
                         <button type="submit" class="btn btn-secondary btn-login hover-lemna-trigger">
                             <i class="fa-solid fa-user-plus"></i> Registrarme
@@ -95,24 +112,33 @@
                 
                 <section class="account-content">
                     
-                    <div id="seccion-mis-datos" class="content-section active" style="display: block;">
+                    <div id="seccion-mis-datos" class="content-section active">
                         <h2 style="margin-bottom: 1.5rem;">Información Personal</h2>
                         <form id="form-perfil">
                             <div class="input-group">
                                 <label>Correo Electrónico (No editable)</label>
-                                <input type="email" id="profile-email" name="profile-email" class="form-input" disabled style="background: #f3f4f6;">
+                                <input type="email" id="profile-email" class="form-input" disabled style="background: #f3f4f6;">
                             </div>
                             <div class="input-group">
                                 <label for="profile-name">Nombre Completo</label>
-                                <input type="text" id="profile-name" name="profile-name" class="form-input" placeholder="Tu nombre y apellidos">
+                                <input type="text" id="profile-name" class="form-input" placeholder="Tu nombre y apellidos">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label style="font-weight:700; color:#2e7d32;"><i class="fa-solid fa-map-pin"></i> Ubicación de Entrega</label>
+                                <p style="font-size:0.85rem; color:#666; margin-bottom:5px;">Arrastra el pin azul a tu domicilio exacto.</p>
+                                <div id="map-profile"></div>
+                                <input type="hidden" id="profile-lat">
+                                <input type="hidden" id="profile-lng">
+                            </div>
+
+                            <div class="input-group">
+                                <label for="profile-address">Dirección Escrita y Referencias</label>
+                                <textarea id="profile-address" class="form-input" rows="3" placeholder="Calle, número, colonia, código postal. Color de fachada, entre calles..."></textarea>
                             </div>
                             <div class="input-group">
                                 <label for="profile-phone">Teléfono (Opcional)</label>
-                                <input type="tel" id="profile-phone" name="profile-phone" class="form-input" placeholder="10 dígitos">
-                            </div>
-                            <div class="input-group">
-                                <label for="profile-address">Dirección de Envío Principal</label>
-                                <textarea id="profile-address" name="profile-address" class="form-input" rows="3" placeholder="Incluye: calle, número, colonia, ciudad y código postal"></textarea>
+                                <input type="tel" id="profile-phone" class="form-input" placeholder="10 dígitos">
                             </div>
                             <button type="submit" class="btn btn-primary hover-lemna-trigger">
                                 <i class="fa-solid fa-save"></i> Guardar Cambios
@@ -130,19 +156,13 @@
                             </button>
                         </div>
                         
-                        <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.9rem;">
-                            Tus tarjetas están protegidas. Haz clic en "Mostrar Datos" e ingresa tu contraseña para ver o editar.
-                        </p>
-
                         <div style="background: linear-gradient(135deg, #1b2b1b 0%, #2d3748 100%); padding: 2rem; border-radius: 16px; color: white; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;">
-                            
                             <div id="wallet-overlay" style="display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 16px; align-items: center; justify-content: center; z-index: 10;">
                                 <div style="text-align: center;">
                                     <i class="fa-solid fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i>
                                     <p>Información Oculta</p>
                                 </div>
                             </div>
-
                             <form id="form-pago-seguro">
                                 <div class="input-group">
                                     <label style="color: #cbd5e1;">Titular de la Tarjeta</label>
@@ -235,7 +255,7 @@
                 <i class="fa-solid fa-key"></i>
             </div>
             <h3 style="margin-bottom: 0.5rem;">Confirmar Identidad</h3>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Por seguridad, ingresa tu contraseña para ver o editar tus métodos de pago.</p>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Ingresa tu contraseña para continuar.</p>
             
             <form id="form-security-check">
                 <div class="input-group">
@@ -250,25 +270,58 @@
     </div>
 
     <div id="tracking-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="background: white; padding: 0; border-radius: 16px; width: 90%; max-width: 500px; overflow: hidden;">
-        <div style="background: var(--color-primary); padding: 1.5rem; color: white; text-align: center;">
-            <i class="fa-solid fa-truck-fast fa-2x" style="margin-bottom: 10px;"></i>
-            <h3 style="margin: 0; color: white;">Seguimiento de Envío</h3>
-            <p id="track-id-display" style="opacity: 0.9; font-family: monospace; margin-top: 5px;">#TRACK123456</p>
-        </div>
-        <div style="padding: 2rem;">
-            <div id="tracking-timeline" class="tracking-timeline">
+        <div class="modal-content" style="background: white; padding: 0; border-radius: 16px; width: 90%; max-width: 500px; overflow: hidden;">
+            <div style="background: var(--color-primary); padding: 1.5rem; color: white; text-align: center;">
+                <i class="fa-solid fa-truck-fast fa-2x" style="margin-bottom: 10px;"></i>
+                <h3 style="margin: 0; color: white;">Seguimiento de Envío</h3>
+                <p id="track-id-display" style="opacity: 0.9; font-family: monospace; margin-top: 5px;">#TRACK123456</p>
+            </div>
+            <div style="padding: 2rem;">
+                <div id="tracking-timeline" class="tracking-timeline">
+                    </div>
+                <div style="margin-top: 2rem; text-align: center;">
+                    <button onclick="document.getElementById('tracking-modal').style.display='none'" class="btn btn-light hover-lemna-trigger" style="width: 100%;">Cerrar</button>
                 </div>
-            <div style="margin-top: 2rem; text-align: center;">
-                <button onclick="document.getElementById('tracking-modal').style.display='none'" class="btn btn-light hover-lemna-trigger" style="width: 100%;">Cerrar</button>
             </div>
         </div>
     </div>
-</div>
+
+    <div id="rating-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 16px; width: 90%; max-width: 450px; text-align: center;">
+            <div style="margin-bottom: 1.5rem;">
+                <div style="width: 60px; height: 60px; background: #fef3c7; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <h3>Califica tu Experiencia</h3>
+                <p style="color: #666; font-size: 0.9rem;">¿Qué te pareció tu pedido #<span id="rating-order-id">--</span>?</p>
+            </div>
+            
+            <form id="form-rating">
+                <input type="hidden" id="rating-oid">
+                
+                <div class="star-rating" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 1.5rem; font-size: 2rem; color: #cbd5e1; cursor: pointer;">
+                    <i class="fa-solid fa-star star-btn" data-value="1" onclick="window.RateUI.set(1)"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="2" onclick="window.RateUI.set(2)"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="3" onclick="window.RateUI.set(3)"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="4" onclick="window.RateUI.set(4)"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="5" onclick="window.RateUI.set(5)"></i>
+                </div>
+                <input type="hidden" id="rating-value" required>
+
+                <div class="input-group">
+                    <textarea id="rating-comment" class="form-input" rows="3" placeholder="Cuéntanos más (opcional)..." style="resize: none;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                    <button type="button" onclick="document.getElementById('rating-modal').style.display='none'" class="btn btn-light hover-lemna-trigger" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary hover-lemna-trigger" style="flex: 1;">Enviar Opinión</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="main.js"></script>
 
-    
 </body>
 </html>

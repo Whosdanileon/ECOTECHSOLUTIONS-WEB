@@ -632,3 +632,97 @@ body.hide-native-cursor { cursor: none !important; }
 }
 .btn-channel:hover { background: #f1f5f9; color: var(--color-text); }
 .btn-channel.active { background: #e0f2fe; color: #0284c7; font-weight: 700; }
+
+/* === ESTILOS DE CHAT PROFESIONAL === */
+
+/* Botones de Canal */
+.btn-channel {
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #64748b;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+.btn-channel:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+.btn-channel.active {
+    background: #e0f2fe;
+    color: #0284c7;
+    font-weight: 700;
+}
+.btn-channel.active i {
+    color: #0284c7;
+}
+
+/* Mensajes (Burbujas) */
+.message-list::-webkit-scrollbar {
+    width: 6px;
+}
+.message-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+
+.msg-item {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    gap: 15px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    animation: fadeIn 0.3s ease;
+}
+
+.msg-avatar {
+    width: 40px;
+    height: 40px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #64748b;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+/* Responsividad para el Chat en Móvil */
+@media (max-width: 768px) {
+    .messages-layout {
+        grid-template-columns: 1fr !important; /* Colapsar columnas */
+        height: auto !important;
+    }
+    .messages-layout > .card:first-child {
+        display: flex;
+        flex-direction: row; /* Canales en fila horizontal */
+        overflow-x: auto;
+        padding: 10px;
+        gap: 10px;
+    }
+    .btn-channel {
+        white-space: nowrap;
+        padding: 8px 15px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+    #view-mensajes .card:last-child {
+        height: 500px; /* Altura fija para el área de mensajes en móvil */
+    }
+}
+
+/* Estilos de Calificación */
+.star-btn.active { color: #fbbf24; transform: scale(1.1); transition: all 0.2s; }
+.star-btn:hover { color: #fbbf24; }
