@@ -2,6 +2,7 @@ const CONFIG = {
     SUPABASE_URL: 'https://dtdtqedzfuxfnnipdorg.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZHRxZWR6ZnV4Zm5uaXBkb3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNzI4MjYsImV4cCI6MjA3Nzg0ODgyNn0.xMdOs7tr5g8z8X6V65I29R_f3Pib2x1qc-FsjRTHKBY',
     CART_KEY: 'ecotech_cart',
+    VISION_URL_KEY: 'ecotech_ngrok_url', // Key para guardar URL localmente
     ROLES: {
         SYS: ['Sistemas'],
         ADMIN: ['Sistemas', 'Lider'],
@@ -27,7 +28,7 @@ const State = {
 let globalEmergencyActive = false;
 
 const db = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-console.log('✅ EcoTech System v78: Optimized Core');
+console.log('✅ EcoTech System v80: Vision Iframe Integration');
 
 window.Utils = {
     formatCurrency: (val) => {
@@ -834,6 +835,9 @@ window.Dashboard = {
                 window.Dashboard.subscribeRealtime();
                 window.Telemetry.init(); 
                 
+                // INICIAR VISIÓN SI HAY URL GUARDADA
+                if(window.Vision) window.Vision.init();
+
                 if (CONFIG.ROLES.ADMIN.includes(p.rol)) {
                     window.Dashboard.initAdminUsers(p.rol);
                     window.Dashboard.renderSales();
@@ -1229,6 +1233,43 @@ window.plcSw = async (id, k) => {
     } 
     await db.from('maquinas').update({ controles: c }).eq('id', id); 
     await window.Dashboard.logEvent(id, k, 'INFO');
+};
+
+/* --------------------------------------------------------------------------
+   7.1. SISTEMA DE VISIÓN (IFRAME)
+   -------------------------------------------------------------------------- */
+window.Vision = {
+    baseUrl: null,
+    
+    init: () => {
+        const storedUrl = localStorage.getItem(CONFIG.VISION_URL_KEY);
+        if (storedUrl) {
+            document.getElementById('ngrok-url-input').value = storedUrl;
+        }
+    },
+
+    connect: () => {
+        const input = document.getElementById('ngrok-url-input');
+        let url = input.value.trim();
+        
+        // Limpieza básica de la URL (quitar slash final)
+        if (url.endsWith('/')) url = url.slice(0, -1);
+        
+        if (!url) return notify.error('Ingresa una URL de Ngrok válida');
+        if (!url.startsWith('http')) return notify.error('La URL debe empezar con http:// o https://');
+
+        window.Vision.baseUrl = url;
+        localStorage.setItem(CONFIG.VISION_URL_KEY, url);
+        
+        notify.success('Cargando panel de visión...');
+        
+        // Cargar la página completa de Streamlit/Web en el iframe
+        const iframe = document.getElementById('vision-iframe');
+        iframe.src = url;
+        
+        document.getElementById('vision-status').classList.replace('off', 'on');
+        document.getElementById('vision-status').innerHTML = '<span class="status-pill dot"></span>Incrustado';
+    }
 };
 
 window.toggleGlobalEmergency = async () => { 

@@ -13,6 +13,27 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos específicos para el módulo de visión (IFRAME) */
+        .vision-iframe-container {
+            width: 100%;
+            height: 600px; /* Altura suficiente para ver el panel de visión completo */
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+        .vision-iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .vision-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -119,6 +140,28 @@
                         <i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA
                     </button>
                 </header>
+
+                <div class="card machine-card" style="margin-bottom: 24px; border-color: #3b82f6;">
+                    <div class="m-header" style="background: #eff6ff;">
+                        <h4 style="color: #1e40af;"><i class="fa-solid fa-eye"></i> Sistema de Visión Artificial</h4>
+                        <div class="status-pill off" id="vision-status"><span class="status-pill dot"></span>Offline</div>
+                    </div>
+                    <div class="m-body">
+                        <div class="vision-controls">
+                            <input type="text" id="ngrok-url-input" class="form-input" placeholder="Pega tu URL de Ngrok aquí (ej. https://xxxx.ngrok-free.app)" style="margin:0;">
+                            <button class="btn btn-primary btn-sm" onclick="window.Vision.connect()">Cargar Panel</button>
+                        </div>
+                        
+                        <div class="vision-iframe-container">
+                            <iframe id="vision-iframe" src="about:blank" title="Panel de Visión"></iframe>
+                        </div>
+                        
+                        <div style="margin-top: 10px; font-size: 0.8rem; color: #666; text-align: center;">
+                            <i class="fa-solid fa-circle-info"></i> Si ves una advertencia de Ngrok, haz clic en "Visit Site" dentro del recuadro negro.
+                        </div>
+                    </div>
+                </div>
+
                 <div id="maquinas-container" class="maquinas-grid"></div>
             </section>
             
