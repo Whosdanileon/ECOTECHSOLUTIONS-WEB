@@ -52,40 +52,39 @@ export const Store = {
             if (error) throw error;
             return data;
         } catch (err) {
-            return { id: CONFIG.PRODUCT.ID, nombre: CONFIG.PRODUCT.NAME, precio: CONFIG.PRODUCT.PRICE, stock_disponible: 999 };
+            // Fallback solo si falla la red, para mostrar info básica
+            return { id: CONFIG.PRODUCT.ID, nombre: CONFIG.PRODUCT.NAME, precio: CONFIG.PRODUCT.PRICE, stock_disponible: '--' };
         }
     },
 
+    // --- PROCESO DE CHECKOUT BLINDADO (RPC) ---
     processCheckout: async (user, shippingData) => {
         const cart = Store.getCart();
-        const prodId = CONFIG.PRODUCT.ID;
-        const qty = cart[prodId] || 0;
-
-        if (qty <= 0) throw new Error("El carrito está vacío");
-
-        const product = await Store.fetchProduct();
-        if (product.stock_disponible < qty) throw new Error(`Stock insuficiente. Quedan ${product.stock_disponible}.`);
-
-        const total = product.precio * qty;
-        const newOrder = {
-            user_id: user.id,
-            items: [{ id: product.id, nombre: product.nombre, precio: product.precio, cantidad: qty }],
-            total: total,
-            datos_envio: shippingData,
-            estado: shippingData.metodo === 'transfer' ? 'Pendiente' : 'Pagado'
-        };
-
-        const { data, error } = await db.from('pedidos').insert(newOrder).select().single();
-        if (error) throw error;
-
-        // Actualizar stock
-        await db.from('productos').update({ stock_disponible: Math.max(0, product.stock_disponible - qty) }).eq('id', product.id);
         
+        // Validación básica local antes de enviar
+        const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
+        if (totalItems <= 0) throw new Error("El carrito está vacío");
+
+        // Llamada a la función remota segura (Transaction)
+        const { data, error } = await db.rpc('crear_pedido_seguro', {
+            p_user_id: user.id,
+            p_items_cart: cart, // Enviamos el objeto crudo: {"1": 5}
+            p_shipping: shippingData
+        });
+
+        if (error) {
+            console.error("Error RPC:", error);
+            // Mensajes de error amigables basados en la excepción SQL
+            if(error.message.includes('Stock insuficiente')) throw new Error(error.message);
+            throw new Error("Error procesando el pedido. Intenta nuevamente.");
+        }
+
+        // Si todo sale bien
         Store.clearCart();
         return data;
     },
 
-    // --- ¡ESTO FALTABA! Renderizado de Pedidos en Cuenta ---
+    // --- Renderizado de Pedidos en Cuenta ---
     renderOrders: async (userId) => {
         const list = document.getElementById('pedidos-lista-container');
         if (!list) return;
@@ -135,6 +134,8 @@ export const Store = {
     cancelOrder: async (orderId) => {
         confirmModal('Cancelar Pedido', '¿Estás seguro de cancelar este pedido?', async () => {
             const load = notify.loading('Cancelando...');
+            // Al cancelar, idealmente deberíamos devolver el stock. 
+            // Para simplificar, solo cambiamos estado, pero un sistema robusto usaría otro RPC para "cancelar_y_devolver_stock".
             const { error } = await db.from('pedidos').update({ estado: 'Cancelado' }).eq('id', orderId);
             notify.close(load);
             if(error) notify.error(error.message);
