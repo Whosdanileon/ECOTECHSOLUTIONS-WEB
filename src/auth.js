@@ -2,6 +2,8 @@
 import { db } from './db.js';
 import { globalState } from './state.js';
 import { notify } from './utils.js';
+import { Store } from './store.js';
+import { CONFIG } from './config.js'; // Necesitamos config para sacar el ID del proyecto si es necesario
 
 export const Auth = {
     // Iniciar Sesión
@@ -14,9 +16,9 @@ export const Auth = {
 
             if (error) throw error;
             
-            // Cargamos el perfil inmediatamente para tener el Rol disponible
             if (data.user) {
                 await Auth.loadProfile(data.user.id);
+                await Store.mergeWithCloud(data.user.id);
             }
 
             notify.success('Bienvenido de nuevo');
@@ -31,7 +33,6 @@ export const Auth = {
     // Registrarse
     register: async (email, password) => {
         try {
-            // 1. Crear usuario en Auth
             const { data, error } = await db.auth.signUp({ 
                 email: email.trim(), 
                 password: password 
@@ -39,101 +40,105 @@ export const Auth = {
 
             if (error) throw error;
 
-            // 2. Crear perfil base en la tabla 'perfiles' si el registro fue exitoso
             if (data.user) {
                 const { error: profileError } = await db.from('perfiles').upsert([{ 
                     id: data.user.id, 
                     email: email.trim(), 
                     rol: 'Cliente', 
-                    nombre_completo: 'Nuevo Usuario',
+                    nombre_completo: 'Nuevo Usuario', 
                     created_at: new Date()
                 }]);
                 
-                if (profileError) console.warn('Error creando perfil base:', profileError);
+                if (profileError) console.warn('Error perfil:', profileError);
                 
-                // Cargar perfil en estado global
                 await Auth.loadProfile(data.user.id);
+                await Store.mergeWithCloud(data.user.id);
             }
 
-            notify.success('Cuenta creada exitosamente. ¡Bienvenido!');
+            notify.success('Cuenta creada. ¡Bienvenido!');
             return { success: true, user: data.user };
         } catch (error) {
             console.error('Register error:', error);
-            notify.error(error.message || 'Error en el registro');
+            notify.error(error.message || 'Error en registro');
             return { success: false, error };
         }
     },
 
-    // Cerrar Sesión (Optimizada sin redirect forzoso)
+    // --- FIX DEFINITIVO: LOGOUT NUCLEAR ---
     logout: async () => {
         try {
-            const { error } = await db.auth.signOut();
-            if (error) throw error;
+            // Intentamos ser amables con Supabase
+            await db.auth.signOut();
+        } catch (error) {
+            console.warn('Supabase no pudo cerrar sesión (Bloqueo de navegador), forzando cierre local...');
+        } finally {
+            // AQUI ESTÁ LA MAGIA: Borrado Manual
+            // Supabase guarda el token bajo la llave: sb-<PROJECT_ID>-auth-token
+            // Tu Project ID es: dtdtqedzfuxfnnipdorg (lo saqué de tu URL en config.js)
             
-            // Limpiar estado global
+            const projectID = 'dtdtqedzfuxfnnipdorg';
+            
+            // 1. Borramos el token específico de Supabase
+            localStorage.removeItem(`sb-${projectID}-auth-token`);
+            
+            // 2. Por seguridad, borramos cualquier rastro de supabase en el storage
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('sb-')) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // 3. Limpiamos estado en memoria
             globalState.userProfile = null;
             if (globalState.realtimeSubscription) {
                 db.removeChannel(globalState.realtimeSubscription);
                 globalState.realtimeSubscription = null;
             }
             
-            notify.show('Sesión cerrada correctamente', 'info');
+            // 4. Limpiamos el carrito local
+            Store.clearCart(false); 
+            
+            notify.show('Sesión cerrada', 'info');
             return { success: true };
-        } catch (error) {
-            console.error('Logout error:', error);
-            notify.error('Error al cerrar sesión');
-            return { success: false, error };
         }
     },
 
-    // Obtener Usuario Actual y Perfil
+    // Verificar Sesión
     checkSession: async () => {
-        const { data: { session } } = await db.auth.getSession();
-        if (session?.user) {
+        try {
+            const { data: { session }, error } = await db.auth.getSession();
+            if (error || !session?.user) return null;
+
             await Auth.loadProfile(session.user.id);
             return session.user;
-        }
-        return null;
-    },
-
-    // Cargar datos extendidos del perfil (Rol, Dirección, etc.)
-    loadProfile: async (userId) => {
-        try {
-            const { data, error } = await db.from('perfiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            if (error) throw error;
-
-            // Guardar en estado global para usarlo en toda la app
-            globalState.userProfile = data;
-            console.log('👤 Perfil cargado:', data.rol);
-            return data;
-        } catch (error) {
-            console.error('Error cargando perfil:', error);
+        } catch (e) {
             return null;
         }
     },
 
-    // Actualizar Perfil (Usado en cuenta.html)
+    loadProfile: async (userId) => {
+        try {
+            const { data, error } = await db.from('perfiles').select('*').eq('id', userId).single();
+            if (error) throw error;
+            globalState.userProfile = data;
+            console.log('👤 Perfil cargado:', data.rol);
+            return data;
+        } catch (error) {
+            console.error('Error perfil:', error);
+            return null;
+        }
+    },
+
     updateProfile: async (userId, updates) => {
         try {
-            notify.loading('Guardando cambios...');
-            
-            const { error } = await db.from('perfiles')
-                .update(updates)
-                .eq('id', userId);
-
+            notify.loading('Guardando...');
+            const { error } = await db.from('perfiles').update(updates).eq('id', userId);
             if (error) throw error;
-
-            // Actualizar estado local
             globalState.userProfile = { ...globalState.userProfile, ...updates };
-            
-            notify.success('Perfil actualizado correctamente');
+            notify.success('Perfil actualizado');
             return true;
         } catch (error) {
-            notify.error('Error al actualizar: ' + error.message);
+            notify.error(error.message);
             return false;
         }
     }
