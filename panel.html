@@ -33,6 +33,11 @@
             gap: 10px;
             margin-bottom: 10px;
         }
+        .login-box {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease-in;
+    }
     </style>
 </head>
 <body class="bg-light">
@@ -132,8 +137,8 @@
                 <header class="view-header">
                     <div>
                         <h1>Control de Planta</h1>
-                        <div class="status-indicator">
-                            <span class="dot"></span> Sincronizando PLC...
+                        <div id="global-plc-status" class="status-indicator">
+                        <span class="dot"></span> Conectando...
                         </div>
                     </div>
                     <button id="btn-global-stop" class="btn-global-stop hover-lemna-trigger" onclick="window.toggleGlobalEmergency()">

@@ -1,3 +1,4 @@
+// src/auth.js
 import { db } from './db.js';
 import { globalState } from './state.js';
 import { notify } from './utils.js';
@@ -13,6 +14,11 @@ export const Auth = {
 
             if (error) throw error;
             
+            // Cargamos el perfil inmediatamente para tener el Rol disponible
+            if (data.user) {
+                await Auth.loadProfile(data.user.id);
+            }
+
             notify.success('Bienvenido de nuevo');
             return { success: true, user: data.user };
         } catch (error) {
@@ -44,6 +50,9 @@ export const Auth = {
                 }]);
                 
                 if (profileError) console.warn('Error creando perfil base:', profileError);
+                
+                // Cargar perfil en estado global
+                await Auth.loadProfile(data.user.id);
             }
 
             notify.success('Cuenta creada exitosamente. ¡Bienvenido!');
@@ -55,7 +64,7 @@ export const Auth = {
         }
     },
 
-    // Cerrar Sesión
+    // Cerrar Sesión (Optimizada sin redirect forzoso)
     logout: async () => {
         try {
             const { error } = await db.auth.signOut();
@@ -65,11 +74,15 @@ export const Auth = {
             globalState.userProfile = null;
             if (globalState.realtimeSubscription) {
                 db.removeChannel(globalState.realtimeSubscription);
+                globalState.realtimeSubscription = null;
             }
             
-            window.location.href = 'index.html';
+            notify.show('Sesión cerrada correctamente', 'info');
+            return { success: true };
         } catch (error) {
+            console.error('Logout error:', error);
             notify.error('Error al cerrar sesión');
+            return { success: false, error };
         }
     },
 
