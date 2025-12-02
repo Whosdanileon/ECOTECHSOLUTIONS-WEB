@@ -8,45 +8,12 @@ import { Store } from './store.js';
 import { Dashboard, Telemetry, Vision, MachineControl } from './dashboard.js';
 import { Maps } from './maps.js';
 
-console.log('🚀 EcoTech System v3.3: Stable Release');
+console.log('🚀 EcoTech System v3.5: High Security Release');
 
-// --- 1. EXPOSICIÓN GLOBAL ---
-// Necesario para que los botones onclick="" en el HTML funcionen
-window.Auth = Auth;
-window.Store = Store;
-window.Dashboard = Dashboard;
-window.Vision = Vision;
-window.MachineControl = MachineControl;
-window.Maps = Maps;
-window.Utils = { formatCurrency, formatTime, confirmModal, printReceipt };
-
-// Compatibilidad con código Legacy (si existiera)
-window.plcCmd = MachineControl.sendCommand;
-window.plcSw = MachineControl.toggleSwitch;
-window.toggleGlobalEmergency = MachineControl.toggleEmergency;
-
-// Helper UI para cambio de método de pago en Checkout
-window.togglePaymentMethod = function(method) {
-    const cardForm = document.getElementById('payment-form-card');
-    const transferInfo = document.getElementById('payment-info-transfer');
-    if (!cardForm || !transferInfo) return;
-
-    if (method === 'card') {
-        cardForm.style.display = 'block';
-        transferInfo.style.display = 'none';
-        cardForm.querySelectorAll('input').forEach(i => i.required = true);
-    } else {
-        cardForm.style.display = 'none';
-        transferInfo.style.display = 'block';
-        cardForm.querySelectorAll('input').forEach(i => i.required = false);
-    }
-};
-
-// --- 2. GESTOR DE ESTADO DE LA INTERFAZ (UI MANAGER) ---
+// --- 1. GESTOR DE ESTADO DE LA INTERFAZ (UI MANAGER) ---
 const AppUI = {
-    // Actualiza la interfaz global según el estado del usuario
     refreshState: async (user) => {
-        // A. Header (Links de navegación)
+        // A. Header
         const authLinks = document.getElementById('auth-links-container');
         if (authLinks) {
             authLinks.innerHTML = user 
@@ -54,7 +21,7 @@ const AppUI = {
                 : `<a href="#" class="nav-link" onclick="window.AuthModal.open(); return false;"><i class="fa-solid fa-sign-in-alt"></i> Acceder</a>`;
         }
 
-        // B. Sidebar del Panel (Nombre y Rol)
+        // B. Sidebar
         if(globalState.userProfile) {
             const uName = document.getElementById('sidebar-username');
             const uRole = document.getElementById('sidebar-role');
@@ -62,14 +29,14 @@ const AppUI = {
             if(uRole) uRole.textContent = globalState.userProfile.rol || 'Staff';
         }
 
-        // C. Lógica específica por página (Router simple)
+        // C. Router Simple
         const path = window.location.pathname;
         if (path.includes('panel.html')) await AppUI.handlePanelPage(user);
         else if (path.includes('cuenta.html')) await AppUI.handleAccountPage(user);
         else if (path.includes('checkout.html')) await AppUI.handleCheckoutPage(user);
     },
 
-    // Lógica para panel.html
+    // Lógica Segura del Panel (FOUC Fix)
     handlePanelPage: async (user) => {
         const overlay = document.getElementById('login-overlay');
         const loginBox = document.querySelector('.login-box');
@@ -77,41 +44,30 @@ const AppUI = {
         const isStaff = user && CONFIG.ROLES.STAFF.includes(globalState.userProfile?.rol);
 
         if (!isStaff) {
-            // Usuario no autorizado o no logueado
             if (layout) layout.style.display = 'none';
             if (overlay) {
                 overlay.style.display = 'flex';
                 if (loginBox) {
-                    // Animación suave de entrada
                     loginBox.style.opacity = '0';
                     loginBox.style.display = 'block';
                     setTimeout(() => loginBox.style.opacity = '1', 50);
                 }
             }
-            // Si hay usuario pero no es staff, expulsar
             if (user) {
                 notify.error('Acceso denegado: Rol insuficiente.');
                 setTimeout(() => window.location.href = 'index.html', 2000);
             }
-            
-            // LIMPIEZA DE RECURSOS AL SALIR
-            Telemetry.destroy();
-
+            Telemetry.destroy(); 
         } else {
-            // Usuario Staff Autorizado
             if (overlay) overlay.style.display = 'none';
             if (layout) layout.style.display = 'flex';
             
-            // Iniciar componentes del Dashboard solo una vez
             if (!globalState.dashboardInitialized) {
                 Dashboard.renderMachines(globalState.userProfile.rol);
                 Dashboard.loadChatMessages('General');
-                
-                // NOTA: Telemetry.init se llama, pero ahora es seguro porque maneja persistencia
                 Telemetry.init();
                 Vision.init();
                 
-                // Suscripción a cambios en tiempo real
                 if (!globalState.realtimeSubscription) {
                     globalState.realtimeSubscription = db.channel('public-room')
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'maquinas' }, payload => { 
@@ -128,7 +84,6 @@ const AppUI = {
         }
     },
 
-    // Lógica para cuenta.html
     handleAccountPage: async (user) => {
         const authForms = document.getElementById('auth-forms');
         const userInfo = document.getElementById('user-info');
@@ -142,7 +97,6 @@ const AppUI = {
 
             const p = globalState.userProfile;
             if(p) {
-                // Rellenar formulario de perfil
                 const inputs = { 
                     'profile-name': p.nombre_completo, 
                     'profile-email': p.email, 
@@ -154,10 +108,8 @@ const AppUI = {
                     if(el) el.value = val || '';
                 }
                 
-                // Inicializar mapa si existe
                 if(window.Maps) Maps.init('map-profile', p.latitud, p.longitud, true);
                 
-                // Rellenar datos de pago (visual)
                 if(p.datos_pago && p.datos_pago.number) {
                     globalState.tempWalletData = p.datos_pago;
                     const wNum = document.getElementById('wallet-number');
@@ -173,7 +125,6 @@ const AppUI = {
         }
     },
 
-    // Lógica para checkout.html
     handleCheckoutPage: async (user) => {
         const prompt = document.getElementById('checkout-login-prompt');
         const container = document.getElementById('checkout-container');
@@ -187,13 +138,15 @@ const AppUI = {
 
             const p = globalState.userProfile;
             if (p) {
-                // Precargar datos de envío
                 if(document.getElementById('checkout-name')) document.getElementById('checkout-name').value = p.nombre_completo || '';
                 if(document.getElementById('checkout-address')) document.getElementById('checkout-address').value = p.direccion || '';
                 if(document.getElementById('checkout-phone')) document.getElementById('checkout-phone').value = p.telefono || '';
-                if(p.latitud && p.longitud && window.Maps) Maps.init('map-checkout', p.latitud, p.longitud, false);
                 
-                // Precargar tarjeta
+                // Fix Mapa Invisible (Punto 5)
+                if(window.Maps) {
+                    Maps.init('map-checkout', p.latitud, p.longitud, false);
+                }
+                
                 if (p.datos_pago && p.datos_pago.number) {
                     const cn = document.getElementById('card-number');
                     const ch = document.getElementById('card-holder');
@@ -204,7 +157,6 @@ const AppUI = {
                 }
             }
             
-            // Renderizar resumen de compra
             const cart = Store.getCart();
             const prod = await Store.fetchProduct();
             const qty = cart[prod.id] || 0;
@@ -212,28 +164,29 @@ const AppUI = {
             
             const itemsDiv = document.getElementById('checkout-items');
             if(itemsDiv) itemsDiv.innerHTML = `<div style="display:flex;justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;"><span>${prod.nombre} x${qty}</span><strong>${formatCurrency(total)}</strong></div>`;
-            if(document.getElementById('checkout-total')) document.getElementById('checkout-total').textContent = formatCurrency(total);
-            if(document.getElementById('checkout-subtotal')) document.getElementById('checkout-subtotal').textContent = formatCurrency(total / 1.16);
+            
+            // Fix Precios Visuales (Punto 6 - Opción A)
+            if(document.getElementById('checkout-total')) 
+                document.getElementById('checkout-total').textContent = formatCurrency(total);
+            
+            if(document.getElementById('checkout-subtotal')) 
+                document.getElementById('checkout-subtotal').textContent = formatCurrency(total); 
         }
     },
     
-    // --- MANEJO DE AUTH CON BLOQUEO DE UI (Evita doble submit) ---
     handleAuthAction: async (actionType, email, password, btn) => {
         const originalText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Procesando...';
-        
         try {
             const res = actionType === 'login' 
                 ? await Auth.login(email, password) 
                 : await Auth.register(email, password);
-            
             if (res.success) {
                 window.AuthModal.close();
                 await AppUI.refreshState(res.user);
             }
         } finally {
-            // Restaurar botón siempre, sea éxito o error
             if(btn) {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
@@ -242,13 +195,10 @@ const AppUI = {
     },
 
     performLogout: async () => {
-        // CORRECCIÓN MEMORY LEAK: Limpiar gráficas antes de salir
         Telemetry.destroy();
-
         const res = await Auth.logout();
         if (res.success) {
             const path = window.location.pathname;
-            // Redirigir si estamos en páginas privadas
             if (path.includes('panel.html') || path.includes('checkout.html') || path.includes('cuenta.html')) {
                 window.location.href = 'index.html';
             } else {
@@ -258,9 +208,8 @@ const AppUI = {
     }
 };
 
-// --- 3. COMPONENTES DE UI ---
+// --- 2. COMPONENTES Y UTILIDADES UI ---
 
-// Galería de Imágenes (Para Tienda)
 window.ProductGallery = {
     images: document.querySelectorAll('.thumb'),
     set: (el) => {
@@ -283,7 +232,6 @@ window.ProductGallery = {
     }
 };
 
-// Modal de Autenticación
 window.AuthModal = {
     init: () => {
         if (document.getElementById('auth-modal')) return;
@@ -307,7 +255,6 @@ window.AuthModal = {
         </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Listeners Modales con Bloqueo
         const lForm = document.getElementById('form-modal-login');
         if (lForm) lForm.onsubmit = async (e) => { 
             e.preventDefault(); 
@@ -333,31 +280,6 @@ window.AuthModal = {
     closeSecurityCheck: () => { const m = document.getElementById('security-modal'); if(m) { m.style.opacity='0'; setTimeout(()=>{m.style.display='none'; document.getElementById('sec-password').value='';},300); } }
 };
 
-// Navegación Sidebar
-window.switchTab = function(tabName) {
-    document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
-    const btn = document.querySelector(`.sidebar-nav li[onclick*="${tabName}"]`);
-    if (btn) btn.classList.add('active');
-    document.querySelectorAll('.dashboard-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
-    const target = document.getElementById('view-' + tabName);
-    if (target) {
-        target.style.display = 'block'; setTimeout(() => target.classList.add('active'), 10);
-        if (tabName === 'reportes') {
-             Dashboard.renderReports();
-             // Aseguramos que la gráfica esté lista al volver a la pestaña
-             Telemetry.init();
-        }
-        if (tabName === 'ventas') Dashboard.renderSales();
-        if (tabName === 'personal') Dashboard.initAdminUsers(globalState.userProfile?.rol);
-        if (tabName === 'mensajes') Dashboard.loadChatMessages(globalState.currentChannel);
-    }
-    if (window.innerWidth <= 968) window.toggleSidebar();
-};
-
-window.toggleSidebar = function() { document.getElementById('sidebar')?.classList.toggle('active'); document.getElementById('mobile-overlay')?.classList.toggle('show'); };
-window.toggleSidebarIfMobile = function() { if(window.innerWidth <= 968) window.toggleSidebar(); };
-
-// Sistema de Calificación
 window.RateUI = {
     current: 0,
     open: (oid) => { const m = document.getElementById('rating-modal'); if(m) { m.style.display='flex'; document.getElementById('rating-oid').value = oid; document.getElementById('rating-order-id').textContent = oid; window.RateUI.set(0); } },
@@ -371,23 +293,67 @@ window.RateUI = {
     }
 };
 
-// --- INICIALIZACIÓN (DOMContentLoaded) ---
+// --- 3. EXPOSICIÓN GLOBAL ---
+window.Auth = Auth;
+window.Store = Store;
+window.Dashboard = Dashboard;
+window.Vision = Vision;
+window.MachineControl = MachineControl;
+window.Maps = Maps;
+window.Utils = { formatCurrency, formatTime, confirmModal, printReceipt };
+window.toggleGlobalEmergency = MachineControl.toggleEmergency;
+
+// Helper UI para Checkout
+window.togglePaymentMethod = function(method) {
+    const cardForm = document.getElementById('payment-form-card');
+    const transferInfo = document.getElementById('payment-info-transfer');
+    if (!cardForm || !transferInfo) return;
+    if (method === 'card') {
+        cardForm.style.display = 'block';
+        transferInfo.style.display = 'none';
+        cardForm.querySelectorAll('input').forEach(i => i.required = true);
+    } else {
+        cardForm.style.display = 'none';
+        transferInfo.style.display = 'block';
+        cardForm.querySelectorAll('input').forEach(i => i.required = false);
+    }
+};
+
+// UI Helpers Globales
+window.switchTab = function(tabName) {
+    document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+    const btn = document.querySelector(`.sidebar-nav li[onclick*="${tabName}"]`);
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.dashboard-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const target = document.getElementById('view-' + tabName);
+    if (target) {
+        target.style.display = 'block'; setTimeout(() => target.classList.add('active'), 10);
+        if (tabName === 'reportes') { Dashboard.renderReports(); Telemetry.init(); }
+        if (tabName === 'ventas') Dashboard.renderSales();
+        if (tabName === 'personal') Dashboard.initAdminUsers(globalState.userProfile?.rol);
+        if (tabName === 'mensajes') Dashboard.loadChatMessages(globalState.currentChannel);
+    }
+    if (window.innerWidth <= 968) window.toggleSidebar();
+};
+
+window.toggleSidebar = function() { document.getElementById('sidebar')?.classList.toggle('active'); document.getElementById('mobile-overlay')?.classList.toggle('show'); };
+window.toggleSidebarIfMobile = function() { if(window.innerWidth <= 968) window.toggleSidebar(); };
+
+// --- 4. INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', async () => {
     window.AuthModal.init();
     Store.updateCartCountUI();
     
-    // Listeners Generales
     const btnTrash = document.getElementById('btn-vaciar-carrito');
-    if(btnTrash) btnTrash.onclick = () => Store.clearCart(true); // Borrado manual limpia nube
+    if(btnTrash) btnTrash.onclick = () => Store.clearCart(true); 
     
     const rateForm = document.getElementById('form-rating');
     if(rateForm) rateForm.onsubmit = window.RateUI.submit;
 
-    // Verificar Sesión e Inicializar UI
     const user = await Auth.checkSession();
     await AppUI.refreshState(user);
 
-    // --- MANEJO DE FORMULARIOS ESTÁTICOS (Login/Registro en página) ---
+    // Listeners Formularios
     const staticLoginForm = document.getElementById('panel-login-form');
     if (staticLoginForm) staticLoginForm.onsubmit = async (e) => {
         e.preventDefault();
@@ -408,13 +374,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await AppUI.handleAuthAction('register', document.getElementById('registro-email').value, document.getElementById('registro-password').value, btn);
     };
 
-    // Logout
     const btnLogoutPanel = document.getElementById('btn-logout-panel');
     if(btnLogoutPanel) btnLogoutPanel.onclick = AppUI.performLogout;
     const btnLogoutAccount = document.getElementById('btn-logout');
     if(btnLogoutAccount) btnLogoutAccount.onclick = AppUI.performLogout;
 
-    // Tienda: Datos del producto
     const productData = await Store.fetchProduct();
     if(document.getElementById('producto-nombre')) {
         document.getElementById('producto-nombre').textContent = productData.nombre;
@@ -428,7 +392,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnAdd = document.getElementById('btn-anadir-carrito');
     if(btnAdd) btnAdd.onclick = () => { const qty = parseInt(document.getElementById('cantidad')?.value || 1); Store.addToCart(qty); };
 
-    // Lógica para página "Mi Cuenta"
     if(window.location.pathname.includes('cuenta.html')) {
         const tabs = { datos: { btn: document.getElementById('btn-tab-datos'), view: document.getElementById('seccion-mis-datos') }, pedidos: { btn: document.getElementById('btn-tab-pedidos'), view: document.getElementById('seccion-mis-pedidos') }, pagos: { btn: document.getElementById('btn-tab-pagos'), view: document.getElementById('seccion-pagos') } };
         const activateTab = (activeKey) => { Object.keys(tabs).forEach(key => { if (tabs[key].btn && tabs[key].view) { if (key === activeKey) { tabs[key].btn.classList.add('active'); tabs[key].view.style.display = 'block'; } else { tabs[key].btn.classList.remove('active'); tabs[key].view.style.display = 'none'; } } }); };
@@ -451,15 +414,63 @@ document.addEventListener('DOMContentLoaded', async () => {
             notify.close(load); if(!error) { notify.success('Tarjeta guardada'); globalState.tempWalletData = walletData; } else notify.error('Error al guardar');
         };
 
+        // --- CORRECCIÓN PUNTO 6: Autenticación REAL ---
         const secForm = document.getElementById('form-security-check');
         if(secForm) secForm.onsubmit = async (e) => { 
             e.preventDefault(); 
             const pass = document.getElementById('sec-password').value;
-            if(pass) { notify.success('Identidad confirmada'); window.AuthModal.closeSecurityCheck(); ['wallet-holder', 'wallet-number', 'wallet-expiry', 'wallet-cvc'].forEach(id => { const el = document.getElementById(id); if(el) { el.disabled = false; el.type = "text"; el.style.background = "rgba(255,255,255,0.15)"; } }); document.getElementById('btn-save-wallet').disabled = false; document.getElementById('btn-unlock-wallet').style.display = 'none'; document.getElementById('wallet-overlay').style.display = 'none'; if (globalState.tempWalletData) { document.getElementById('wallet-holder').value = globalState.tempWalletData.holder || ''; document.getElementById('wallet-number').value = globalState.tempWalletData.number || ''; document.getElementById('wallet-expiry').value = globalState.tempWalletData.expiry || ''; } }
+            const btn = secForm.querySelector('button[type="submit"]');
+            
+            if(!pass) return notify.error('Ingresa tu contraseña');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Validando';
+
+            try {
+                // VERIFICACIÓN REAL CONTRA SUPABASE
+                // Intentamos re-autenticar al usuario con la contraseña provista
+                const { error } = await db.auth.signInWithPassword({
+                    email: globalState.userProfile.email,
+                    password: pass
+                });
+
+                if (error) {
+                    throw new Error('Contraseña incorrecta');
+                }
+
+                notify.success('Identidad confirmada'); 
+                window.AuthModal.closeSecurityCheck(); 
+                
+                // Desbloqueo de UI
+                ['wallet-holder', 'wallet-number', 'wallet-expiry', 'wallet-cvc'].forEach(id => { 
+                    const el = document.getElementById(id); 
+                    if(el) { 
+                        el.disabled = false; 
+                        el.type = "text"; 
+                        el.style.background = "rgba(255,255,255,0.15)"; 
+                    } 
+                }); 
+                document.getElementById('btn-save-wallet').disabled = false; 
+                document.getElementById('btn-unlock-wallet').style.display = 'none'; 
+                document.getElementById('wallet-overlay').style.display = 'none'; 
+                
+                // Cargar datos reales
+                if (globalState.tempWalletData) { 
+                    document.getElementById('wallet-holder').value = globalState.tempWalletData.holder || ''; 
+                    document.getElementById('wallet-number').value = globalState.tempWalletData.number || ''; 
+                    document.getElementById('wallet-expiry').value = globalState.tempWalletData.expiry || ''; 
+                }
+
+            } catch (err) {
+                notify.error(err.message || 'Error de validación');
+                document.getElementById('sec-password').value = '';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Confirmar';
+            }
         };
     }
 
-    // Lógica para Checkout
     const formCheckout = document.getElementById('form-checkout');
     if(formCheckout) {
         formCheckout.onsubmit = async (e) => {
