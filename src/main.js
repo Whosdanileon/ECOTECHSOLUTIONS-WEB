@@ -93,6 +93,10 @@ const AppUI = {
                 notify.error('Acceso denegado: Rol insuficiente.');
                 setTimeout(() => window.location.href = 'index.html', 2000);
             }
+            
+            // LIMPIEZA DE RECURSOS AL SALIR
+            Telemetry.destroy();
+
         } else {
             // Usuario Staff Autorizado
             if (overlay) overlay.style.display = 'none';
@@ -102,6 +106,8 @@ const AppUI = {
             if (!globalState.dashboardInitialized) {
                 Dashboard.renderMachines(globalState.userProfile.rol);
                 Dashboard.loadChatMessages('General');
+                
+                // NOTA: Telemetry.init se llama, pero ahora es seguro porque maneja persistencia
                 Telemetry.init();
                 Vision.init();
                 
@@ -236,6 +242,9 @@ const AppUI = {
     },
 
     performLogout: async () => {
+        // CORRECCIÓN MEMORY LEAK: Limpiar gráficas antes de salir
+        Telemetry.destroy();
+
         const res = await Auth.logout();
         if (res.success) {
             const path = window.location.pathname;
@@ -333,7 +342,11 @@ window.switchTab = function(tabName) {
     const target = document.getElementById('view-' + tabName);
     if (target) {
         target.style.display = 'block'; setTimeout(() => target.classList.add('active'), 10);
-        if (tabName === 'reportes') Dashboard.renderReports();
+        if (tabName === 'reportes') {
+             Dashboard.renderReports();
+             // Aseguramos que la gráfica esté lista al volver a la pestaña
+             Telemetry.init();
+        }
         if (tabName === 'ventas') Dashboard.renderSales();
         if (tabName === 'personal') Dashboard.initAdminUsers(globalState.userProfile?.rol);
         if (tabName === 'mensajes') Dashboard.loadChatMessages(globalState.currentChannel);

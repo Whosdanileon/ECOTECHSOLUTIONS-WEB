@@ -10,15 +10,23 @@ export const Telemetry = {
         const ctx = document.getElementById('tempChart');
         if (!ctx) return;
         if (typeof Chart === 'undefined') return console.warn("Chart.js no cargado.");
-        if (globalState.chartInstance) globalState.chartInstance.destroy();
 
+        // 1. Limpieza preventiva
+        Telemetry.destroy();
+
+        // 2. Inicializar historial en memoria si no existe (Persistencia)
+        if (!globalState.tempHistory) {
+            globalState.tempHistory = Array(20).fill(null);
+        }
+
+        // 3. Crear nueva instancia usando los datos de memoria global
         globalState.chartInstance = new Chart(ctx, {
             type: 'line',
             data: { 
                 labels: Array(20).fill(''), 
                 datasets: [{ 
                     label: 'Temp (°C)', 
-                    data: Array(20).fill(null), 
+                    data: globalState.tempHistory, // Referencia al estado global
                     borderColor: '#f59e0b', 
                     backgroundColor: 'rgba(245, 158, 11, 0.1)', 
                     borderWidth: 2, 
@@ -36,20 +44,35 @@ export const Telemetry = {
             }
         });
     },
+
+    // Método nuevo para limpieza explícita (Memory Leak Fix)
+    destroy: () => {
+        if (globalState.chartInstance) {
+            globalState.chartInstance.destroy();
+            globalState.chartInstance = null;
+            console.log('🧹 Telemetry: Gráfica destruida y memoria liberada.');
+        }
+    },
+
     updateFromPayload: (machineId, controls) => {
         if (machineId !== 2 || !controls) return;
         const newVal = Number(controls.escalda_db);
         if (isNaN(newVal)) return;
         
+        // Actualizar física global
         globalState.machinePhysics.m2_temp = newVal;
         
-        if (globalState.chartInstance) {
-            const data = globalState.chartInstance.data.datasets[0].data;
-            data.shift(); 
-            data.push(newVal); 
+        // Actualizar HISTORIAL en memoria (independiente de si hay gráfica o no)
+        if (!globalState.tempHistory) globalState.tempHistory = Array(20).fill(null);
+        globalState.tempHistory.shift(); 
+        globalState.tempHistory.push(newVal); 
+        
+        // Solo actualizar VISUALMENTE si la gráfica existe y es válida
+        if (globalState.chartInstance && globalState.chartInstance.ctx) {
             globalState.chartInstance.update();
         }
         
+        // Actualizar KPIs del DOM (estos siempre existen si estamos en el panel)
         const kpi = document.getElementById('kpi-temp');
         if (kpi) { 
             kpi.textContent = newVal.toFixed(1) + '°C'; 
@@ -95,15 +118,13 @@ export const Vision = {
             return notify.error('URL inválida: Debe iniciar con http:// o https://');
         }
 
-        // 2. Validación Estricta de Dominio (Seguridad IQ 195)
+        // 2. Validación Estricta de Dominio
         try {
             const urlObj = new URL(url);
             const hostname = urlObj.hostname;
             
-            // Lista blanca de dominios permitidos para el sistema de visión
             const allowedDomains = ['ngrok-free.app', 'ngrok.io', 'localhost', '127.0.0.1'];
             
-            // Verifica si el hostname termina con alguno de los dominios permitidos
             const isSafe = allowedDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
 
             if (!isSafe) {
@@ -115,7 +136,6 @@ export const Vision = {
             return notify.error('Error: La URL tiene un formato incorrecto.');
         }
         
-        // Si pasa las pruebas, guardamos y conectamos
         localStorage.setItem(CONFIG.VISION_URL_KEY, url);
         
         const iframe = document.getElementById('vision-iframe');
@@ -133,7 +153,7 @@ export const Vision = {
 // --- CONTROL DE MAQUINARIA (Lógica) ---
 export const MachineControl = {
     sendCommand: async (id, act) => { 
-        if (globalState.isEmergencyActive && act !== 'Paro') return notify.error("⛔ EMERGENCIA ACTIVA"); 
+        if (globalState.isEmergencyActive && act !== 'Paro') return notify.error("⛔ EMERGENCIA ACTIVA: Debe restablecer primero."); 
         try {
             const { data } = await db.from('maquinas').select('controles').eq('id', id).single(); 
             let c = data.controles || {}; 
@@ -142,7 +162,7 @@ export const MachineControl = {
             else { c.Inicio = false; c.Paro = true; c.online_llenado = false; c.online_vaciado = false; } 
             
             await db.from('maquinas').update({ controles: c, estado: act === 'Inicio' ? 'En Ciclo' : 'Detenida' }).eq('id', id); 
-            Dashboard.renderMachines(globalState.userProfile?.rol);
+            // Dashboard.renderMachines se llamará automáticamente por el listener realtime en main.js
             Dashboard.logEvent(id, act, 'INFO');
         } catch (e) { notify.error('Error PLC'); }
     },
@@ -163,7 +183,6 @@ export const MachineControl = {
             } 
             
             await db.from('maquinas').update({ controles: c }).eq('id', id); 
-            Dashboard.renderMachines(globalState.userProfile?.rol);
             Dashboard.logEvent(id, `Switch ${key}`, 'INFO');
         } catch (e) { notify.error('Error switch PLC'); }
     },
@@ -174,9 +193,7 @@ export const MachineControl = {
         const originalContent = btn.innerHTML;
         btn.disabled = true; 
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-        btn.classList.add('active'); 
-        btn.style.transform = "scale(0.95)";
-
+        
         try {
             const { data } = await db.from('maquinas').select('controles').eq('id', id).single();
             let c = data.controles || {};
@@ -204,36 +221,27 @@ export const MachineControl = {
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalContent;
-            btn.classList.remove('active');
-            btn.style.transform = "scale(1)";
         }
     },
 
     toggleEmergency: () => {
         if (!globalState.isEmergencyActive) { 
-            confirmModal('PARO DE EMERGENCIA', '¿Detener TODO?', async () => { 
-                globalState.isEmergencyActive = true; 
-                document.body.classList.add('emergency-mode'); 
+            confirmModal('PARO DE EMERGENCIA', '¿Detener TODO el sistema?', async () => { 
                 const btn = document.getElementById('btn-global-stop'); 
-                if(btn) { 
-                    btn.classList.add('active'); 
-                    btn.textContent = 'RESTABLECER'; 
-                } 
+                if(btn) btn.disabled = true;
+
                 await MachineControl.sendCommand(1, 'Paro'); 
                 await db.from('maquinas').update({ controles: { start_cycle: false, stop_cycle: true, calentador_on: false } }).eq('id', 2);
+                
                 Dashboard.logEvent(0, 'PARO GLOBAL', 'ERROR');
+                if(btn) btn.disabled = false;
             }, 'btn-primary-modal-danger', 'PARAR'); 
         } else { 
-            confirmModal('Restablecer', '¿Reactivar?', async () => { 
-                globalState.isEmergencyActive = false; 
-                document.body.classList.remove('emergency-mode'); 
-                const btn = document.getElementById('btn-global-stop'); 
-                if(btn) { 
-                    btn.classList.remove('active'); 
-                    btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA'; 
-                } 
+            confirmModal('Restablecer Sistema', '¿Confirmas que es seguro reactivar?', async () => { 
+                await db.from('maquinas').update({ controles: { Paro: false }, estado: 'Lista' }).eq('id', 1);
                 await db.from('maquinas').update({ controles: { stop_cycle: false } }).eq('id', 2);
-                Dashboard.logEvent(0, 'Reinicio', 'INFO');
+                
+                Dashboard.logEvent(0, 'Restablecimiento de Seguridad', 'INFO');
             }, 'btn-secondary-modal', 'OK'); 
         } 
     }
@@ -256,6 +264,32 @@ export const Dashboard = {
         
         const { data } = await db.from('maquinas').select('*').order('id');
         if (!data) return;
+
+        // --- LÓGICA DE SINCRONIZACIÓN DE SEGURIDAD (FIX PUNTO 4) ---
+        const masterMachine = data.find(m => m.id === 1);
+        const dbEmergencyState = masterMachine?.controles?.Paro === true;
+        const btnEmergency = document.getElementById('btn-global-stop');
+
+        if (dbEmergencyState) {
+            if (!globalState.isEmergencyActive) {
+                globalState.isEmergencyActive = true;
+                document.body.classList.add('emergency-mode');
+                if(btnEmergency) {
+                    btnEmergency.classList.add('active');
+                    btnEmergency.textContent = 'RESTABLECER SISTEMA';
+                }
+            }
+        } else {
+            if (globalState.isEmergencyActive) {
+                globalState.isEmergencyActive = false;
+                document.body.classList.remove('emergency-mode');
+                if(btnEmergency) {
+                    btnEmergency.classList.remove('active');
+                    btnEmergency.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> PARO DE EMERGENCIA';
+                }
+            }
+        }
+        // -----------------------------------------------------------
 
         container.innerHTML = '';
         const isAdmin = CONFIG.ROLES.ADMIN.includes(userRole);

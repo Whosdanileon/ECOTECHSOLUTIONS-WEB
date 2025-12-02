@@ -16,10 +16,22 @@ export const Store = {
         if (globalState.userProfile?.id) Store.syncToCloud(cart);
     },
 
-    addToCart: (qty = 1) => {
+    addToCart: async (qty = 1) => {
+        // 1. Validar Stock antes de agregar localmente
+        const productData = await Store.fetchProduct();
+        const currentStock = productData.stock_disponible; // Asumimos que viene de DB
+        
         const cart = Store.getCart();
         const prodId = CONFIG.PRODUCT.ID;
-        cart[prodId] = (cart[prodId] || 0) + qty;
+        const currentQty = cart[prodId] || 0;
+        const newQty = currentQty + qty;
+
+        // Validación rígida de stock
+        if (typeof currentStock === 'number' && newQty > currentStock) {
+            return notify.error(`Solo hay ${currentStock} unidades disponibles.`);
+        }
+
+        cart[prodId] = newQty;
         Store.saveCart(cart);
         notify.success(`Se agregaron ${qty} unidades al carrito.`);
     },
@@ -27,6 +39,8 @@ export const Store = {
     clearCart: (clearCloud = false) => {
         localStorage.removeItem(CONFIG.CART_KEY);
         Store.updateCartCountUI();
+        // Si clearCloud es true, limpiamos también en la BD (útil post-compra)
+        // Si es false, solo limpiamos local (útil para logout)
         if (clearCloud && globalState.userProfile?.id) Store.syncToCloud({});
     },
 
@@ -53,7 +67,7 @@ export const Store = {
         } catch (e) { console.error("Sync error:", e); }
     },
 
-    // --- FIX CRÍTICO: Fusión Inteligente ---
+    // --- CORRECCIÓN CRÍTICA: Fusión Inteligente y Validación ---
     mergeWithCloud: async (userId) => {
         try {
             const localCart = Store.getCart();
@@ -61,26 +75,46 @@ export const Store = {
 
             const { data } = await db.from('carritos').select('items').eq('user_id', userId).single();
             const cloudCart = data?.items || {};
+            const cloudItemsCount = Object.keys(cloudCart).length;
 
-            // ESCENARIO 1: Carrito Local Vacío -> Solo descargar (NO SUMAR, NO RE-GUARDAR EN NUBE)
-            if (localItemsCount === 0) {
-                console.log('☁️ Descargando carrito de la nube (Local estaba vacío)');
+            // CASO 1: Local vacío, Nube tiene datos -> Bajamos la nube
+            if (localItemsCount === 0 && cloudItemsCount > 0) {
+                console.log('☁️ Restaurando carrito de la nube');
                 localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(cloudCart));
                 Store.updateCartCountUI();
-                return; // Terminamos aquí. Evita bucles de duplicación.
+                return;
             }
 
-            // ESCENARIO 2: Hay items locales -> Fusionar con cuidado
+            // CASO 2: Nube vacía, Local tiene datos -> Subimos lo local (ya lo hace saveCart implícitamente, pero forzamos sync)
+            if (localItemsCount > 0 && cloudItemsCount === 0) {
+                console.log('⬆️ Subiendo carrito local a cuenta nueva');
+                await Store.syncToCloud(localCart);
+                return;
+            }
+
+            // CASO 3: Ambos tienen datos -> Conflicto (Fusión Inteligente)
+            // Lógica corregida: NO sumar ciegamente. Usar Math.max para evitar duplicación fantasma
+            // o priorizar la sesión actual.
+            
             const finalCart = { ...cloudCart };
+            
             Object.keys(localCart).forEach(itemId => {
                 if (finalCart[itemId]) {
-                    finalCart[itemId] += localCart[itemId];
+                    // CORRECCIÓN: Evitar duplicación x2. 
+                    // Si el usuario tenía 5 en nube y 5 en local (misma sesión), NO queremos 10.
+                    // Tomamos el mayor de los dos para ser conservadores, o el local si asumimos que es el más reciente.
+                    // Aquí usamos Math.max para evitar perder items, pero evitar la duplicación exacta.
+                    finalCart[itemId] = Math.max(finalCart[itemId], localCart[itemId]);
                 } else {
                     finalCart[itemId] = localCart[itemId];
                 }
             });
 
-            console.log('🔄 Fusionando carritos Local + Nube');
+            // Opcional: Validar stock máximo aquí también si fuera necesario
+            // const product = await Store.fetchProduct();
+            // if (finalCart[CONFIG.PRODUCT.ID] > product.stock_disponible) { ... }
+
+            console.log('🔄 Carritos sincronizados (Estrategia Max)');
             localStorage.setItem(CONFIG.CART_KEY, JSON.stringify(finalCart));
             Store.updateCartCountUI();
             await db.from('carritos').upsert({ user_id: userId, items: finalCart, updated_at: new Date() });
@@ -96,36 +130,60 @@ export const Store = {
             if (error) throw error;
             return data;
         } catch (err) {
-            return { id: CONFIG.PRODUCT.ID, nombre: CONFIG.PRODUCT.NAME, precio: CONFIG.PRODUCT.PRICE, stock_disponible: '--' };
+            // Fallback seguro pero indicando error visualmente si es posible
+            console.error("Error fetching product:", err);
+            return { id: CONFIG.PRODUCT.ID, nombre: CONFIG.PRODUCT.NAME, precio: CONFIG.PRODUCT.PRICE, stock_disponible: 0 };
         }
     },
 
     processCheckout: async (user, shippingData) => {
         const cart = Store.getCart();
         const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
-        if (totalItems <= 0) throw new Error("El carrito está vacío");
+        
+        if (totalItems <= 0) {
+            throw new Error("El carrito está vacío.");
+        }
 
+        // Llamada segura al Backend (RPC)
         const { data, error } = await db.rpc('crear_pedido_seguro', {
             p_user_id: user.id,
-            p_items_cart: cart,
+            p_items_cart: cart, // Enviamos { "id": qty }, SIN precios
             p_shipping: shippingData
         });
 
         if (error) {
-            console.error("RPC Error:", error);
-            if(error.message.includes('Stock insuficiente')) throw new Error(error.message);
-            throw new Error("Error procesando el pedido.");
+            console.error("Error en Checkout:", error);
+            
+            // Traducción de errores comunes de SQL para el usuario
+            if (error.message.includes('Stock insuficiente')) {
+                throw new Error("Lo sentimos, algunos productos ya no tienen stock suficiente.");
+            }
+            if (error.message.includes('Producto ID')) {
+                throw new Error("Uno de los productos ya no está disponible.");
+            }
+            
+            throw new Error("Error al procesar el pedido. Por favor intenta nuevamente.");
         }
 
-        Store.clearCart(true); 
+        // Si todo sale bien:
+        Store.clearCart(true); // Limpiamos carrito local y nube
         return data;
     },
 
     renderOrders: async (userId) => {
         const list = document.getElementById('pedidos-lista-container');
         if (!list) return;
-        const { data: orders } = await db.from('pedidos').select('*').eq('user_id', userId).order('created_at', { ascending: false });
         
+        // Mejor manejo de errores y estados de carga
+        list.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</div>';
+
+        const { data: orders, error } = await db.from('pedidos').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        
+        if (error) {
+            list.innerHTML = `<p style="color:red; text-align:center;">Error al cargar pedidos: ${error.message}</p>`;
+            return;
+        }
+
         if (orders && orders.length > 0) {
             list.innerHTML = orders.map(o => {
                 let statusColor = 'primary';
@@ -134,14 +192,31 @@ export const Store = {
                 else if (o.estado === 'Entregado') statusColor = 'success';
                 
                 let btns = `<button onclick="window.Utils.printReceipt(${o.id})" class="btn-sm btn-light" style="margin-right:5px;"><i class="fa-solid fa-print"></i> Recibo</button>`;
-                if(['Enviado','Entregado'].includes(o.estado) && o.tracking_info) {
+                
+                // Validación extra: Solo mostrar rastreo si hay info válida
+                if(['Enviado','Entregado'].includes(o.estado) && o.tracking_info && o.tracking_info.tracking_number) {
                      const safeData = encodeURIComponent(JSON.stringify(o.tracking_info));
                      btns += `<button onclick="window.Store.trackOrder('${safeData}', ${o.id})" class="btn-sm btn-primary" style="margin-right:5px;">Rastrear</button>`;
                 }
+                
                 if(o.estado === 'Entregado') btns += `<button onclick="window.RateUI.open(${o.id})" class="btn-sm" style="background:#f59e0b; color:white; border:none; border-radius:20px;">★ Calificar</button>`;
+                
+                // Solo permitir cancelar si no ha pasado mucho tiempo (opcional, lógica de UI)
                 if(o.estado === 'Pendiente') btns += `<button onclick="window.Store.cancelOrder(${o.id})" class="btn-text-danger" style="margin-left:10px;">Cancelar</button>`;
 
-                return `<div class="pedido-card" style="border-left-color: var(--color-${statusColor});"><div class="pedido-header"><div><strong>Pedido #${String(o.id).slice(0, 8)}</strong><br><small>${new Date(o.created_at).toLocaleDateString()}</small></div><span class="badge">${o.estado}</span></div><div class="order-info"><div>${formatCurrency(o.total)}</div><div>${btns}</div></div></div>`;
+                return `<div class="pedido-card" style="border-left-color: var(--color-${statusColor});">
+                            <div class="pedido-header">
+                                <div>
+                                    <strong>Pedido #${String(o.id).slice(0, 8)}</strong><br>
+                                    <small>${new Date(o.created_at).toLocaleDateString()}</small>
+                                </div>
+                                <span class="badge" style="background-color: var(--color-${statusColor}-light, #eee); color: var(--color-${statusColor});">${o.estado}</span>
+                            </div>
+                            <div class="order-info">
+                                <div>${formatCurrency(o.total)}</div>
+                                <div>${btns}</div>
+                            </div>
+                        </div>`;
             }).join('');
         } else {
             list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No tienes pedidos aún.</p>';
@@ -149,12 +224,24 @@ export const Store = {
     },
 
     cancelOrder: async (orderId) => {
-        confirmModal('Cancelar Pedido', '¿Estás seguro?', async () => {
+        confirmModal('Cancelar Pedido', '¿Estás seguro de cancelar este pedido?', async () => {
             const load = notify.loading('Cancelando...');
+            
+            // Verificar estado actual antes de cancelar (evitar cancelar algo ya enviado)
+            const { data: orderCheck } = await db.from('pedidos').select('estado').eq('id', orderId).single();
+            if (orderCheck && orderCheck.estado !== 'Pendiente') {
+                notify.close(load);
+                return notify.error('El pedido ya no puede ser cancelado.');
+            }
+
             const { error } = await db.from('pedidos').update({ estado: 'Cancelado' }).eq('id', orderId);
             notify.close(load);
+            
             if(error) notify.error(error.message);
-            else { notify.success('Pedido cancelado'); Store.renderOrders(globalState.userProfile.id); }
+            else { 
+                notify.success('Pedido cancelado'); 
+                if(globalState.userProfile?.id) Store.renderOrders(globalState.userProfile.id); 
+            }
         });
     },
 
@@ -165,9 +252,29 @@ export const Store = {
             const timeline = document.getElementById('tracking-timeline');
             const title = document.getElementById('track-id-display');
             if(!modal) return;
+            
             title.textContent = `${data.carrier || 'Envío'} - Guía: ${data.tracking_number || 'Pendiente'}`;
-            timeline.innerHTML = (data.history || []).map(step => `<div class="timeline-item ${step.completed ? 'completed' : ''}"><div class="timeline-marker"></div><div class="timeline-content"><div style="font-weight:600;">${step.status}</div><div style="font-size:0.8rem; color:#888;">${step.date ? new Date(step.date).toLocaleString() : ''}</div></div></div>`).join('');
+            
+            // Renderizado seguro del timeline
+            if (Array.isArray(data.history) && data.history.length > 0) {
+                timeline.innerHTML = data.history.map(step => `
+                    <div class="timeline-item ${step.completed ? 'completed' : ''}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div style="font-weight:600;">${step.status}</div>
+                            <div style="font-size:0.8rem; color:#888;">
+                                ${step.date ? new Date(step.date).toLocaleString() : 'Fecha pendiente'}
+                            </div>
+                        </div>
+                    </div>`).join('');
+            } else {
+                timeline.innerHTML = '<p style="text-align:center; color:#666;">Información de seguimiento no disponible.</p>';
+            }
+            
             modal.style.display = 'flex';
-        } catch(e) { notify.error('Error de rastreo'); }
+        } catch(e) { 
+            console.error(e);
+            notify.error('Error al cargar datos de rastreo'); 
+        }
     }
 };
