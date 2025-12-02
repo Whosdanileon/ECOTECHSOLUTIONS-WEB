@@ -4,6 +4,15 @@ export const CONFIG = {
     CART_KEY: 'ecotech_cart',
     VISION_URL_KEY: 'ecotech_ngrok_url',
     
+    // Helper para extraer ID del proyecto dinámicamente
+    get PROJECT_REF() {
+        try {
+            return this.SUPABASE_URL.split('//')[1].split('.')[0];
+        } catch (e) {
+            return 'dtdtqedzfuxfnnipdorg'; // Fallback
+        }
+    },
+
     // Configuración del Producto Único (Lemna Minor)
     PRODUCT: {
         ID: 1,

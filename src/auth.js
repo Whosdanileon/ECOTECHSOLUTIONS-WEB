@@ -3,7 +3,7 @@ import { db } from './db.js';
 import { globalState } from './state.js';
 import { notify } from './utils.js';
 import { Store } from './store.js';
-import { CONFIG } from './config.js'; // Necesitamos config para sacar el ID del proyecto si es necesario
+import { CONFIG } from './config.js';
 
 export const Auth = {
     // Iniciar Sesión
@@ -41,15 +41,16 @@ export const Auth = {
             if (error) throw error;
 
             if (data.user) {
+                // Intentamos crear el perfil, pero usamos upsert para evitar errores si el trigger de DB ya lo creó
                 const { error: profileError } = await db.from('perfiles').upsert([{ 
                     id: data.user.id, 
                     email: email.trim(), 
                     rol: 'Cliente', 
                     nombre_completo: 'Nuevo Usuario', 
                     created_at: new Date()
-                }]);
+                }], { onConflict: 'id', ignoreDuplicates: false });
                 
-                if (profileError) console.warn('Error perfil:', profileError);
+                if (profileError) console.warn('Nota perfil:', profileError.message);
                 
                 await Auth.loadProfile(data.user.id);
                 await Store.mergeWithCloud(data.user.id);
@@ -64,26 +65,23 @@ export const Auth = {
         }
     },
 
-    // --- FIX DEFINITIVO: LOGOUT NUCLEAR ---
+    // --- FIX DEFINITIVO: LOGOUT NUCLEAR Y DINÁMICO ---
     logout: async () => {
         try {
             // Intentamos ser amables con Supabase
             await db.auth.signOut();
         } catch (error) {
-            console.warn('Supabase no pudo cerrar sesión (Bloqueo de navegador), forzando cierre local...');
+            console.warn('Supabase no pudo cerrar sesión (posible bloqueo), forzando cierre local...');
         } finally {
-            // AQUI ESTÁ LA MAGIA: Borrado Manual
-            // Supabase guarda el token bajo la llave: sb-<PROJECT_ID>-auth-token
-            // Tu Project ID es: dtdtqedzfuxfnnipdorg (lo saqué de tu URL en config.js)
+            // AQUI ESTÁ LA MAGIA: Borrado Manual Dinámico
+            const projectID = CONFIG.PROJECT_REF;
             
-            const projectID = 'dtdtqedzfuxfnnipdorg';
-            
-            // 1. Borramos el token específico de Supabase
+            // 1. Borramos el token específico de Supabase usando el ID dinámico
             localStorage.removeItem(`sb-${projectID}-auth-token`);
             
-            // 2. Por seguridad, borramos cualquier rastro de supabase en el storage
+            // 2. Por seguridad, iteramos y borramos cualquier rastro de supabase
             Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('sb-')) {
+                if (key.startsWith('sb-') && key.includes('auth-token')) {
                     localStorage.removeItem(key);
                 }
             });
@@ -121,10 +119,10 @@ export const Auth = {
             const { data, error } = await db.from('perfiles').select('*').eq('id', userId).single();
             if (error) throw error;
             globalState.userProfile = data;
-            console.log('👤 Perfil cargado:', data.rol);
+            // console.log('👤 Perfil cargado:', data.rol);
             return data;
         } catch (error) {
-            console.error('Error perfil:', error);
+            console.error('Error cargando perfil:', error);
             return null;
         }
     },

@@ -471,30 +471,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
+    // ... código anterior en src/main.js ...
+
     const formCheckout = document.getElementById('form-checkout');
     if(formCheckout) {
         formCheckout.onsubmit = async (e) => {
             e.preventDefault();
+            // CORRECCIÓN: Definimos la variable 'btn' y 'originalText' FUERA del try para que esté disponible en el catch si es necesario, 
+            // y lo buscamos por ID porque está fuera del <form>
+            const btn = document.getElementById('btn-confirmar-compra');
+            let originalText = '<i class="fa-solid fa-lock"></i> Pagar Ahora';
+
             try {
                 if(!user) return notify.error('Debes iniciar sesión');
-                const btn = formCheckout.querySelector('button[type="submit"]');
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-lock"></i> Procesando...';
+                
+                if (btn) {
+                    originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Procesando...';
+                }
                 
                 const method = document.querySelector('input[name="payment-method"]:checked')?.value || 'card';
-                const shipping = { nombre: document.getElementById('checkout-name').value, direccion: document.getElementById('checkout-address').value, telefono: document.getElementById('checkout-phone').value, metodo: method };
+                const shipping = { 
+                    nombre: document.getElementById('checkout-name').value, 
+                    direccion: document.getElementById('checkout-address').value, 
+                    telefono: document.getElementById('checkout-phone').value, 
+                    metodo: method 
+                };
                 
                 document.getElementById('payment-modal').style.display = 'flex';
                 await Store.processCheckout(user, shipping);
                 notify.success('¡Pedido Confirmado!');
                 setTimeout(() => window.location.href = 'cuenta.html', 2000);
+
             } catch (err) {
                 document.getElementById('payment-modal').style.display = 'none';
                 notify.error(err.message);
-                const btn = formCheckout.querySelector('button[type="submit"]');
-                btn.disabled = false;
-                btn.innerHTML = originalText || 'Pagar Ahora';
+                
+                // CORRECCIÓN: Restauramos el botón usando la referencia por ID
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
             }
         };
     }

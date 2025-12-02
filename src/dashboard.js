@@ -4,7 +4,7 @@ import { CONFIG } from './config.js';
 import { globalState } from './state.js';
 import { notify, formatCurrency, confirmModal, escapeHtml } from './utils.js';
 
-// --- CONSTANTES DE CONFIGURACIÓN (Adiós Magic Numbers) ---
+// --- CONSTANTES DE CONFIGURACIÓN ---
 const MACHINE_IDS = {
     MASTER_PLC: 1,
     DEHYDRATOR: 2
@@ -23,29 +23,33 @@ export const Telemetry = {
             globalState.tempHistory = Array(20).fill(null);
         }
 
-        globalState.chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { 
-                labels: Array(20).fill(''), 
-                datasets: [{ 
-                    label: 'Temp (°C)', 
-                    data: globalState.tempHistory, 
-                    borderColor: '#f59e0b', 
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)', 
-                    borderWidth: 2, 
-                    fill: true, 
-                    tension: 0.4, 
-                    pointRadius: 2 
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                animation: { duration: 0 }, 
-                scales: { y: { beginAtZero: false, min: 0, max: 100 }, x: { display: false } }, 
-                plugins: { legend: { display: false } } 
-            }
-        });
+        try {
+            globalState.chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { 
+                    labels: Array(20).fill(''), 
+                    datasets: [{ 
+                        label: 'Temp (°C)', 
+                        data: globalState.tempHistory, 
+                        borderColor: '#f59e0b', 
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)', 
+                        borderWidth: 2, 
+                        fill: true, 
+                        tension: 0.4, 
+                        pointRadius: 2 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 0 }, 
+                    scales: { y: { beginAtZero: false, min: 0, max: 100 }, x: { display: false } }, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        } catch (e) {
+            console.error("Error iniciando Chart.js:", e);
+        }
     },
 
     destroy: () => {
@@ -67,10 +71,10 @@ export const Telemetry = {
         globalState.tempHistory.push(newVal); 
         
         if (globalState.chartInstance && globalState.chartInstance.ctx) {
-            globalState.chartInstance.update();
+            globalState.chartInstance.data.datasets[0].data = globalState.tempHistory;
+            globalState.chartInstance.update('none'); 
         }
         
-        // Actualización DOM segura
         const kpi = document.getElementById('kpi-temp');
         if (kpi) { 
             kpi.textContent = newVal.toFixed(1) + '°C'; 
@@ -81,12 +85,7 @@ export const Telemetry = {
         const bar = document.getElementById('temp-bar-2');
         
         if (gauge) {
-            gauge.textContent = ''; 
-            gauge.appendChild(document.createTextNode(newVal.toFixed(1)));
-            const unit = document.createElement('span');
-            unit.className = 'gauge-unit';
-            unit.textContent = '°C';
-            gauge.appendChild(unit);
+            gauge.innerHTML = `${newVal.toFixed(1)} <span class="gauge-unit">°C</span>`;
         }
         if (bar) { 
             bar.style.width = Math.min(newVal, 100) + '%'; 
@@ -111,7 +110,7 @@ export const Vision = {
         if (url.endsWith('/')) url = url.slice(0, -1);
         
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            return notify.error('URL inválida: Protocolo requerido.');
+            return notify.error('URL inválida: Protocolo requerido (https://).');
         }
 
         try {
@@ -121,7 +120,7 @@ export const Vision = {
             const isSafe = allowedDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
 
             if (!isSafe) {
-                return notify.error('⛔ Dominio no autorizado por seguridad.');
+                return notify.error('⛔ Dominio no autorizado. Use ngrok o localhost.');
             }
 
         } catch (e) {
@@ -132,9 +131,8 @@ export const Vision = {
         
         const iframe = document.getElementById('vision-iframe');
         if (iframe) {
-            // FIX DE SEGURIDAD 8: Atributo Sandbox
-            // Evita que el iframe ejecute scripts peligrosos contra el padre o abra popups
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
+            iframe.setAttribute('referrerpolicy', 'no-referrer');
             iframe.src = url;
         }
         
@@ -160,7 +158,7 @@ export const MachineControl = {
             
             await db.from('maquinas').update({ controles: c, estado: act === 'Inicio' ? 'En Ciclo' : 'Detenida' }).eq('id', id); 
             Dashboard.logEvent(id, act, 'INFO');
-        } catch (e) { notify.error('Error PLC'); }
+        } catch (e) { notify.error('Error PLC: Verifique conexión'); }
     },
 
     toggleSwitch: async (id, key) => { 
@@ -169,7 +167,6 @@ export const MachineControl = {
             const { data } = await db.from('maquinas').select('controles').eq('id', id).single(); 
             let c = data.controles || {}; 
             
-            // Lógica específica M1 (Tanques/Elevador)
             if (id === MACHINE_IDS.MASTER_PLC) { 
                 if (key.includes('llenado')) { c.online_llenado = true; c.online_vaciado = false; } 
                 else if (key.includes('vaciado')) { c.online_vaciado = true; c.online_llenado = false; } 
@@ -215,8 +212,10 @@ export const MachineControl = {
         } catch (e) {
             notify.error('Error pulso PLC');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalContent;
+            if(btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
         }
     },
 
@@ -252,7 +251,7 @@ const el = (tag, classes = '', text = '', parent = null) => {
     return element;
 };
 
-// --- RENDERIZADORES ESPECÍFICOS (Separación de Intereses) ---
+// --- RENDERIZADORES ESPECÍFICOS ---
 const MachineRenderers = {
     [MACHINE_IDS.MASTER_PLC]: (m, body, isAdmin) => {
         const area = el('div', 'm-area', '', body);
@@ -271,7 +270,6 @@ const MachineRenderers = {
         btnStop.innerHTML = '<i class="fa-solid fa-stop"></i> PARO';
         btnStop.onclick = () => MachineControl.sendCommand(m.id, 'Paro');
 
-        // Helper interno para controles segmentados
         const createSegmented = (label, name, options) => {
             const group = el('div', 'control-group', '', interfaceDiv);
             if(name === 'ch') group.style.marginBottom = '0';
@@ -311,8 +309,7 @@ const MachineRenderers = {
         const gauge = el('div', 'clean-gauge', '', body);
         const readout = el('div', 'gauge-readout', '', gauge);
         readout.id = 'gauge-m2-val';
-        readout.textContent = temp.toFixed(1);
-        el('span', 'gauge-unit', '°C', readout);
+        readout.innerHTML = `${temp.toFixed(1)}<span class="gauge-unit">°C</span>`;
 
         const barBg = el('div', 'gauge-bar-bg', '', gauge);
         const barFill = el('div', 'gauge-bar-fill', '', barBg);
@@ -354,7 +351,6 @@ export const Dashboard = {
         const { data } = await db.from('maquinas').select('*').order('id');
         if (!data) return;
 
-        // Sincronización de Seguridad (Heredada)
         const masterMachine = data.find(m => m.id === MACHINE_IDS.MASTER_PLC);
         const dbEmergencyState = masterMachine?.controles?.Paro === true;
         const btnEmergency = document.getElementById('btn-global-stop');
@@ -407,7 +403,6 @@ export const Dashboard = {
                 offDiv.innerHTML = '<i class="fa-solid fa-plug-circle-xmark"></i> DESCONECTADO';
             }
 
-            // CORRECCIÓN 7: Uso de Renderizadores por ID/Tipo
             if (MachineRenderers[m.id]) {
                 MachineRenderers[m.id](m, body, isAdmin);
             } else {
@@ -416,7 +411,7 @@ export const Dashboard = {
         });
     },
     
-    // --- USUARIOS, BITÁCORA Y VENTAS (Se mantienen igual pero seguros) ---
+    // --- USUARIOS, BITÁCORA Y VENTAS ---
     initAdminUsers: async (myRole) => {
         const tbody = document.getElementById('user-table-body');
         if (!tbody) return;
@@ -448,10 +443,24 @@ export const Dashboard = {
                 el('td', '', escapeHtml(u.area || '-'), tr);
 
                 const tdAction = el('td', '', '', tr);
+                
                 const btnSave = el('button', 'btn-icon btn-save', '', tdAction);
                 btnSave.innerHTML = '<i class="fa-solid fa-save"></i>';
+                btnSave.title = "Guardar Rol";
                 btnSave.onclick = function() { Dashboard.updateUserRole(u.id, this); };
-                if (u.id === globalState.userProfile?.id) btnSave.disabled = true;
+
+                const btnDelete = el('button', 'btn-icon btn-delete', '', tdAction);
+                btnDelete.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                btnDelete.title = "Eliminar Usuario";
+                btnDelete.style.marginLeft = "8px";
+                btnDelete.style.color = "#ef4444";
+                btnDelete.onclick = function() { Dashboard.deleteUser(u.id); };
+
+                if (u.id === globalState.userProfile?.id) {
+                    btnSave.disabled = true;
+                    btnDelete.disabled = true;
+                    btnDelete.style.opacity = "0.5";
+                }
             });
 
             const form = document.getElementById('form-create-employee');
@@ -462,36 +471,50 @@ export const Dashboard = {
         }
     },
 
+    openCreateUserModal: () => {
+        const modal = document.getElementById('modal-create-user');
+        if(modal) modal.style.display = 'flex';
+    },
+
     createEmployee: async (e) => {
         e.preventDefault();
-        // Usamos la versión segura de createEmployee del paso anterior (Cliente Temporal)
-        // ... (Ver fix 1.3) ...
+        
         if (typeof supabase === 'undefined') return notify.error("Librería crítica no cargada");
         const load = notify.loading('Creando empleado...');
+        
         try {
             const tempClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
                 auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
             });
+            
             const { data, error } = await tempClient.auth.signUp({ 
                 email: document.getElementById('new-user-email').value, 
                 password: document.getElementById('new-user-pass').value 
             });
+            
             if (error) throw error;
+            
             if (data.user) {
                 const { error: profileError } = await db.from('perfiles').upsert([{ 
-                    id: data.user.id, email: data.user.email, 
+                    id: data.user.id, 
+                    email: data.user.email, 
                     nombre_completo: document.getElementById('new-user-name').value, 
                     rol: document.getElementById('new-user-role').value, 
                     area: document.getElementById('new-user-dept').value,
                     created_at: new Date()
                 }]);
+                
                 if (profileError) throw profileError;
-                notify.close(load); notify.success('Empleado creado'); 
+                
+                notify.close(load); 
+                notify.success('Empleado creado correctamente'); 
                 document.getElementById('modal-create-user').style.display = 'none'; 
                 Dashboard.initAdminUsers(globalState.userProfile.rol);
+                document.getElementById('form-create-employee').reset();
             }
         } catch (err) {
-            notify.close(load); notify.error(err.message || "Error al crear");
+            notify.close(load); 
+            notify.error(err.message || "Error al crear empleado");
         }
     },
 
@@ -499,37 +522,228 @@ export const Dashboard = {
         const tr = btn.closest('tr');
         const rol = tr.querySelector('.role-select').value;
         const load = notify.loading('Guardando...');
-        await db.from('perfiles').update({ rol }).eq('id', uid);
-        notify.close(load); notify.success('Rol actualizado');
+        try {
+            const { error } = await db.from('perfiles').update({ rol }).eq('id', uid);
+            notify.close(load); 
+            if(error) throw error;
+            notify.success('Rol actualizado');
+        } catch(e) {
+            notify.close(load);
+            notify.error('Error actualizando rol');
+        }
+    },
+
+    deleteUser: async (uid) => {
+        confirmModal('Eliminar Usuario', '¿Estás seguro? Esta acción eliminará el perfil y revocará el acceso inmediatamente.', async () => {
+            const load = notify.loading('Eliminando...');
+            try {
+                const { error } = await db.from('perfiles').delete().eq('id', uid);
+                
+                if (error) throw error;
+                
+                notify.close(load);
+                notify.success('Usuario eliminado');
+                Dashboard.initAdminUsers(globalState.userProfile.rol);
+            } catch (e) {
+                notify.close(load);
+                notify.error('Error al eliminar: ' + e.message);
+            }
+        });
     },
     
+    // --- NUEVA LÓGICA DE REPORTES (MODAL DINÁMICO MEJORADO) ---
+    reportIncident: async () => {
+        // 1. Obtener staff desde la DB en tiempo real
+        const load = notify.loading('Cargando datos...');
+        let staffOptions = '<option value="">Seleccione personal...</option>';
+        
+        try {
+            const { data: users, error } = await db.from('perfiles').select('id, nombre_completo, rol');
+            if (error) throw error;
+            
+            // FILTRO: Solo mostrar roles de Staff (excluyendo clientes)
+            const staff = users.filter(u => CONFIG.ROLES.STAFF.includes(u.rol));
+            
+            staff.forEach(u => {
+                staffOptions += `<option value="${escapeHtml(u.nombre_completo)}">${escapeHtml(u.nombre_completo)} (${u.rol})</option>`;
+            });
+
+        } catch (e) {
+            console.error(e);
+            notify.error('Error cargando lista de personal');
+            notify.close(load);
+            return; 
+        }
+        notify.close(load);
+
+        // 2. Limpiar modal anterior para asegurar datos frescos
+        const existingModal = document.getElementById('modal-report-incident');
+        if (existingModal) existingModal.remove();
+
+        // 3. Crear Modal con las opciones solicitadas
+        const modalHTML = `
+            <div id="modal-report-incident" class="modal-overlay" style="display:none; justify-content:center; align-items:center;">
+              <div class="modal-content" style="background:white; padding:2rem; border-radius:12px; width:90%; max-width:500px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+                <h3 style="margin-top:0;">Reportar Incidente</h3>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:1.5rem;">Registra un evento anómalo en la bitácora.</p>
+                <form id="form-report-incident">
+                  <div class="input-group">
+                    <label>Área del Incidente</label>
+                    <select id="report-area" class="form-input" required>
+                        <option value="">Seleccione área...</option>
+                        <option value="Lavado">Lavado</option>
+                        <option value="Deshidratado">Deshidratado</option>
+                        <option value="Empaquetado">Empaquetado</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label>Tipo de Reporte</label>
+                    <select id="report-type" class="form-input" onchange="Dashboard.toggleReportTarget(this.value)">
+                       <option value="general">General / Otro</option>
+                       <option value="machine">Falla de Maquinaria</option>
+                       <option value="person">Reporte de Personal</option>
+                    </select>
+                  </div>
+                  
+                  <div class="input-group" id="group-target-machine" style="display:none;">
+                    <label>Máquina Afectada</label>
+                    <select id="report-machine-id" class="form-input">
+                       <option value="1">M1 - PLC Maestro</option>
+                       <option value="2">M2 - Deshidratadora</option>
+                    </select>
+                  </div>
+
+                  <div class="input-group" id="group-target-person" style="display:none;">
+                    <label>Personal Involucrado</label>
+                    <select id="report-person-name" class="form-input">
+                        ${staffOptions}
+                    </select>
+                  </div>
+
+                  <div class="input-group">
+                    <label>Descripción Detallada</label>
+                    <textarea id="report-desc" class="form-input" rows="3" required placeholder="Describe qué sucedió..."></textarea>
+                  </div>
+
+                  <div style="text-align:right; margin-top:1.5rem; display:flex; gap:10px; justify-content:flex-end;">
+                     <button type="button" class="btn btn-light" onclick="document.getElementById('modal-report-incident').style.display='none'">Cancelar</button>
+                     <button type="submit" class="btn btn-danger">Enviar Reporte</button>
+                  </div>
+                </form>
+              </div>
+            </div>`;
+            
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // 4. Bindear eventos
+        document.getElementById('form-report-incident').onsubmit = Dashboard.submitReport;
+        
+        // 5. Mostrar
+        document.getElementById('modal-report-incident').style.display = 'flex';
+        Dashboard.toggleReportTarget('general');
+    },
+
+    toggleReportTarget: (val) => {
+        const machineGroup = document.getElementById('group-target-machine');
+        const personGroup = document.getElementById('group-target-person');
+        const personInput = document.getElementById('report-person-name');
+
+        if (val === 'machine') {
+            machineGroup.style.display = 'block';
+            personGroup.style.display = 'none';
+            personInput.required = false;
+        } else if (val === 'person') {
+            machineGroup.style.display = 'none';
+            personGroup.style.display = 'block';
+            personInput.required = true;
+        } else {
+            machineGroup.style.display = 'none';
+            personGroup.style.display = 'none';
+            personInput.required = false;
+        }
+    },
+
+    submitReport: async (e) => {
+        e.preventDefault();
+        const modal = document.getElementById('modal-report-incident');
+        const area = document.getElementById('report-area').value;
+        const type = document.getElementById('report-type').value;
+        const desc = document.getElementById('report-desc').value;
+        let machineId = 0;
+
+        // Construir mensaje detallado
+        let targetInfo = "";
+        if (type === 'machine') {
+            machineId = document.getElementById('report-machine-id').value;
+            targetInfo = `[MAQUINA: M${machineId}]`;
+        } else if (type === 'person') {
+            const name = document.getElementById('report-person-name').value;
+            targetInfo = `[REPORTADO: ${name}]`;
+        } else {
+            targetInfo = "[GENERAL]";
+        }
+
+        const fullEventString = `REPORTE MANUAL | ÁREA: ${area} ${targetInfo} | ${desc}`;
+
+        const load = notify.loading('Registrando reporte...');
+        
+        try {
+            const { error } = await db.from('bitacora_industrial').insert({
+                maquina_id: machineId,
+                evento: fullEventString,
+                tipo: 'ERROR',
+                usuario: globalState.userProfile?.nombre_completo || 'Operador',
+                valor_lectura: null
+            });
+
+            if (error) throw error;
+
+            notify.close(load);
+            notify.success('Falla reportada correctamente');
+            modal.style.display = 'none';
+            Dashboard.renderReports(); 
+        } catch (err) {
+            notify.close(load);
+            notify.error('Error al reportar: ' + err.message);
+        }
+    },
+
     logEvent: async (mid, evt, type, val=null) => {
-        await db.from('bitacora_industrial').insert({ 
+        db.from('bitacora_industrial').insert({ 
             maquina_id: mid, 
             evento: evt, 
             tipo: type, 
             usuario: globalState.userProfile?.nombre_completo || 'Sys', 
             valor_lectura: val 
-        });
+        }).then(({error}) => { if(error) console.error("Error logging:", error); });
     },
 
     renderReports: async () => {
         const tbody = document.getElementById('reportes-table-body');
         if (!tbody) return;
-        tbody.innerHTML = ''; 
+        
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fa-solid fa-spinner fa-spin"></i> Actualizando...</td></tr>';
+        
         try {
             const { data: logs, error } = await db.from('bitacora_industrial').select('*').order('created_at', { ascending: false }).limit(50);
             if (error) throw error;
+            
             if (!logs || logs.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin actividad reciente.</td></tr>'; return; 
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin actividad reciente.</td></tr>'; 
+                return; 
             }
+            
+            tbody.innerHTML = '';
+            
             logs.forEach(l => {
                 const tr = el('tr', '', '', tbody);
                 const tdTime = el('td', '', new Date(l.created_at).toLocaleTimeString(), tr);
                 tdTime.style.color = '#666';
-                el('td', '', l.maquina_id === 0 ? 'General' : 'M' + l.maquina_id, tr);
+                el('td', '', l.maquina_id == 0 ? 'General' : 'M' + l.maquina_id, tr); 
+                
                 const tdEvt = el('td', '', '', tr);
                 el('strong', '', escapeHtml(l.evento), tdEvt);
+                
                 el('td', '', escapeHtml(l.usuario), tr);
                 const tdType = el('td', '', '', tr);
                 const badge = el('span', 'badge', l.tipo, tdType);
@@ -537,6 +751,9 @@ export const Dashboard = {
                 badge.style.background = color + '20';
                 badge.style.color = color;
             });
+
+            notify.success('Bitácora actualizada');
+
         } catch (e) {
             tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:red">Error: ${e.message}</td></tr>`;
         }
@@ -636,13 +853,19 @@ export const Dashboard = {
     sendMessage: async () => {
         const inp = document.getElementById('chat-input-text');
         if(!inp.value.trim()) return;
-        await db.from('mensajes').insert({ 
-            mensaje: inp.value, 
-            sender: globalState.userProfile.nombre_completo, 
-            role: globalState.userProfile.rol, 
-            canal: globalState.currentChannel 
-        });
-        inp.value = '';
+        
+        try {
+            const { error } = await db.from('mensajes').insert({ 
+                mensaje: inp.value, 
+                sender: globalState.userProfile.nombre_completo, 
+                role: globalState.userProfile.rol, 
+                canal: globalState.currentChannel 
+            });
+            if(error) throw error;
+            inp.value = '';
+        } catch(e) {
+            notify.error('Error enviando mensaje');
+        }
     },
 
     renderChatMessage: (m, anim=true) => {
