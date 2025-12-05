@@ -9,21 +9,116 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <style>
-        /* Ajuste para el mapa */
+        /* --- ESTILOS PREMIUM PARA CUENTA --- */
+        body { font-family: 'Lato', sans-serif; color: #334155; background-color: #f1f5f9; }
+        
+        h1, h2, h3, h4, .btn, .nav-link, .account-nav-link, label { font-family: 'Montserrat', sans-serif; }
+
+        .page-section { padding: 3rem 0; min-height: 80vh; }
+
+        /* Contenedor de Autenticación (Login/Registro) */
+        #auth-forms .modal-content {
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        .login-title { font-weight: 800; color: #1e293b; letter-spacing: -0.5px; }
+
+        /* Layout de Cuenta: Grid Sidebar + Contenido */
+        .account-container { 
+            display: grid; 
+            grid-template-columns: 280px 1fr; 
+            gap: 2rem; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        /* Sidebar Tipo Tarjeta */
+        .account-sidebar { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 16px; 
+            border: 1px solid #e2e8f0; 
+            height: fit-content; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .account-nav-link { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            width: 100%; 
+            padding: 1rem; 
+            text-align: left; 
+            background: transparent; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            margin-bottom: 0.5rem; 
+            font-weight: 600; 
+            color: #64748b; 
+            transition: all 0.2s; 
+            font-size: 0.95rem;
+        }
+        .account-nav-link:hover { background: #f8fafc; color: var(--color-primary); transform: translateX(5px); }
+        .account-nav-link.active { background: #f0fdf4; color: #166534; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .account-nav-link i { width: 20px; text-align: center; }
+
+        /* Área de Contenido Principal */
+        .account-content { 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: 16px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            min-height: 500px;
+        }
+
+        h2 { font-weight: 800; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 2rem; font-size: 1.5rem; }
+
+        /* Mapa */
         #map-profile { 
             height: 300px; 
             width: 100%; 
-            border-radius: 8px; 
-            border: 2px solid #e2e8f0; 
+            border-radius: 12px; 
+            border: 1px solid #cbd5e1; 
             margin-top: 10px;
             z-index: 1;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        /* Tarjetas de Pedidos */
+        .pedido-card {
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--color-primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            margin-bottom: 1rem;
+        }
+        .pedido-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+        .pedido-header strong { color: #1e293b; font-family: 'Montserrat', sans-serif; }
+
+        /* Modal Informativo (Footer) */
+        .info-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s; }
+        .info-modal.show { opacity: 1; }
+        .info-modal-content { background: white; width: 90%; max-width: 500px; padding: 2.5rem; border-radius: 16px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s; }
+        .info-modal.show .info-modal-content { transform: translateY(0); }
+        .info-modal-close { position: absolute; top: 20px; right: 20px; border: none; background: #f1f5f9; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .info-modal-close:hover { background: #e2e8f0; color: #0f172a; }
+
+        @media (max-width: 968px) {
+            .account-container { grid-template-columns: 1fr; }
+            .account-sidebar { margin-bottom: 1.5rem; width: 100%; }
         }
     </style>
 </head>
@@ -52,34 +147,45 @@
         <div class="container">
 
             <div id="auth-forms" style="display: none;">
-                <div class="modal-content" style="max-width: 450px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div class="modal-content" style="max-width: 450px; margin: 2rem auto; background: white; padding: 2.5rem; border-radius: 16px;">
                     <form id="form-login">
-                        <h3 class="login-title" style="text-align: center; margin-bottom: 1.5rem;">Iniciar Sesión</h3>
+                        <div style="text-align:center; margin-bottom:2rem;">
+                            <img src="images/logo.png" alt="Logo" style="height:50px; margin-bottom:10px;">
+                            <h3 class="login-title">Bienvenido</h3>
+                            <p style="color:#64748b; font-size:0.9rem;">Accede para gestionar tus pedidos</p>
+                        </div>
+                        
                         <div class="input-group">
                             <label for="login-email">Correo Electrónico</label>
-                            <input type="email" id="login-email" class="form-input" required>
+                            <input type="email" id="login-email" class="form-input" required placeholder="tu@email.com">
                         </div>
                         <div class="input-group">
                             <label for="login-password">Contraseña</label>
-                            <input type="password" id="login-password" class="form-input" required>
+                            <input type="password" id="login-password" class="form-input" required placeholder="••••••••">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-login hover-lemna-trigger">
-                            <i class="fa-solid fa-sign-in-alt"></i> Entrar
+                        <button type="submit" class="btn btn-primary btn-login hover-lemna-trigger" style="width:100%; padding:12px;">
+                            ENTRAR
                         </button>
                     </form>
-                    <hr class="product-divider" style="margin: 2rem 0;">
+                    
+                    <div style="display:flex; align-items:center; margin: 2rem 0; gap:10px;">
+                        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+                        <span style="color:#94a3b8; font-size:0.8rem; font-weight:600;">O</span>
+                        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+                    </div>
+
                     <form id="form-registro">
-                        <h3 class="login-title" style="text-align: center; margin-bottom: 1.5rem;">Crear Cuenta Nueva</h3>
+                        <h4 style="text-align: center; margin-bottom: 1rem; color:#475569;">¿Nuevo cliente?</h4>
                         <div class="input-group">
                             <label for="registro-email">Correo Electrónico</label>
                             <input type="email" id="registro-email" class="form-input" required>
                         </div>
                         <div class="input-group">
-                            <label for="registro-password">Contraseña (mín. 6 caracteres)</label>
+                            <label for="registro-password">Crear Contraseña</label>
                             <input type="password" id="registro-password" class="form-input" required minlength="6">
                         </div>
-                        <button type="submit" class="btn btn-secondary btn-login hover-lemna-trigger">
-                            <i class="fa-solid fa-user-plus"></i> Registrarme
+                        <button type="submit" class="btn btn-light btn-login hover-lemna-trigger" style="width:100%; border:1px solid #cbd5e1;">
+                            CREAR CUENTA
                         </button>
                     </form>
                 </div>
@@ -88,11 +194,12 @@
             <div id="user-info" class="account-container" style="display: none;">
                 
                 <aside class="account-sidebar">
-                    <div style="text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
-                        <div style="width: 60px; height: 60px; background: var(--color-primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 10px;">
+                    <div style="text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
+                        <div style="width: 80px; height: 80px; background: #dcfce7; color: #166534; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 15px; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                             <i class="fa-solid fa-user"></i>
                         </div>
-                        <h4 style="margin: 0;">Mi Perfil</h4>
+                        <h4 style="margin: 0; font-size:1.1rem;">Mi Cuenta</h4>
+                        <p style="color:#64748b; font-size:0.85rem; margin-top:5px;">Gestiona tu perfil</p>
                     </div>
                     <nav>
                         <button id="btn-tab-datos" class="account-nav-link active hover-lemna-trigger">
@@ -104,7 +211,7 @@
                         <button id="btn-tab-pedidos" class="account-nav-link hover-lemna-trigger">
                             <i class="fa-solid fa-box-open"></i> Mis Pedidos
                         </button>
-                        <button id="btn-logout" class="account-nav-link btn-logout hover-lemna-trigger" style="color: var(--color-danger); margin-top: 1rem;">
+                        <button id="btn-logout" class="account-nav-link btn-logout hover-lemna-trigger" style="color: var(--color-danger); margin-top: 2rem; border: 1px solid #fee2e2; justify-content: center;">
                             <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
                         </button>
                     </nav>
@@ -113,20 +220,22 @@
                 <section class="account-content">
                     
                     <div id="seccion-mis-datos" class="content-section active">
-                        <h2 style="margin-bottom: 1.5rem;">Información Personal</h2>
+                        <h2><i class="fa-solid fa-pen-to-square" style="color:#94a3b8; margin-right:10px;"></i> Editar Perfil</h2>
                         <form id="form-perfil">
                             <div class="input-group">
-                                <label>Correo Electrónico (No editable)</label>
-                                <input type="email" id="profile-email" class="form-input" disabled style="background: #f3f4f6;">
+                                <label>Correo Electrónico</label>
+                                <input type="email" id="profile-email" class="form-input" disabled style="background: #f8fafc; color:#94a3b8; border-color:#e2e8f0;">
                             </div>
                             <div class="input-group">
                                 <label for="profile-name">Nombre Completo</label>
                                 <input type="text" id="profile-name" class="form-input" placeholder="Tu nombre y apellidos">
                             </div>
                             
-                            <div class="input-group">
-                                <label style="font-weight:700; color:#2e7d32;"><i class="fa-solid fa-map-pin"></i> Ubicación de Entrega</label>
-                                <p style="font-size:0.85rem; color:#666; margin-bottom:5px;">Arrastra el pin azul a tu domicilio exacto.</p>
+                            <div class="input-group" style="background:#f8fafc; padding:1.5rem; border-radius:12px; border:1px solid #e2e8f0;">
+                                <label style="font-weight:700; color:#166534; display:flex; align-items:center; gap:8px;">
+                                    <i class="fa-solid fa-map-location-dot"></i> Ubicación de Entrega
+                                </label>
+                                <p style="font-size:0.85rem; color:#64748b; margin-bottom:10px;">Arrastra el marcador para precisar tu domicilio.</p>
                                 <div id="map-profile"></div>
                                 <input type="hidden" id="profile-lat">
                                 <input type="hidden" id="profile-lng">
@@ -140,57 +249,58 @@
                                 <label for="profile-phone">Teléfono (Opcional)</label>
                                 <input type="tel" id="profile-phone" class="form-input" placeholder="10 dígitos">
                             </div>
-                            <button type="submit" class="btn btn-primary hover-lemna-trigger">
-                                <i class="fa-solid fa-save"></i> Guardar Cambios
-                            </button>
+                            <div style="text-align:right;">
+                                <button type="submit" class="btn btn-primary hover-lemna-trigger">
+                                    GUARDAR CAMBIOS
+                                </button>
+                            </div>
                         </form>
                     </div>
 
                     <div id="seccion-pagos" class="content-section" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                                <i class="fa-solid fa-shield-halved" style="color: var(--color-success);"></i> Billetera Segura
-                            </h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom:2px solid #f1f5f9; padding-bottom:1rem;">
+                            <h2 style="margin:0; border:none; padding:0;">Billetera Segura</h2>
                             <button id="btn-unlock-wallet" onclick="window.AuthModal.openSecurityCheck()" class="btn btn-sm btn-light hover-lemna-trigger" style="border: 1px solid #ccc;">
-                                <i class="fa-solid fa-eye"></i> Mostrar Datos
+                                <i class="fa-solid fa-eye"></i> Revelar Datos
                             </button>
                         </div>
                         
-                        <div style="background: linear-gradient(135deg, #1b2b1b 0%, #2d3748 100%); padding: 2rem; border-radius: 16px; color: white; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;">
-                            <div id="wallet-overlay" style="display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 16px; align-items: center; justify-content: center; z-index: 10;">
-                                <div style="text-align: center;">
-                                    <i class="fa-solid fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                                    <p>Información Oculta</p>
-                                </div>
+                        <div style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 2.5rem; border-radius: 20px; color: white; margin-bottom: 2rem; box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.5); position: relative; overflow:hidden;">
+                            
+                            <div id="wallet-overlay" style="display: none; position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 10; flex-direction:column;">
+                                <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 15px; color:#cbd5e1;"></i>
+                                <p style="font-weight:600; color:white; letter-spacing:1px;">INFORMACIÓN ENCRIPTADA</p>
                             </div>
+
                             <form id="form-pago-seguro">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:2rem;">
+                                    <img src="images/logo.png" style="height:30px; filter:brightness(0) invert(1); opacity:0.7;">
+                                    <i class="fa-brands fa-cc-visa" style="font-size:2rem; opacity:0.7;"></i>
+                                </div>
+
                                 <div class="input-group">
-                                    <label style="color: #cbd5e1;">Titular de la Tarjeta</label>
-                                    <input type="text" id="wallet-holder" class="form-input" placeholder="PROTEGIDO" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                    <label style="color: #94a3b8; font-size:0.8rem; text-transform:uppercase;">Número de Tarjeta</label>
+                                    <input type="password" id="wallet-number" class="form-input" placeholder="**** **** **** ****" maxlength="19" disabled style="background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.3); color: white; font-family:monospace; font-size:1.4rem; padding-left:0;">
                                 </div>
-                                <div class="input-group">
-                                    <label style="color: #cbd5e1;">Número de Tarjeta</label>
-                                    <div class="input-with-icon">
-                                        <i class="fa-regular fa-credit-card icon-left" style="color: #cbd5e1;"></i>
-                                        <input type="password" id="wallet-number" class="form-input" placeholder="**** **** **** ****" maxlength="19" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
-                                    </div>
-                                </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; margin-top:1.5rem;">
                                     <div class="input-group">
-                                        <label style="color: #cbd5e1;">Vencimiento</label>
-                                        <input type="text" id="wallet-expiry" class="form-input" placeholder="**/**" maxlength="5" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                        <label style="color: #94a3b8; font-size:0.8rem; text-transform:uppercase;">Titular</label>
+                                        <input type="text" id="wallet-holder" class="form-input" placeholder="NOMBRE COMPLETO" disabled style="background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.3); color: white; text-transform:uppercase;">
                                     </div>
                                     <div class="input-group">
-                                        <label style="color: #cbd5e1;">CVV</label>
-                                        <div class="input-with-icon">
-                                            <i class="fa-solid fa-lock icon-left" style="color: #cbd5e1;"></i>
-                                            <input type="password" id="wallet-cvc" class="form-input" placeholder="***" maxlength="4" disabled style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
-                                        </div>
+                                        <label style="color: #94a3b8; font-size:0.8rem; text-transform:uppercase;">EXP</label>
+                                        <input type="text" id="wallet-expiry" class="form-input" placeholder="MM/AA" maxlength="5" disabled style="background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.3); color: white;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label style="color: #94a3b8; font-size:0.8rem; text-transform:uppercase;">CVC</label>
+                                        <input type="password" id="wallet-cvc" class="form-input" placeholder="***" maxlength="4" disabled style="background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.3); color: white;">
                                     </div>
                                 </div>
-                                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-                                    <button type="submit" id="btn-save-wallet" class="btn btn-primary hover-lemna-trigger" style="background: var(--color-success); border: none;" disabled>
-                                        <i class="fa-solid fa-lock"></i> Guardar Cambios
+                                
+                                <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                                    <button type="submit" id="btn-save-wallet" class="btn btn-primary hover-lemna-trigger" style="background: white; color:#0f172a; border: none; font-weight:800;" disabled>
+                                        GUARDAR TARJETA
                                     </button>
                                 </div>
                             </form>
@@ -198,10 +308,11 @@
                     </div>
                     
                     <div id="seccion-mis-pedidos" class="content-section" style="display: none;">
-                        <h2 style="margin-bottom: 1.5rem;">Historial de Pedidos</h2>
+                        <h2><i class="fa-solid fa-clock-rotate-left" style="color:#94a3b8; margin-right:10px;"></i> Historial de Compras</h2>
                         <div id="pedidos-lista-container" class="orders-grid">
-                            <div style="text-align: center; padding: 3rem; color: #999;">
-                                <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...
+                            <div style="text-align: center; padding: 4rem; color: #94a3b8;">
+                                <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                                <p style="margin-top:10px;">Consultando base de datos...</p>
                             </div>
                         </div>
                     </div>
@@ -210,13 +321,12 @@
         </div>
     </main>
 
-<footer class="site-footer-premium">
+    <footer class="site-footer-premium">
         <div class="container">
-            
             <div class="footer-top-row">
                 <div class="region-selector">
                     <span class="region-label">Región / Idioma Actual</span>
-                    <button class="region-btn hover-lemna-trigger">
+                    <button class="region-btn hover-lemna-trigger" onclick="FooterLogic.open('idioma'); return false;">
                         <img src="https://flagcdn.com/24x18/mx.png" alt="México" style="display:inline; width:18px; vertical-align:middle; margin-right:5px;"> 
                         México / Español 
                         <span style="text-decoration: underline; margin-left: 10px; color: #999; font-size: 0.8em;">Cambiar</span>
@@ -225,32 +335,27 @@
             </div>
 
             <div class="footer-middle-grid">
-                
                 <div class="footer-col">
                     <h4 class="footer-heading">Contacto</h4>
-                    <p class="footer-link-text">¿Preguntas?</p>
-                    <a href="panel.html" class="btn btn-light btn-sm hover-lemna-trigger" style="margin-top: 10px; width: fit-content; border-radius: 4px;">Formulario de Contacto</a>
+                    <p class="footer-link-text">¿Necesitas ayuda?</p>
+                    <a href="panel.html" class="btn btn-light btn-sm hover-lemna-trigger" style="margin-top: 10px; width: fit-content; border-radius: 4px;">Soporte Técnico</a>
                 </div>
-
                 <div class="footer-col">
                     <h4 class="footer-heading">Redes Sociales</h4>
-                    <p class="footer-link-text">Ponte en contacto con nosotros a través de las redes sociales.</p>
+                    <p class="footer-link-text">Síguenos.</p>
                     <div class="social-icons-grid">
-                        <a href="https://www.facebook.com/AndyGk237" class="social-box hover-lemna-trigger"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/kevineleomar/" class="social-box hover-lemna-trigger"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.youtube.com/@vegetta777" class="social-box hover-lemna-trigger"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="https://www.linkedin.com/in/jeason-vazquez-555884390/" class="social-box hover-lemna-trigger"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="https://www.facebook.com/AndyGk237" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/kevineleomar/" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/@vegetta777" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-youtube"></i></a>
                     </div>
                 </div>
-
                 <div class="footer-col">
                     <h4 class="footer-heading">Empresa</h4>
                     <ul class="footer-links-list">
-                        <li><a href="#" class="hover-lemna-trigger">Filiales y Servicios</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Sostenibilidad</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Carreras y Empleo</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Prensa y Noticias</a></li>
-                        <li><a href="panel.html" class="hover-lemna-trigger">Acceso Corporativo (Intranet)</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('servicios'); return false;">Filiales y Servicios</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('sostenibilidad'); return false;">Sostenibilidad</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('empleo'); return false;">Carreras y Empleo</a></li>
+                        <li><a href="panel.html" class="hover-lemna-trigger">Acceso Corporativo</a></li>
                     </ul>
                 </div>
             </div>
@@ -260,80 +365,60 @@
             <div class="footer-bottom-block">
                 <div class="footer-legal-links">
                     <span>© 2025 ECOTECHSOLUTIONS México.</span>
-                    <a href="#" class="hover-lemna-trigger">Aspectos Legales.</a>
-                    <a href="#" class="hover-lemna-trigger">Aviso de Privacidad.</a>
-                    <a href="#" class="hover-lemna-trigger">Política de cookies.</a>
-                    <a href="#" class="hover-lemna-trigger">Consulta Términos y condiciones.</a>
-                    <a href="#" class="hover-lemna-trigger">Sistema de denuncia de irregularidades.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('legal'); return false;">Aspectos Legales.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('privacidad'); return false;">Aviso de Privacidad.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('cookies'); return false;">Política de cookies.</a>
                 </div>
-                
                 <div class="footer-disclaimer">
-                    <p>* Conozca los beneficios de los Servicios de Nutrición que EcoTech tiene para usted.</p>
-                    <p>Los precios aquí establecidos son en Moneda Nacional de los Estados Unidos Mexicanos, los cuales incluyen el 16% de Impuesto al Valor Agregado (IVA). Los impuestos pueden variar conforme a la normativa aplicable vigente así como con las disposiciones legales aplicables a cada región geográfica. Para mayor información sobre la disponibilidad, versiones y precios, se recomienda consultar con su Distribuidor autorizado.</p>
-                    <p>Información para nuestros clientes: Debido a la alta demanda en las cadenas logísticas, es posible que existan ligeros retrasos en los envíos masivos. EcoTech estará disponible para proveerle la información más actualizada.</p>
-                    <p>Para consultas generales o quejas, le invitamos a contactarnos a través del Centro de Excelencia marcando al +52 247 155 9218 o enviando un correo electrónico a soporte@ecotech.com.</p>
+                    <p>EcoTech Solutions garantiza la protección de sus datos bancarios mediante encriptación SSL de 256 bits.</p>
                 </div>
-
                 <div class="footer-brand-logo">
                     <img src="images/logo.png" alt="ECOTECH BRAND" class="footer-final-logo">
                     <span class="brand-text">ECOTECHSOLUTIONS</span>
                 </div>
             </div>
-
         </div>
     </footer>
 
-    <div id="security-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
-            <div style="width: 50px; height: 50px; background: #fef3c7; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
-                <i class="fa-solid fa-key"></i>
+    <div id="footer-info-modal" class="info-modal">
+        <div class="info-modal-content">
+            <button class="info-modal-close" onclick="FooterLogic.close()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="f-modal-title" style="margin-bottom: 1.5rem; color: #166534; font-family:'Montserrat', sans-serif;">Título</h3>
+            <div id="f-modal-body" style="font-size: 1rem; color: #475569; line-height: 1.7;">
+                Contenido...
             </div>
-            <h3 style="margin-bottom: 0.5rem;">Confirmar Identidad</h3>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Ingresa tu contraseña para continuar.</p>
+        </div>
+    </div>
+
+    <div id="security-modal" class="info-modal">
+        <div class="info-modal-content" style="max-width: 400px; text-align:center;">
+            <button class="info-modal-close" onclick="window.AuthModal.closeSecurityCheck()"><i class="fa-solid fa-xmark"></i></button>
+            <div style="width: 60px; height: 60px; background: #fff7ed; color: #ea580c; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 1.5rem;">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 style="margin-bottom: 0.5rem; color:#1e293b; font-family:'Montserrat', sans-serif;">Acceso Protegido</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Por tu seguridad, confirma tu contraseña para ver los datos de la tarjeta.</p>
             
             <form id="form-security-check">
                 <div class="input-group">
-                    <input type="password" id="sec-password" class="form-input" placeholder="Contraseña actual" required style="text-align: center;">
+                    <input type="password" id="sec-password" class="form-input" placeholder="Ingresa tu contraseña" required style="text-align: center; font-size:1.1rem; padding:12px;">
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
-                    <button type="button" onclick="window.AuthModal.closeSecurityCheck()" class="btn btn-light hover-lemna-trigger" style="flex: 1;">Cancelar</button>
+                    <button type="button" onclick="window.AuthModal.closeSecurityCheck()" class="btn btn-light hover-lemna-trigger" style="flex: 1; border:1px solid #e2e8f0;">Cancelar</button>
                     <button type="submit" class="btn btn-primary hover-lemna-trigger" style="flex: 1;">Confirmar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="tracking-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="background: white; padding: 0; border-radius: 16px; width: 90%; max-width: 500px; overflow: hidden;">
-            <div style="background: var(--color-primary); padding: 1.5rem; color: white; text-align: center;">
-                <i class="fa-solid fa-truck-fast fa-2x" style="margin-bottom: 10px;"></i>
-                <h3 style="margin: 0; color: white;">Seguimiento de Envío</h3>
-                <p id="track-id-display" style="opacity: 0.9; font-family: monospace; margin-top: 5px;">#TRACK123456</p>
-            </div>
-            <div style="padding: 2rem;">
-                <div id="tracking-timeline" class="tracking-timeline">
-                    </div>
-                <div style="margin-top: 2rem; text-align: center;">
-                    <button onclick="document.getElementById('tracking-modal').style.display='none'" class="btn btn-light hover-lemna-trigger" style="width: 100%;">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="rating-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 16px; width: 90%; max-width: 450px; text-align: center;">
-            <div style="margin-bottom: 1.5rem;">
-                <div style="width: 60px; height: 60px; background: #fef3c7; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
-                    <i class="fa-solid fa-star"></i>
-                </div>
-                <h3>Califica tu Experiencia</h3>
-                <p style="color: #666; font-size: 0.9rem;">¿Qué te pareció tu pedido #<span id="rating-order-id">--</span>?</p>
-            </div>
+    <div id="rating-modal" class="info-modal">
+        <div class="info-modal-content" style="text-align: center; max-width:450px;">
+            <h3 style="font-family:'Montserrat',sans-serif;">Califica tu Compra</h3>
+            <p style="color:#64748b; font-size:0.9rem; margin-bottom:1.5rem;">Pedido #<span id="rating-order-id">--</span></p>
             
             <form id="form-rating">
                 <input type="hidden" id="rating-oid">
-                
-                <div class="star-rating" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 1.5rem; font-size: 2rem; color: #cbd5e1; cursor: pointer;">
+                <div class="star-rating" style="display: flex; justify-content: center; gap: 15px; margin-bottom: 1.5rem; font-size: 2rem; color: #cbd5e1; cursor: pointer;">
                     <i class="fa-solid fa-star star-btn" data-value="1" onclick="window.RateUI.set(1)"></i>
                     <i class="fa-solid fa-star star-btn" data-value="2" onclick="window.RateUI.set(2)"></i>
                     <i class="fa-solid fa-star star-btn" data-value="3" onclick="window.RateUI.set(3)"></i>
@@ -341,14 +426,10 @@
                     <i class="fa-solid fa-star star-btn" data-value="5" onclick="window.RateUI.set(5)"></i>
                 </div>
                 <input type="hidden" id="rating-value" required>
-
-                <div class="input-group">
-                    <textarea id="rating-comment" class="form-input" rows="3" placeholder="Cuéntanos más (opcional)..." style="resize: none;"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
-                    <button type="button" onclick="document.getElementById('rating-modal').style.display='none'" class="btn btn-light hover-lemna-trigger" style="flex: 1;">Cancelar</button>
-                    <button type="submit" class="btn btn-primary hover-lemna-trigger" style="flex: 1;">Enviar Opinión</button>
+                <textarea id="rating-comment" class="form-input" rows="3" placeholder="¿Qué te pareció el producto? (Opcional)" style="margin-bottom:1.5rem;"></textarea>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="document.getElementById('rating-modal').style.display='none'" class="btn btn-light" style="flex:1;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Enviar</button>
                 </div>
             </form>
         </div>
@@ -357,5 +438,34 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="src/main.js"></script>
 
+    <script>
+        const FooterLogic = {
+            content: {
+                'servicios': { title: 'Nuestros Servicios', body: 'EcoTech ofrece consultoría en biorremediación, instalación de sistemas acuapónicos y venta de insumos biológicos certificados.' },
+                'sostenibilidad': { title: 'Compromiso Verde', body: 'Nuestra huella de carbono es negativa. Por cada kilo de producto vendido, purificamos 1000 litros de agua mediante nuestros bio-filtros de Lemna.' },
+                'empleo': { title: 'Únete al Equipo', body: 'Actualmente buscamos ingenieros agrónomos y biólogos marinos. Envía tu CV a rh@ecotech.com.' },
+                'legal': { title: 'Términos Legales', body: 'El uso de este sitio implica la aceptación de nuestros términos. EcoTech Solutions SA de CV está registrada bajo las leyes mexicanas.' },
+                'privacidad': { title: 'Aviso de Privacidad', body: 'Sus datos personales son sagrados. Solo recopilamos información necesaria para el envío y facturación. No compartimos datos con terceros.' },
+                'cookies': { title: 'Política de Cookies', body: 'Usamos cookies esenciales para el funcionamiento del carrito de compras y la sesión de usuario.' },
+                'idioma': { title: 'Región e Idioma', body: 'Actualmente, la plataforma EcoTech Solutions opera exclusivamente en México (MXN). Estamos trabajando en la expansión logística para envíos internacionales (USA/LATAM).' }
+            },
+            open: (key) => {
+                const data = FooterLogic.content[key];
+                if(data) {
+                    document.getElementById('f-modal-title').innerText = data.title;
+                    document.getElementById('f-modal-body').innerText = data.body;
+                    const modal = document.getElementById('footer-info-modal');
+                    modal.style.display = 'flex';
+                    setTimeout(() => modal.classList.add('show'), 10);
+                }
+            },
+            close: () => {
+                const modal = document.getElementById('footer-info-modal');
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
+        };
+        window.FooterLogic = FooterLogic;
+    </script>
 </body>
 </html>

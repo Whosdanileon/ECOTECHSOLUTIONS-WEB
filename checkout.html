@@ -3,26 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proceso de Pago - ECOTECHSOLUTIONS</title>
+    <title>Finalizar Compra - ECOTECHSOLUTIONS</title>
     
     <link rel="stylesheet" href="style.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <style>
-        #map-checkout { 
-            height: 200px; 
-            width: 100%; 
+        /* --- ESTILOS CHECKOUT PREMIUM --- */
+        body { font-family: 'Lato', sans-serif; color: #334155; background-color: #f1f5f9; }
+        
+        h1, h2, h3, h4, label, .btn, .step-badge { font-family: 'Montserrat', sans-serif; }
+
+        .page-section { padding: 3rem 0; min-height: 85vh; }
+
+        /* Login Prompt (Tarjeta) */
+        #checkout-login-prompt {
+            background: white;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Layout Grid */
+        #checkout-container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Columna Izquierda (Formularios) */
+        .checkout-details {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-bottom: 2rem; }
+        h2 { font-size: 1.2rem; margin-bottom: 1.5rem; color: #1e293b; display: flex; align-items: center; gap: 12px; }
+
+        .step-badge {
+            background: var(--color-primary);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .input-group label { font-weight: 600; font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { 
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
             border-radius: 8px; 
-            margin-top: 10px; 
-            border: 2px solid #e2e8f0; 
-            z-index: 1; 
-            background: #f8f9fa;
+            padding: 12px; 
+            transition: all 0.2s;
+        }
+        .form-input:focus { background: white; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1); }
+
+        #map-checkout { 
+            height: 250px; 
+            width: 100%; 
+            border-radius: 12px; 
+            margin-top: 15px; 
+            border: 1px solid #cbd5e1;
+            z-index: 1;
+        }
+
+        /* Métodos de Pago */
+        .payment-methods-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 2rem; }
+        .payment-card-option input { display: none; }
+        .payment-card-content {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #64748b;
+        }
+        .payment-card-content i { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+        .payment-card-content span { font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 0.9rem; }
+        
+        .payment-card-option input:checked + .payment-card-content {
+            border-color: var(--color-primary);
+            background: #f0fdf4;
+            color: #166534;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+        }
+
+        .payment-details-box {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Columna Derecha (Resumen) */
+        .checkout-summary-sidebar {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .summary-header { border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .summary-header h4 { margin: 0; color: #0f172a; font-weight: 700; }
+
+        .summary-total { margin-top: 2rem; }
+        .summary-total p { display: flex; justify-content: space-between; margin-bottom: 0.8rem; color: #64748b; }
+        .summary-total h4 { display: flex; justify-content: space-between; font-size: 1.6rem; color: #0f172a; margin-top: 1rem; padding-top: 1rem; border-top: 2px dashed #e2e8f0; }
+
+        /* Modal Footer */
+        .info-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s; }
+        .info-modal.show { opacity: 1; }
+        .info-modal-content { background: white; width: 90%; max-width: 500px; padding: 2.5rem; border-radius: 16px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s; }
+        .info-modal.show .info-modal-content { transform: translateY(0); }
+        .info-modal-close { position: absolute; top: 20px; right: 20px; border: none; background: #f1f5f9; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        
+        @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+        @media (max-width: 968px) {
+            #checkout-container { grid-template-columns: 1fr; }
+            .checkout-summary-sidebar { position: static; order: -1; margin-bottom: 2rem; }
         }
     </style>
 </head>
@@ -30,15 +158,16 @@
 
     <nav class="main-nav">
         <a href="index.html" class="logo">
-            <img src="images/logo.png" alt="ECOTECHSOLUTIONS Logo" style="height: 40px; width: auto;">
+            <img src="images/logo.png" alt="ECOTECH Logo">
+            <span>ECOTECHSOLUTIONS</span>
         </a>
         <div class="center-nav-links">
-            <a href="index.html#nosotros" class="nav-link hover-lemna-trigger">NOSOTROS</a>
-            <a href="tienda.html" class="nav-link hover-lemna-trigger">PRODUCTO</a>
-            <a href="index.html#galeria" class="nav-link hover-lemna-trigger">GALERÍA</a>
+            <a href="index.html#nosotros" class="nav-link">NOSOTROS</a>
+            <a href="tienda.html" class="nav-link">PRODUCTO</a>
+            <a href="index.html#galeria" class="nav-link">GALERÍA</a>
         </div>
         <div class="right-nav">
-            <a href="checkout.html" class="nav-icon hover-lemna-trigger" id="carrito-link" aria-label="Ver carrito">
+            <a href="checkout.html" class="nav-icon hover-lemna-trigger" id="carrito-link">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 <span id="carrito-contador" class="badge badge-primary" style="display: none;">0</span>
             </a>
@@ -49,58 +178,58 @@
     <main class="page-section">
         <div class="container">
             
-            <div id="checkout-login-prompt" style="display: none; text-align: center; padding: 4rem 1rem;">
-                <i class="fa-solid fa-lock" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-                <h2>Inicia sesión para comprar</h2>
-                <p class="text-large" style="margin-bottom: 2rem;">Necesitamos tus datos para procesar el envío de forma segura.</p>
+            <div id="checkout-login-prompt" style="display: none;">
+                <div style="width: 80px; height: 80px; background: #f1f5f9; color: #94a3b8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.5rem;">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2>Finalizar Compra</h2>
+                <p class="text-large" style="margin-bottom: 2rem; color: #64748b;">Inicia sesión para proteger tus datos y procesar el envío de forma segura.</p>
                 <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <button onclick="window.AuthModal.open('login')" class="btn btn-primary hover-lemna-trigger">Iniciar Sesión</button>
-                    <button onclick="window.AuthModal.open('register')" class="btn btn-light hover-lemna-trigger">Crear Cuenta</button>
+                    <button onclick="window.AuthModal.open('login')" class="btn btn-primary hover-lemna-trigger" style="padding: 12px 25px;">Iniciar Sesión</button>
+                    <button onclick="window.AuthModal.open('register')" class="btn btn-light hover-lemna-trigger" style="padding: 12px 25px;">Crear Cuenta</button>
                 </div>
             </div>
 
-            <div id="checkout-container" class="checkout-layout-modern" style="display: none;">
+            <div id="checkout-container" style="display: none;">
                 
                 <div class="checkout-details">
-                    <h1 style="margin-bottom: 1.5rem;">Finalizar Compra</h1>
+                    <h1><i class="fa-solid fa-lock" style="color:var(--color-primary); margin-right:10px;"></i> Pago Seguro</h1>
                     
                     <form id="form-checkout">
-                        <div class="checkout-section" style="margin-bottom: 2rem;">
-                            <h2 style="font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
-                                <span class="step-badge">1</span> Datos de Envío
-                            </h2>
+                        <div class="checkout-section" style="margin-bottom: 3rem;">
+                            <h2><span class="step-badge">1</span> Datos de Envío</h2>
+                            
                             <div class="input-group">
-                                <label for="checkout-name">Nombre Completo</label>
-                                <input type="text" id="checkout-name" class="form-input" required placeholder="Ej. Juan Pérez">
+                                <label for="checkout-name">Destinatario</label>
+                                <input type="text" id="checkout-name" class="form-input" required placeholder="Nombre completo de quien recibe">
                             </div>
+                            
                             <div class="input-group">
                                 <label for="checkout-address">Dirección de Entrega</label>
-                                <textarea id="checkout-address" class="form-input" required placeholder="Calle, número, colonia, código postal, ciudad" rows="3"></textarea>
+                                <textarea id="checkout-address" class="form-input" required placeholder="Calle, número, colonia, código postal, ciudad" rows="2"></textarea>
                                 
-                                <div style="margin-top: 15px;">
-                                    <label style="font-size:0.9rem; color:#666; font-weight:600;"><i class="fa-solid fa-map-location-dot"></i> Ubicación confirmada:</label>
+                                <div style="margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                    <label style="color:#166534; display:flex; align-items:center; gap:8px;">
+                                        <i class="fa-solid fa-map-pin"></i> Confirmación de Ubicación
+                                    </label>
                                     <div id="map-checkout"></div>
-                                    <small style="color:#999; display:block; margin-top:5px;">* Para cambiar la ubicación del pin, ve a "Mi Cuenta".</small>
+                                    <small style="color:#94a3b8; display:block; margin-top:8px; font-size:0.8rem;">* La ubicación se toma de tu perfil. Para cambiarla, ve a "Mi Cuenta".</small>
                                 </div>
                             </div>
                              <div class="input-group">
                                 <label for="checkout-phone">Teléfono de Contacto</label>
-                                <input type="tel" id="checkout-phone" class="form-input" required placeholder="Ej. 55 1234 5678">
+                                <input type="tel" id="checkout-phone" class="form-input" required placeholder="10 dígitos (Para el repartidor)">
                             </div>
                         </div>
 
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 2rem 0;">
-
                         <div class="checkout-section">
-                            <h2 style="font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
-                                <span class="step-badge">2</span> Método de Pago
-                            </h2>
+                            <h2><span class="step-badge">2</span> Método de Pago</h2>
                             
-                            <div class="payment-methods-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="payment-methods-grid">
                                 <label class="payment-card-option hover-lemna-trigger">
                                     <input type="radio" name="payment-method" value="card" checked onchange="window.togglePaymentMethod('card')">
                                     <div class="payment-card-content">
-                                        <i class="fa-solid fa-credit-card"></i>
+                                        <i class="fa-regular fa-credit-card"></i>
                                         <span>Tarjeta Crédito/Débito</span>
                                     </div>
                                 </label>
@@ -116,9 +245,9 @@
                             <div id="payment-form-card" class="payment-details-box">
                                 <div class="input-group">
                                     <label>Número de Tarjeta</label>
-                                    <div class="input-with-icon">
-                                        <i class="fa-brands fa-cc-visa icon-left"></i>
-                                        <input type="text" id="card-number" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19">
+                                    <div class="input-with-icon" style="position:relative;">
+                                        <i class="fa-brands fa-cc-visa icon-left" style="position:absolute; left:12px; top:12px; color:#94a3b8; font-size:1.2rem;"></i>
+                                        <input type="text" id="card-number" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" style="padding-left:45px;">
                                     </div>
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -127,10 +256,10 @@
                                         <input type="text" id="card-expiry" class="form-input" placeholder="MM/AA" maxlength="5">
                                     </div>
                                     <div class="input-group">
-                                        <label>CVV</label>
-                                        <div class="input-with-icon">
-                                            <i class="fa-solid fa-lock icon-left"></i>
-                                            <input type="password" id="card-cvc" class="form-input" placeholder="123" maxlength="4">
+                                        <label>CVC</label>
+                                        <div class="input-with-icon" style="position:relative;">
+                                            <i class="fa-solid fa-lock icon-left" style="position:absolute; left:12px; top:12px; color:#94a3b8;"></i>
+                                            <input type="password" id="card-cvc" class="form-input" placeholder="123" maxlength="4" style="padding-left:35px;">
                                         </div>
                                     </div>
                                 </div>
@@ -140,12 +269,12 @@
                                 </div>
                             </div>
 
-                            <div id="payment-info-transfer" class="payment-details-box" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 8px;">
-                                <div style="display: flex; gap: 10px;">
-                                    <i class="fa-solid fa-circle-info" style="color: var(--color-primary); margin-top: 3px;"></i>
+                            <div id="payment-info-transfer" class="payment-details-box" style="display: none; background: #f0fdf4; border-color: #bbf7d0;">
+                                <div style="display: flex; gap: 15px;">
+                                    <i class="fa-solid fa-circle-info" style="color: var(--color-success); font-size: 1.5rem; margin-top: 2px;"></i>
                                     <div>
-                                        <strong style="color: var(--color-primary-dark);">Instrucciones:</strong>
-                                        <p style="font-size: 0.9rem; margin: 5px 0 0;">Al confirmar el pedido, recibirás un correo con la CLABE interbancaria única para realizar tu pago. Tu pedido se procesará una vez confirmado el depósito.</p>
+                                        <strong style="color: #166534; font-family:'Montserrat',sans-serif;">Instrucciones SPEI:</strong>
+                                        <p style="font-size: 0.95rem; margin: 5px 0 0; color:#334155;">Al confirmar el pedido, recibirás un correo con la CLABE interbancaria única. Tu pedido se procesará automáticamente una vez detectado el pago (aprox. 15 min).</p>
                                     </div>
                                 </div>
                             </div>
@@ -154,35 +283,36 @@
                 </div>
 
                 <aside class="checkout-summary-sidebar">
-                    <div class="summary-details">
-                        <h4 style="margin-bottom: 1.5rem;">Resumen del Pedido</h4>
-                        
-                        <div class="summary-items-list" id="checkout-items" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
-                            <p style="color: #666; font-style: italic;">Cargando productos...</p>
-                        </div>
-                        
-                        <div class="divider" style="height: 1px; background: #eee; margin: 1rem 0;"></div>
-                        
-                        <div class="summary-total">
-                            <p style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span>Subtotal:</span> <span id="checkout-subtotal">$0.00</span>
-                            </p>
-                            <p style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                                <span>Envío:</span> <span id="checkout-envio" style="color: var(--color-success);">Gratis</span>
-                            </p>
-                            <div class="divider" style="height: 1px; background: #eee; margin: 1rem 0;"></div>
-                            <h4 style="display: flex; justify-content: space-between; font-size: 1.5rem;">
-                                <span>Total:</span> <span id="checkout-total" style="color: var(--color-primary);">$0.00</span>
-                            </h4>
-                        </div>
-                        
-                        <button type="submit" form="form-checkout" id="btn-confirmar-compra" class="btn btn-primary btn-lg hover-lemna-trigger" style="width: 100%; margin-top: 1.5rem;">
-                            <i class="fa-solid fa-lock"></i> Pagar Ahora
-                        </button>
-                        
-                        <p style="text-align: center; font-size: 0.8rem; color: #999; margin-top: 1rem;">
-                            <i class="fa-solid fa-shield-halved"></i> Pagos procesados de forma segura SSL
+                    <div class="summary-header">
+                        <h4>Resumen del Pedido</h4>
+                    </div>
+                    
+                    <div id="checkout-items" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem; color:#475569; font-size:0.95rem;">
+                        <p style="color: #94a3b8; font-style: italic; text-align:center;">Cargando...</p>
+                    </div>
+                    
+                    <div class="summary-total">
+                        <p>
+                            <span>Subtotal:</span> <span id="checkout-subtotal" style="font-weight:600; color:#0f172a;">$0.00</span>
                         </p>
+                        <p>
+                            <span>Envío:</span> <span id="checkout-envio" style="color: var(--color-success); font-weight:700;">GRATIS</span>
+                        </p>
+                        
+                        <h4>
+                            <span>Total:</span> <span id="checkout-total" style="color: var(--color-primary);">$0.00</span>
+                        </h4>
+                    </div>
+                    
+                    <button type="submit" form="form-checkout" id="btn-confirmar-compra" class="btn btn-primary btn-lg hover-lemna-trigger" style="width: 100%; margin-top: 1.5rem; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);">
+                        <i class="fa-solid fa-shield-halved"></i> PAGAR AHORA
+                    </button>
+                    
+                    <div style="margin-top: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                        <i class="fa-brands fa-cc-visa" style="font-size: 1.5rem; margin: 0 5px;"></i>
+                        <i class="fa-brands fa-cc-mastercard" style="font-size: 1.5rem; margin: 0 5px;"></i>
+                        <i class="fa-brands fa-cc-amex" style="font-size: 1.5rem; margin: 0 5px;"></i>
+                        <p style="margin-top:5px;">Pagos encriptados con SSL 256-bit</p>
                     </div>
                 </aside>
             </div>
@@ -191,11 +321,10 @@
 
     <footer class="site-footer-premium">
         <div class="container">
-            
             <div class="footer-top-row">
                 <div class="region-selector">
                     <span class="region-label">Región / Idioma Actual</span>
-                    <button class="region-btn hover-lemna-trigger">
+                    <button class="region-btn hover-lemna-trigger" onclick="FooterLogic.open('idioma'); return false;">
                         <img src="https://flagcdn.com/24x18/mx.png" alt="México" style="display:inline; width:18px; vertical-align:middle; margin-right:5px;"> 
                         México / Español 
                         <span style="text-decoration: underline; margin-left: 10px; color: #999; font-size: 0.8em;">Cambiar</span>
@@ -204,32 +333,27 @@
             </div>
 
             <div class="footer-middle-grid">
-                
                 <div class="footer-col">
                     <h4 class="footer-heading">Contacto</h4>
-                    <p class="footer-link-text">¿Preguntas?</p>
-                    <a href="panel.html" class="btn btn-light btn-sm hover-lemna-trigger" style="margin-top: 10px; width: fit-content; border-radius: 4px;">Formulario de Contacto</a>
+                    <p class="footer-link-text">¿Necesitas ayuda con tu pago?</p>
+                    <a href="panel.html" class="btn btn-light btn-sm hover-lemna-trigger" style="margin-top: 10px; width: fit-content; border-radius: 4px;">Soporte de Ventas</a>
                 </div>
-
                 <div class="footer-col">
                     <h4 class="footer-heading">Redes Sociales</h4>
-                    <p class="footer-link-text">Ponte en contacto con nosotros a través de las redes sociales.</p>
+                    <p class="footer-link-text">Síguenos.</p>
                     <div class="social-icons-grid">
-                        <a href="https://www.facebook.com/AndyGk237" class="social-box hover-lemna-trigger"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/kevineleomar/" class="social-box hover-lemna-trigger"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.youtube.com/@vegetta777" class="social-box hover-lemna-trigger"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="https://www.linkedin.com/in/jeason-vazquez-555884390/" class="social-box hover-lemna-trigger"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="https://www.facebook.com/AndyGk237" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/kevineleomar/" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/@vegetta777" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-youtube"></i></a>
                     </div>
                 </div>
-
                 <div class="footer-col">
                     <h4 class="footer-heading">Empresa</h4>
                     <ul class="footer-links-list">
-                        <li><a href="#" class="hover-lemna-trigger">Filiales y Servicios</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Sostenibilidad</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Carreras y Empleo</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Prensa y Noticias</a></li>
-                        <li><a href="panel.html" class="hover-lemna-trigger">Acceso Corporativo (Intranet)</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('servicios'); return false;">Filiales y Servicios</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('sostenibilidad'); return false;">Sostenibilidad</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('empleo'); return false;">Carreras y Empleo</a></li>
+                        <li><a href="panel.html" class="hover-lemna-trigger">Acceso Corporativo</a></li>
                     </ul>
                 </div>
             </div>
@@ -239,44 +363,48 @@
             <div class="footer-bottom-block">
                 <div class="footer-legal-links">
                     <span>© 2025 ECOTECHSOLUTIONS México.</span>
-                    <a href="#" class="hover-lemna-trigger">Aspectos Legales.</a>
-                    <a href="#" class="hover-lemna-trigger">Aviso de Privacidad.</a>
-                    <a href="#" class="hover-lemna-trigger">Política de cookies.</a>
-                    <a href="#" class="hover-lemna-trigger">Consulta Términos y condiciones.</a>
-                    <a href="#" class="hover-lemna-trigger">Sistema de denuncia de irregularidades.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('legal'); return false;">Aspectos Legales.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('privacidad'); return false;">Aviso de Privacidad.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('cookies'); return false;">Política de cookies.</a>
                 </div>
-                
                 <div class="footer-disclaimer">
-                    <p>* Conozca los beneficios de los Servicios de Nutrición que EcoTech tiene para usted.</p>
-                    <p>Los precios aquí establecidos son en Moneda Nacional de los Estados Unidos Mexicanos, los cuales incluyen el 16% de Impuesto al Valor Agregado (IVA). Los impuestos pueden variar conforme a la normativa aplicable vigente así como con las disposiciones legales aplicables a cada región geográfica. Para mayor información sobre la disponibilidad, versiones y precios, se recomienda consultar con su Distribuidor autorizado.</p>
-                    <p>Información para nuestros clientes: Debido a la alta demanda en las cadenas logísticas, es posible que existan ligeros retrasos en los envíos masivos. EcoTech estará disponible para proveerle la información más actualizada.</p>
-                    <p>Para consultas generales o quejas, le invitamos a contactarnos a través del Centro de Excelencia marcando al +52 247 155 9218 o enviando un correo electrónico a soporte@ecotech.com.</p>
+                    <p>EcoTech Solutions no almacena el código de seguridad (CVC) de sus tarjetas. Todas las transacciones son procesadas por una pasarela de pago certificada.</p>
                 </div>
-
                 <div class="footer-brand-logo">
                     <img src="images/logo.png" alt="ECOTECH BRAND" class="footer-final-logo">
                     <span class="brand-text">ECOTECHSOLUTIONS</span>
                 </div>
             </div>
-
         </div>
     </footer>
 
-    <div id="payment-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="background: white; padding: 2.5rem; border-radius: 16px; width: 90%; max-width: 400px; text-align: center;">
-            <div id="payment-loading-state">
-                <div class="spinner-payment" style="width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid var(--color-primary); border-radius: 50%; margin: 0 auto 1.5rem; animation: spin 1s linear infinite;"></div>
-                <h3 style="margin-bottom: 0.5rem;">Procesando Pago...</h3>
-                <p style="color: #666; font-size: 0.9rem;">Conectando de forma segura con el banco...</p>
+    <div id="footer-info-modal" class="info-modal">
+        <div class="info-modal-content">
+            <button class="info-modal-close" onclick="FooterLogic.close()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="f-modal-title" style="margin-bottom: 1.5rem; color: #166534; font-family:'Montserrat', sans-serif;">Título</h3>
+            <div id="f-modal-body" style="font-size: 1rem; color: #475569; line-height: 1.7;">
+                Contenido...
             </div>
         </div>
     </div>
+
+    <div id="payment-modal" class="info-modal" style="background: rgba(255,255,255,0.9);">
+        <div class="info-modal-content" style="text-align: center; box-shadow:none; background:transparent;">
+            <div id="payment-loading-state">
+                <div class="spinner-payment" style="width: 60px; height: 60px; border: 5px solid #e2e8f0; border-top: 5px solid var(--color-primary); border-radius: 50%; margin: 0 auto 2rem; animation: spin 1s linear infinite;"></div>
+                <h2 style="margin-bottom: 0.5rem; font-size:1.5rem;">Procesando Pago...</h2>
+                <p style="color: #64748b; font-size: 1rem;">Conectando de forma segura con el banco...</p>
+            </div>
+        </div>
+    </div>
+
+    <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="src/main.js"></script>
     
     <script>
-        // Lógica simple de UI para métodos de pago (sin romper módulos)
+        // Lógica de Tabs de Pago
         window.togglePaymentMethod = function(method) {
             const cardForm = document.getElementById('payment-form-card');
             const transferInfo = document.getElementById('payment-info-transfer');
@@ -288,10 +416,39 @@
                 cardInputs.forEach(i => i.required = true);
             } else {
                 cardForm.style.display = 'none';
-                transferInfo.style.display = 'block';
+                transferInfo.style.display = 'flex'; // Flex para que se vea el icono al lado
                 cardInputs.forEach(i => i.required = false);
             }
         };
+
+        // Lógica Footer
+        const FooterLogic = {
+            content: {
+                'servicios': { title: 'Nuestros Servicios', body: 'EcoTech ofrece consultoría en biorremediación, instalación de sistemas acuapónicos y venta de insumos biológicos certificados.' },
+                'sostenibilidad': { title: 'Compromiso Verde', body: 'Nuestra huella de carbono es negativa. Por cada kilo de producto vendido, purificamos 1000 litros de agua mediante nuestros bio-filtros de Lemna.' },
+                'empleo': { title: 'Únete al Equipo', body: 'Actualmente buscamos ingenieros agrónomos y biólogos marinos. Envía tu CV a rh@ecotech.com.' },
+                'legal': { title: 'Términos Legales', body: 'El uso de este sitio implica la aceptación de nuestros términos. EcoTech Solutions SA de CV está registrada bajo las leyes mexicanas.' },
+                'privacidad': { title: 'Aviso de Privacidad', body: 'Sus datos personales son sagrados. Solo recopilamos información necesaria para el envío y facturación. No compartimos datos con terceros.' },
+                'cookies': { title: 'Política de Cookies', body: 'Usamos cookies esenciales para el funcionamiento del carrito de compras y la sesión de usuario.' },
+                'idioma': { title: 'Región e Idioma', body: 'Actualmente, la plataforma EcoTech Solutions opera exclusivamente en México (MXN). Estamos trabajando en la expansión logística para envíos internacionales (USA/LATAM).' }
+            },
+            open: (key) => {
+                const data = FooterLogic.content[key];
+                if(data) {
+                    document.getElementById('f-modal-title').innerText = data.title;
+                    document.getElementById('f-modal-body').innerText = data.body;
+                    const modal = document.getElementById('footer-info-modal');
+                    modal.style.display = 'flex';
+                    setTimeout(() => modal.classList.add('show'), 10);
+                }
+            },
+            close: () => {
+                const modal = document.getElementById('footer-info-modal');
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
+        };
+        window.FooterLogic = FooterLogic;
     </script>
 </body>
 </html>

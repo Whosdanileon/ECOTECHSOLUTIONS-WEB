@@ -3,35 +3,53 @@ import { db } from './db.js';
 
 // --- Formateadores ---
 export const formatCurrency = (amount) => {
+    const val = parseFloat(amount);
+    if (isNaN(val)) return '$0.00';
     return new Intl.NumberFormat('es-MX', {
         style: 'currency',
         currency: 'MXN'
-    }).format(amount);
+    }).format(val);
 };
 
 export const formatTime = (dateStr) => {
-    return dateStr ? new Date(dateStr).toLocaleTimeString('es-MX', {
+    if (!dateStr) return '--:--';
+    return new Date(dateStr).toLocaleTimeString('es-MX', {
         hour: '2-digit',
         minute: '2-digit'
-    }) : '--:--';
+    });
 };
 
 export const escapeHtml = (text) => {
-    if (!text) return '';
-    return text.toString().replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    })[m]);
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
 };
 
 export const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// --- Utilidades de Interfaz (UI) ---
+// --- Utilidades de Interfaz (UI) MEJORADAS ---
 export const notify = {
+    // Función interna para limpiar notificaciones viejas atascadas
+    garbageCollect: () => {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+        
+        const now = Date.now();
+        // Buscar notificaciones que lleven más de 10 segundos vivas (zombies)
+        Array.from(container.children).forEach(child => {
+            const timestamp = parseInt(child.dataset.time || '0');
+            // Si es 'loading' y lleva mucho tiempo, o si ya no tiene la clase show
+            if (now - timestamp > 10000 || !child.classList.contains('show')) {
+                child.remove();
+            }
+        });
+    },
+
     show: (msg, type = 'info') => {
+        // 1. Limpieza preventiva antes de mostrar una nueva
+        notify.garbageCollect();
+
         let container = document.getElementById('notification-container');
         if (!container) {
             container = document.createElement('div');
@@ -39,23 +57,53 @@ export const notify = {
             container.className = 'notification-container';
             document.body.appendChild(container);
         }
+        
         const div = document.createElement('div');
-        div.className = `notification notification-${type} show`;
-        div.innerHTML = `<div class="notification-content">${msg}</div>`;
+        div.className = `notification notification-${type}`;
+        div.dataset.time = Date.now(); // Marca de tiempo para el Garbage Collector
+        
+        div.innerHTML = `
+            <div class="notification-icon">
+                ${type === 'success' ? '<i class="fa-solid fa-check-circle"></i>' : 
+                  type === 'error' ? '<i class="fa-solid fa-circle-exclamation"></i>' : 
+                  type === 'loading' ? '<i class="fa-solid fa-circle-notch fa-spin"></i>' : 
+                  '<i class="fa-solid fa-info-circle"></i>'}
+            </div>
+            <div class="notification-content">${escapeHtml(msg)}</div>
+        `;
+        
         container.appendChild(div);
         
+        // Forzar reflow
+        void div.offsetWidth; 
+        div.classList.add('show');
+        
+        // Auto-cierre para mensajes normales
         if (type !== 'loading') {
             setTimeout(() => {
-                div.classList.remove('show');
-                setTimeout(() => div.remove(), 300);
+                notify.close(div);
             }, 4000);
         }
+        
         return div;
     },
+    
     success: (m) => notify.show(m, 'success'),
     error: (m) => notify.show(m, 'error'),
     loading: (m) => notify.show(m, 'loading'),
-    close: (div) => { if (div) div.remove(); }
+    
+    close: (div) => { 
+        if (div && div.parentNode) {
+            div.classList.remove('show');
+            setTimeout(() => {
+                if (div.parentNode) div.remove();
+            }, 300);
+        } else {
+            // Si por alguna razón pasaron null o el div ya no existe,
+            // ejecutamos una limpieza general por si acaso.
+            notify.garbageCollect();
+        }
+    }
 };
 
 export const confirmModal = (title, message, onConfirm, btnClass = 'btn-primary-modal-danger', btnText = 'Confirmar') => {
@@ -63,155 +111,223 @@ export const confirmModal = (title, message, onConfirm, btnClass = 'btn-primary-
     if (existing) existing.remove();
 
     const modalHTML = `
-        <div id="custom-confirm-modal" class="modal-overlay" style="display:flex; opacity:1;">
+        <div id="custom-confirm-modal" class="modal-overlay" style="display:flex; opacity:0; transition: opacity 0.2s;">
             <div class="modal-content-premium">
                 <div class="modal-icon-warning">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <h3>${title}</h3>
-                <p>${message}</p>
+                <h3>${escapeHtml(title)}</h3>
+                <p>${escapeHtml(message)}</p>
                 <div class="modal-actions">
                     <button id="btn-modal-cancel" class="btn-secondary-modal">Cancelar</button>
-                    <button id="btn-modal-confirm" class="${btnClass}">${btnText}</button>
+                    <button id="btn-modal-confirm" class="${btnClass}">${escapeHtml(btnText)}</button>
                 </div>
             </div>
         </div>`;
     
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    requestAnimationFrame(() => document.getElementById('custom-confirm-modal').style.opacity = '1');
     
-    document.getElementById('btn-modal-cancel').onclick = () => {
-        document.getElementById('custom-confirm-modal').remove();
+    const closeModal = () => {
+        const m = document.getElementById('custom-confirm-modal');
+        if(m) { m.style.opacity = '0'; setTimeout(() => m.remove(), 200); }
     };
     
-    document.getElementById('btn-modal-confirm').onclick = () => { 
-        onConfirm(); 
-        document.getElementById('custom-confirm-modal').remove(); 
+    document.getElementById('btn-modal-cancel').onclick = closeModal;
+    document.getElementById('btn-modal-confirm').onclick = async () => { 
+        const btn = document.getElementById('btn-modal-confirm');
+        btn.disabled = true; btn.innerText = 'Procesando...';
+        try { await onConfirm(); } catch (e) { console.error(e); } finally { closeModal(); }
     };
 };
 
-// --- FIX 4.1: Generador de Recibos "Anti-Bloqueo" ---
+// --- RECIBO CORPORATIVO ECOTECH (Versión Print-Perfect) ---
 export const printReceipt = async (orderId) => {
-    // 1. Abrir ventana INMEDIATAMENTE (antes del await) para evitar bloqueo del navegador
     const win = window.open('', '_blank');
-    
-    if (!win) {
-        return notify.error('Habilite las ventanas emergentes para ver el recibo.');
-    }
+    if (!win) return notify.error('Habilite las ventanas emergentes');
 
-    // 2. Poner un loader visual en la nueva ventana mientras cargan los datos
-    win.document.write(`
-        <html><head><title>Generando...</title></head>
-        <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#666;">
-            <div style="text-align:center;">
-                <div style="font-size:30px;margin-bottom:10px;">📄</div>
-                Cargando documento...
-            </div>
-        </body></html>
-    `);
+    win.document.write('<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f0f0;">Generando documento digital...</div>');
 
-    const load = notify.loading('Generando documento...');
+    // Referencia para cerrar
+    const load = notify.loading('Generando recibo...');
     
     try {
-        // 3. Consultamos datos
         const { data: order, error } = await db
             .from('pedidos')
-            .select('*, perfiles(nombre_completo, email, telefono, direccion)')
+            .select('*, perfiles(nombre_completo, email, direccion, telefono)')
             .eq('id', orderId)
             .single();
             
-        notify.close(load);
-        
-        if(error || !order) {
-            win.close(); // Cerramos si hubo error
-            return notify.error('Error al recuperar el pedido');
-        }
+        if(error || !order) throw new Error('Error al obtener datos');
 
-        // 4. Generamos contenido
-        const itemsHtml = (order.items || []).map(item => `
-            <tr>
-                <td style="padding:12px; border-bottom:1px solid #eee;">${item.nombre || 'Producto'}</td>
-                <td style="padding:12px; border-bottom:1px solid #eee; text-align: center;">${item.cantidad}</td>
-                <td style="padding:12px; border-bottom:1px solid #eee; text-align: right;">${formatCurrency(item.precio)}</td>
-                <td style="padding:12px; border-bottom:1px solid #eee; text-align: right;">${formatCurrency(item.precio * item.cantidad)}</td>
+        const subtotal = order.total / 1.16;
+        const iva = order.total - subtotal;
+        const metodoPago = order.datos_envio?.metodo === 'card' ? '04 - Tarjeta de crédito' : '03 - Transferencia electrónica';
+        const fecha = new Date(order.created_at).toLocaleDateString('es-MX');
+        const hora = new Date(order.created_at).toLocaleTimeString('es-MX');
+        
+        const qrData = 'https://whosdanileon.github.io/ECOTECHSOLUTIONS/';
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+
+        const itemsRows = (order.items || []).map((item, i) => `
+            <tr style="background: ${i % 2 === 0 ? '#fff' : '#f9f9f9'}">
+                <td style="padding:8px; border:1px solid #ddd; font-size:0.85em;">${item.cantidad}</td>
+                <td style="padding:8px; border:1px solid #ddd; font-size:0.85em;">PZA</td>
+                <td style="padding:8px; border:1px solid #ddd; font-size:0.85em;">${escapeHtml(item.nombre)}</td>
+                <td style="padding:8px; border:1px solid #ddd; text-align:right; font-size:0.85em;">${formatCurrency(item.precio)}</td>
+                <td style="padding:8px; border:1px solid #ddd; text-align:right; font-size:0.85em;">${formatCurrency(item.precio * item.cantidad)}</td>
             </tr>
         `).join('');
 
         const receiptHTML = `
-        <html>
+        <!DOCTYPE html>
+        <html lang="es">
         <head>
-            <title>Recibo #${order.id}</title>
+            <meta charset="UTF-8">
+            <title>Recibo #${orderId} - EcoTech</title>
             <style>
-                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; max-width: 850px; margin: 0 auto; padding: 40px; line-height: 1.6; }
-                .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px; border-bottom: 4px solid #4CAF50; padding-bottom: 20px; }
-                .company-info h2 { margin: 0; color: #2e7d32; font-size: 26px; text-transform: uppercase; }
-                .invoice-info { text-align: right; }
-                .invoice-info h1 { margin: 0; font-size: 32px; color: #444; letter-spacing: 2px; }
-                .status-badge { display: inline-block; padding: 8px 16px; background: #eee; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 0.9em; margin-top: 10px; letter-spacing: 1px; }
-                .columns { display: flex; justify-content: space-between; margin-bottom: 50px; }
-                .col { width: 45%; }
-                .col h3 { font-size: 14px; text-transform: uppercase; color: #999; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
-                .table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-                .table th { text-align: left; padding: 15px 10px; background: #f8f9fa; border-bottom: 2px solid #ddd; font-size: 0.9em; text-transform: uppercase; color: #666; font-weight: 700; }
-                .total-section { text-align: right; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
-                .total-row { font-size: 1.1em; margin: 8px 0; color: #666; }
-                .total-final { font-size: 2.2em; color: #2e7d32; font-weight: bold; margin-top: 15px; }
-                .footer { margin-top: 80px; text-align: center; font-size: 0.85em; color: #888; border-top: 1px solid #eee; padding-top: 30px; }
-                @media print { .no-print { display: none; } body { padding: 0; } }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 40px; background: #525659; }
+                .page { background: white; max-width: 850px; margin: 0 auto; padding: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); min-height: 1000px; position: relative; box-sizing: border-box; }
+                
+                .header { display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 4px solid #4CAF50; padding-bottom: 20px; }
+                .brand-area { display: flex; align-items: center; gap: 15px; }
+                .brand-area img { height: 70px; }
+                .brand-text h1 { margin: 0; color: #2e7d32; font-size: 1.8em; text-transform: uppercase; letter-spacing: 1px; }
+                .brand-text p { margin: 5px 0 0; font-size: 0.8em; color: #555; line-height: 1.4; }
+                
+                .invoice-meta { text-align: right; }
+                .invoice-label { font-size: 2em; font-weight: 800; color: #ccc; letter-spacing: 2px; line-height: 1; margin: 0; }
+                .meta-table { margin-top: 10px; font-size: 0.85em; border-collapse: collapse; float: right; }
+                .meta-table td { padding: 3px 8px; border: 1px solid #eee; }
+                .meta-header { background: #f1f8e9; font-weight: bold; color: #33691e; }
+                
+                .client-box { background: #f8f9fa; border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 30px; font-size: 0.9em; display: flex; justify-content: space-between; }
+                .client-col h3 { margin: 0 0 5px 0; color: #2e7d32; font-size: 0.9em; text-transform: uppercase; }
+                
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th { background: #2e7d32; color: white; padding: 10px; font-size: 0.8em; text-align: center; font-weight: bold; }
+                
+                .footer-grid { display: flex; gap: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+                .qr-container { text-align: center; width: 120px; }
+                .qr-container img { width: 100px; height: 100px; }
+                .legal-text { flex: 1; font-size: 0.65em; color: #777; text-align: justify; line-height: 1.4; }
+                
+                .totals-box { width: 250px; }
+                .t-row { display: flex; justify-content: space-between; font-size: 0.9em; padding: 5px 0; color: #555; }
+                .t-total { font-size: 1.3em; font-weight: 800; color: #2e7d32; border-top: 2px solid #2e7d32; padding-top: 10px; margin-top: 5px; }
+                
+                .btn-print { position: fixed; bottom: 30px; right: 30px; background: #2e7d32; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; z-index: 1000; }
+                .btn-print:hover { transform: scale(1.05); }
+                
+                @media print {
+                    @page { margin: 0; size: auto; }
+                    body { background: white; padding: 0; margin: 0; }
+                    .page { box-shadow: none; margin: 0; padding: 20px 40px; width: 100%; max-width: none; }
+                    .no-print, .btn-print { display: none !important; }
+                    .header, .client-box, table, .footer-grid { width: 100%; }
+                    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="company-info">
-                    <h2>ECOTECH SOLUTIONS</h2>
-                    <p>Parque Industrial Tlaxcala 2000<br>Tlaxcala, México<br>RFC: ECO230101MX1<br>contacto@ecotech.com</p>
+            <div class="page">
+                <div class="header">
+                    <div class="brand-area">
+                        <img src="images/logo.png" alt="EcoTech Logo">
+                        <div class="brand-text">
+                            <h1>EcoTech Solutions</h1>
+                            <p>
+                                <strong>Régimen Fiscal:</strong> 601 - General de Ley Personas Morales<br>
+                                <strong>RFC:</strong> ECO230101MX1<br>
+                                Carr. a El Carmen Xalpatlahuaya s/n<br>
+                                90500 Huamantla, Tlaxcala, México
+                            </p>
+                        </div>
+                    </div>
+                    <div class="invoice-meta">
+                        <h2 class="invoice-label">RECIBO</h2>
+                        <table class="meta-table">
+                            <tr><td class="meta-header">Folio</td><td>#${String(orderId).padStart(6, '0')}</td></tr>
+                            <tr><td class="meta-header">Fecha</td><td>${fecha}</td></tr>
+                            <tr><td class="meta-header">Hora</td><td>${hora}</td></tr>
+                            <tr><td class="meta-header">Estado</td><td style="color:${order.estado === 'Pagado' ? 'green' : 'orange'}">${order.estado}</td></tr>
+                        </table>
+                    </div>
                 </div>
-                <div class="invoice-info">
-                    <h1>RECIBO</h1>
-                    <p><strong>Folio:</strong> #${String(order.id).padStart(8, '0')}</p>
-                    <p><strong>Fecha:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
-                    <div class="status-badge">${order.estado}</div>
+
+                <div class="client-box">
+                    <div class="client-col">
+                        <h3>Facturar A:</h3>
+                        <strong>${escapeHtml(order.perfiles?.nombre_completo.toUpperCase())}</strong><br>
+                        ${escapeHtml(order.datos_envio?.direccion || 'Dirección no registrada')}<br>
+                        Tel: ${escapeHtml(order.datos_envio?.telefono || order.perfiles?.telefono || 'N/A')}<br>
+                        ${escapeHtml(order.perfiles?.email)}
+                    </div>
+                    <div class="client-col" style="text-align:right;">
+                        <h3>Datos de la Transacción:</h3>
+                        <strong>Método:</strong> PUE - Pago en una sola exhibición<br>
+                        <strong>Forma:</strong> ${metodoPago}<br>
+                        <strong>Moneda:</strong> MXN - Peso Mexicano<br>
+                        <strong>Uso CFDI:</strong> G03 - Gastos en general
+                    </div>
                 </div>
-            </div>
 
-            <div class="columns">
-                <div class="col">
-                    <h3>Cliente</h3>
-                    <strong>${order.datos_envio?.nombre || order.perfiles?.nombre_completo || 'Cliente'}</strong><br>
-                    ${order.datos_envio?.direccion || order.perfiles?.direccion || 'Dirección no registrada'}<br>
-                    ${order.perfiles?.email || ''}
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="10%">CANT</th>
+                            <th width="10%">UNIDAD</th>
+                            <th width="50%">DESCRIPCIÓN</th>
+                            <th width="15%">P. UNIT</th>
+                            <th width="15%">IMPORTE</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsRows}</tbody>
+                </table>
+
+                <div class="footer-grid">
+                    <div class="qr-container">
+                        <img src="${qrUrl}" alt="QR Validación">
+                    </div>
+                    
+                    <div class="legal-text">
+                        <strong>Cadena Original del complemento de certificación digital del SAT:</strong><br>
+                        ||1.1|A-${orderId}|${fecha}|${hora}|ECO230101MX1|${order.total}|MXN|${order.total}|I|PUE|${order.perfiles?.id || 'XAXX010101000'}||<br><br>
+                        <strong>Sello Digital del Emisor:</strong><br>
+                        EcoTechSignsV2+${btoa(order.id).substring(0, 20)}...<br><br>
+                        Este documento es una representación impresa de un CFDI.
+                    </div>
+
+                    <div class="totals-box">
+                        <div class="t-row"><span>Subtotal:</span> <span>${formatCurrency(subtotal)}</span></div>
+                        <div class="t-row"><span>Descuento:</span> <span>$0.00</span></div>
+                        <div class="t-row"><span>IVA (16%):</span> <span>${formatCurrency(iva)}</span></div>
+                        <div class="t-row t-total">
+                            <span>TOTAL:</span> <span>${formatCurrency(order.total)}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col">
-                    <h3>Pago</h3>
-                    <strong>Método:</strong> ${order.datos_envio?.metodo === 'card' ? 'Tarjeta' : 'Transferencia'}<br>
-                    <strong>Moneda:</strong> MXN
+
+                <div style="margin-top: 40px; text-align: center; color: #999; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px;">
+                    EcoTech Solutions S.A. de C.V. | www.ecotechsolutions.com | contacto@ecotech.com
                 </div>
-            </div>
 
-            <table class="table">
-                <thead><tr><th>Producto</th><th style="text-align:center;">Cant.</th><th style="text-align:right;">P. Unit</th><th style="text-align:right;">Importe</th></tr></thead>
-                <tbody>${itemsHtml}</tbody>
-            </table>
-
-            <div class="total-section">
-                <div class="total-row">Subtotal: ${formatCurrency(order.total / 1.16)}</div>
-                <div class="total-row">IVA (16%): ${formatCurrency(order.total - (order.total / 1.16))}</div>
-                <div class="total-final">${formatCurrency(order.total)}</div>
-            </div>
-
-            <div class="footer">
-                <p>Comprobante simplificado. Para facturación fiscal, solicítela en las próximas 24hrs.</p>
-                <button class="no-print" onclick="window.print()" style="padding:10px 20px;background:#333;color:white;border:none;cursor:pointer;border-radius:4px;margin-top:20px;">IMPRIMIR</button>
+                <button class="no-print btn-print" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> IMPRIMIR
+                </button>
             </div>
         </body>
         </html>`;
 
-        // 5. Inyectamos el contenido final en la ventana que ya estaba abierta
         win.document.open();
         win.document.write(receiptHTML);
         win.document.close();
 
     } catch (e) {
         win.close();
-        notify.error('Error generando recibo');
+        notify.error('Error al generar recibo');
+    } finally {
+        // CIERRE FORZOSO DE LA NOTIFICACIÓN DE CARGA
+        notify.close(load);
     }
 };

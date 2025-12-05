@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Compra Lemna Minor premium. Suplemento proteico 100% orgánico para acuicultura sostenible. Presentación de 1kg.">
+    <meta name="description" content="Compra Lemna Premium Gold. Suplemento proteico 60% con Omega 3 y 6. Nutrición científica para acuicultura.">
     <meta name="theme-color" content="#4e7c30">
     
     <title>Tienda - ECOTECHSOLUTIONS</title>
@@ -12,8 +12,90 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* --- ESTILOS DE DISEÑO COMPACTO (Ajustados para fuente Inter) --- */
+        body { font-family: 'Inter', sans-serif; color: #334155; }
+        
+        .page-section { padding: 2rem 0; background-color: #f8fafc; }
+        
+        /* Contenedor Principal: Grid 40% / 60% */
+        .producto-container {
+            display: grid;
+            grid-template-columns: 40% 1fr;
+            gap: 2.5rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Galería de Imágenes */
+        .main-image-frame {
+            aspect-ratio: 1 / 1;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        .main-image-frame img { max-height: 90%; max-width: 90%; object-fit: contain; mix-blend-mode: multiply; }
+
+        .thumbnail-row { display: flex; gap: 10px; justify-content: center; }
+        .thumb { width: 65px; height: 65px; border-radius: 6px; border: 2px solid transparent; cursor: pointer; object-fit: cover; background: #f1f5f9; transition: all 0.2s; }
+        .thumb:hover { opacity: 0.8; }
+        .thumb.active { border-color: var(--color-primary); transform: scale(1.05); }
+
+        /* Textos del Producto */
+        .producto-titulo { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.25rem; color: #0f172a; letter-spacing: -0.5px; }
+        .producto-subtitulo { color: #64748b; font-size: 0.9rem; margin-bottom: 1rem; }
+        .producto-precio-grande { font-size: 2rem; color: var(--color-primary); font-weight: 700; margin-bottom: 1.5rem; letter-spacing: -1px; }
+        .producto-descripcion { font-size: 1rem; margin-bottom: 20px; color: #475569; line-height: 1.6; }
+
+        /* Tarjeta de Información Técnica (Compacta) */
+        .info-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0; overflow: hidden; margin-bottom: 20px; }
+        .info-header { background: #f8fafc; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #334155; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .info-body { padding: 15px 20px; }
+
+        /* Grid Nutricional */
+        .nutrition-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .nutrition-item { background: #f8fafc; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #f1f5f9; }
+        .nutrition-label { font-size: 0.75rem; color: #64748b; display: block; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .nutrition-value { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+
+        /* Tabla de Rendimiento */
+        .dosage-table { width: 100%; font-size: 0.9rem; border-collapse: collapse; margin-top: 5px; }
+        .dosage-table td { padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        .dosage-table tr:last-child td { border-bottom: none; }
+        .highlight-val { color: var(--color-success); font-weight: 700; text-align: right; }
+
+        /* Caja de Compra */
+        .compra-box { background: #f1f5f9; padding: 1.5rem; border-radius: 10px; margin-top: 1.5rem; border: 1px solid #e2e8f0; }
+        .cantidad-selector input { font-weight: 700; color: #0f172a; border-color: #cbd5e1; }
+
+        /* Modal Informativo (Footer) */
+        .info-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s; }
+        .info-modal.show { opacity: 1; }
+        .info-modal-content { background: white; width: 90%; max-width: 500px; padding: 2.5rem; border-radius: 16px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s; }
+        .info-modal.show .info-modal-content { transform: translateY(0); }
+        .info-modal-close { position: absolute; top: 20px; right: 20px; border: none; background: #f1f5f9; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .info-modal-close:hover { background: #e2e8f0; color: #0f172a; }
+
+        @media (max-width: 968px) {
+            .producto-container { grid-template-columns: 1fr; padding: 1.5rem; gap: 1.5rem; }
+            .nutrition-grid { grid-template-columns: repeat(2, 1fr); }
+            .producto-titulo { font-size: 1.5rem; }
+        }
+    </style>
 </head>
 <body>
 
@@ -41,7 +123,7 @@
     </nav>
 
     <main class="page-section">
-        <div class="tienda-wrapper shop-layout" data-pid="" data-stock="">
+        <div class="tienda-wrapper shop-layout">
             
             <div class="producto-container">
                 
@@ -59,75 +141,86 @@
                 </div>
 
                 <div class="producto-detalles">
-                    <h1 class="producto-titulo hover-lemna-trigger" id="producto-nombre">Cargando...</h1>
-                    
-                    <p class="producto-precio-grande" id="producto-precio">$---.--</p>
-                    
-                    <div class="producto-stock" style="margin-bottom: 20px; color: #666;">
-                        <i class="fa-solid fa-box-open"></i>
-                        <span>Disponible:</span>
-                        <span class="producto-stock-numero" id="producto-stock" style="font-weight: bold; color: var(--color-primary);">--</span>
-                        <span>paquetes</span>
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div>
+                            <h1 class="producto-titulo" id="producto-nombre">Lemna Premium Gold</h1>
+                            <p class="producto-subtitulo">Bolsa de 90g • Nutrición Científica</p>
+                        </div>
+                        <div class="producto-stock" style="padding: 6px 12px; font-size:0.8rem; margin:0; background:#f1f5f9; border-radius:20px; border:1px solid #e2e8f0;">
+                            <i class="fa-solid fa-box-open" style="color:#64748b;"></i>
+                            <span id="producto-stock" style="font-weight: 700;">--</span> disp.
+                        </div>
                     </div>
+                    
+                    <p class="producto-precio-grande" id="producto-precio">$72.22</p>
 
-                    <p class="producto-descripcion" style="font-size: 1.1rem; margin-bottom: 30px;">
-                        Suplemento premium de Lemna Minor, empaquetado en un conveniente lote de 4 bolsas de 1kg cada una. Alto en proteína (42%) y 100% orgánico para una acuicultura sostenible y rentable.
+                    <p class="producto-descripcion">
+                        Fórmula científica avanzada con <strong>60% de proteína real</strong>. Potenciada con la bioactividad de la <em>Lemna Minor</em> viva, Harina de Pescado y Aceite de Linaza (rico en Omega 3 y 6) para un crecimiento acelerado y salud inmunológica superior.
                     </p>
 
-                    <div class="nutrition-highlights">
-                        <h4><i class="fa-solid fa-leaf"></i> Información Nutricional</h4>
-                        <p style="font-size: 0.9rem; margin-bottom: 15px;">Valores aproximados por cada 100g</p>
+                    <div class="info-card">
+                        <div class="info-header">
+                            <i class="fa-solid fa-flask"></i> Perfil Nutricional Garantizado (90g)
+                        </div>
+                        <div class="info-body">
+                            <div class="nutrition-grid">
+                                <div class="nutrition-item">
+                                    <span class="nutrition-label">Proteína</span><span class="nutrition-value">54g</span>
+                                </div>
+                                <div class="nutrition-item">
+                                    <span class="nutrition-label">Omega 3/6</span><span class="nutrition-value">7.2g</span>
+                                </div>
+                                <div class="nutrition-item">
+                                    <span class="nutrition-label">Minerales</span><span class="nutrition-value">4.5g</span>
+                                </div>
+                                <div class="nutrition-item">
+                                    <span class="nutrition-label">Energía</span><span class="nutrition-value">330kcal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                        <div class="nutrition-grid">
-                            <div class="nutrition-item">
-                                <span class="nutrition-label">Proteína</span>
-                                <span class="nutrition-value">42g</span>
-                            </div>
-                            <div class="nutrition-item">
-                                <span class="nutrition-label">Grasa</span>
-                                <span class="nutrition-value">9g</span>
-                            </div>
-                            <div class="nutrition-item">
-                                <span class="nutrition-label">Fibra</span>
-                                <span class="nutrition-value">13g</span>
-                            </div>
-                            <div class="nutrition-item">
-                                <span class="nutrition-label">Energía</span>
-                                <span class="nutrition-value">330 Kcal</span>
-                            </div>
+                    <div class="info-card">
+                        <div class="info-header">
+                            <i class="fa-regular fa-clock"></i> Rendimiento Estimado
+                        </div>
+                        <div class="info-body" style="padding-top: 5px; padding-bottom: 5px;">
+                            <table class="dosage-table">
+                                <tbody>
+                                    <tr><td>1 Pez (Goldfish)</td><td class="highlight-val">> 1 Año</td></tr>
+                                    <tr><td>5 Peces</td><td class="highlight-val">~ 90 días</td></tr>
+                                    <tr><td>Cardumen (10 Peces)</td><td class="highlight-val">~ 45 días</td></tr>
+                                </tbody>
+                            </table>
+                            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 8px; font-style: italic;">*Cálculo basado en ingesta diaria del 2% del peso corporal.</p>
                         </div>
                     </div>
 
                     <div class="compra-box">
-                        <h4 style="margin-bottom: 15px;">Realizar compra</h4>
-                        
-                        <div class="cantidad-selector">
-                            <label for="cantidad">Cantidad:</label>
-                            <input type="number" id="cantidad" name="cantidad" value="1" min="1" class="form-input" style="width: 80px; display: inline-block; margin-bottom: 0;">
-                        </div>
-
-                        <div class="botones-compra" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button id="btn-anadir-carrito" class="btn btn-primary btn-lg hover-lemna-trigger">
-                                <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div class="cantidad-selector" style="margin:0;">
+                                <label for="cantidad" style="margin-right: 10px; font-weight: 600;">Cant:</label>
+                                <input type="number" id="cantidad" name="cantidad" value="1" min="1" class="form-input" style="width: 70px; text-align: center;">
+                            </div>
+                            <button id="btn-anadir-carrito" class="btn btn-primary hover-lemna-trigger" style="flex: 1;">
+                                <i class="fa-solid fa-cart-plus"></i> AÑADIR
                             </button>
-                            <a href="checkout.html" class="btn btn-light btn-lg hover-lemna-trigger" style="border: 1px solid #ddd;">
-                                <i class="fa-solid fa-credit-card"></i> Ir a Pagar
+                            <a href="checkout.html" class="btn btn-light hover-lemna-trigger" style="flex: 1; border: 1px solid #cbd5e1; text-align: center;">
+                                PAGAR AHORA
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 
     <footer class="site-footer-premium">
         <div class="container">
-            
             <div class="footer-top-row">
                 <div class="region-selector">
                     <span class="region-label">Región / Idioma Actual</span>
-                    <button class="region-btn hover-lemna-trigger">
+                    <button class="region-btn hover-lemna-trigger" onclick="FooterLogic.open('idioma'); return false;">
                         <img src="https://flagcdn.com/24x18/mx.png" alt="México" style="display:inline; width:18px; vertical-align:middle; margin-right:5px;"> 
                         México / Español 
                         <span style="text-decoration: underline; margin-left: 10px; color: #999; font-size: 0.8em;">Cambiar</span>
@@ -136,31 +229,27 @@
             </div>
 
             <div class="footer-middle-grid">
-                
                 <div class="footer-col">
                     <h4 class="footer-heading">Contacto</h4>
-                    <p class="footer-link-text">¿Preguntas?</p>
+                    <p class="footer-link-text">¿Dudas sobre el producto?</p>
                     <a href="panel.html" class="btn btn-light btn-sm hover-lemna-trigger" style="margin-top: 10px; width: fit-content; border-radius: 4px;">Formulario de Contacto</a>
                 </div>
-
                 <div class="footer-col">
                     <h4 class="footer-heading">Redes Sociales</h4>
-                    <p class="footer-link-text">Ponte en contacto con nosotros a través de las redes sociales.</p>
+                    <p class="footer-link-text">Únete a nuestra comunidad.</p>
                     <div class="social-icons-grid">
-                        <a href="https://www.facebook.com/AndyGk237" class="social-box hover-lemna-trigger"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/kevineleomar/" class="social-box hover-lemna-trigger"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.youtube.com/@vegetta777" class="social-box hover-lemna-trigger"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="https://www.linkedin.com/in/jeason-vazquez-555884390/" class="social-box hover-lemna-trigger"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="https://www.facebook.com/AndyGk237" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/kevineleomar/" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/@vegetta777" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="https://www.linkedin.com/in/jeason-vazquez-555884390/" class="social-box hover-lemna-trigger" target="_blank"><i class="fa-brands fa-linkedin-in"></i></a>
                     </div>
                 </div>
-
                 <div class="footer-col">
                     <h4 class="footer-heading">Empresa</h4>
                     <ul class="footer-links-list">
-                        <li><a href="#" class="hover-lemna-trigger">Filiales y Servicios</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Sostenibilidad</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Carreras y Empleo</a></li>
-                        <li><a href="#" class="hover-lemna-trigger">Prensa y Noticias</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('servicios'); return false;">Filiales y Servicios</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('sostenibilidad'); return false;">Sostenibilidad</a></li>
+                        <li><a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('empleo'); return false;">Carreras y Empleo</a></li>
                         <li><a href="panel.html" class="hover-lemna-trigger">Acceso Corporativo (Intranet)</a></li>
                     </ul>
                 </div>
@@ -171,30 +260,71 @@
             <div class="footer-bottom-block">
                 <div class="footer-legal-links">
                     <span>© 2025 ECOTECHSOLUTIONS México.</span>
-                    <a href="#" class="hover-lemna-trigger">Aspectos Legales.</a>
-                    <a href="#" class="hover-lemna-trigger">Aviso de Privacidad.</a>
-                    <a href="#" class="hover-lemna-trigger">Política de cookies.</a>
-                    <a href="#" class="hover-lemna-trigger">Consulta Términos y condiciones.</a>
-                    <a href="#" class="hover-lemna-trigger">Sistema de denuncia de irregularidades.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('legal'); return false;">Aspectos Legales.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('privacidad'); return false;">Aviso de Privacidad.</a>
+                    <a href="#" class="hover-lemna-trigger" onclick="FooterLogic.open('cookies'); return false;">Política de cookies.</a>
                 </div>
-                
                 <div class="footer-disclaimer">
-                    <p>* Conozca los beneficios de los Servicios de Nutrición que EcoTech tiene para usted.</p>
-                    <p>Los precios aquí establecidos son en Moneda Nacional de los Estados Unidos Mexicanos, los cuales incluyen el 16% de Impuesto al Valor Agregado (IVA). Los impuestos pueden variar conforme a la normativa aplicable vigente así como con las disposiciones legales aplicables a cada región geográfica. Para mayor información sobre la disponibilidad, versiones y precios, se recomienda consultar con su Distribuidor autorizado.</p>
-                    <p>Información para nuestros clientes: Debido a la alta demanda en las cadenas logísticas, es posible que existan ligeros retrasos en los envíos masivos. EcoTech estará disponible para proveerle la información más actualizada.</p>
-                    <p>Para consultas generales o quejas, le invitamos a contactarnos a través del Centro de Excelencia marcando al +52 247 155 9218 o enviando un correo electrónico a soporte@ecotech.com.</p>
+                    <p>Los precios aquí establecidos son en Moneda Nacional e incluyen IVA (16%). Imágenes ilustrativas.</p>
+                    <p>Soporte técnico: soporte@ecotech.com</p>
                 </div>
-
                 <div class="footer-brand-logo">
                     <img src="images/logo.png" alt="ECOTECH BRAND" class="footer-final-logo">
                     <span class="brand-text">ECOTECHSOLUTIONS</span>
                 </div>
             </div>
-
         </div>
     </footer>
 
+    <div id="footer-info-modal" class="info-modal">
+        <div class="info-modal-content">
+            <button class="info-modal-close" onclick="FooterLogic.close()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="f-modal-title" style="margin-bottom: 1.5rem; color: var(--color-primary-dark); font-weight: 700; border-bottom: 2px solid var(--color-primary); padding-bottom: 10px; display:inline-block;">Título</h3>
+            <div id="f-modal-body" style="font-size: 1rem; color: #475569; line-height: 1.7;">
+                Contenido...
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="src/main.js"></script>
+
+    <script>
+        const FooterLogic = {
+            content: {
+                'servicios': { title: 'Nuestros Servicios', body: 'EcoTech ofrece consultoría especializada en biotecnología acuícola, diseño de sistemas de recirculación (RAS) y venta de insumos biológicos certificados de alto rendimiento.' },
+                'sostenibilidad': { title: 'Compromiso Verde', body: 'Nuestra huella de carbono es negativa. Utilizamos la Lemna Minor no solo como alimento, sino como biofiltro activo que purifica más de 10,000 litros de agua por ciclo de producción.' },
+                'empleo': { title: 'Únete al Equipo', body: 'Estamos buscando talento apasionado por la acuicultura sostenible. Vacantes abiertas: Ingeniero en Biorreactores y Especialista en Ventas Técnicas. Envía tu CV a rh@ecotech.com.' },
+                'legal': { title: 'Términos Legales', body: 'El uso de este sitio web implica la aceptación total de nuestros términos y condiciones. EcoTech Solutions S.A. de C.V. opera bajo las leyes de comercio electrónico de los Estados Unidos Mexicanos.' },
+                'privacidad': { title: 'Aviso de Privacidad', body: 'Sus datos personales están seguros con nosotros. Solo recopilamos la información estrictamente necesaria para el procesamiento de pedidos y facturación. Jamás compartiremos sus datos con terceros sin su consentimiento explícito.' },
+                'cookies': { title: 'Política de Cookies', body: 'Utilizamos cookies esenciales para mantener su sesión activa y recordar los productos en su carrito de compras. Al navegar, acepta nuestro uso de cookies técnicas.' },
+                'idioma': { title: 'Región e Idioma', body: 'Actualmente, la plataforma EcoTech Solutions opera exclusivamente en México (MXN). Estamos trabajando en la expansión logística para envíos a USA y LATAM para finales de 2025.' }
+            },
+            open: (key) => {
+                const data = FooterLogic.content[key];
+                if(data) {
+                    document.getElementById('f-modal-title').innerText = data.title;
+                    document.getElementById('f-modal-body').innerText = data.body;
+                    const modal = document.getElementById('footer-info-modal');
+                    modal.style.display = 'flex';
+                    // Pequeño delay para la animación CSS
+                    setTimeout(() => modal.classList.add('show'), 10);
+                }
+            },
+            close: () => {
+                const modal = document.getElementById('footer-info-modal');
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
+        };
+        
+        // Exponer globalmente
+        window.FooterLogic = FooterLogic;
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('footer-info-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'footer-info-modal') FooterLogic.close();
+        });
+    </script>
 </body>
 </html>
